@@ -66,6 +66,9 @@ struct {
     LPCWSTR enemyShip1 = L"Sprites\\Enemies\\Enemy_Ship_1.png";
     LPCWSTR enemyShip1Damaged = L"Sprites\\Enemies\\Enemy_Ship_1_Damaged.png";
     LPCWSTR explosion1 = L"Sprites\\Effects\\Explosion_1.png";
+    LPCWSTR explosion2 = L"Sprites\\Effects\\Explosion_2.png";
+    LPCWSTR explosion3 = L"Sprites\\Effects\\Explosion_3.png";
+    LPCWSTR explosion4 = L"Sprites\\Effects\\Explosion_4.png";
     LPCWSTR doubleShotPickup = L"Sprites\\Pickups\\Double_Shot_Icon.png";
     LPCWSTR base = L"Sprites\\Enemies\\Base_Outside_1.png";
     LPCWSTR brody_the_toad = L"Sprites\\Enemies\\Brody the Toad.png";
@@ -172,7 +175,9 @@ public:
     LPCWSTR shotType;
     LPCWSTR defaultShotEffect;
     std::chrono::steady_clock::time_point lastDeathFrameUpdate = std::chrono::steady_clock::now();
-
+    bool dead = false;
+    LPCWSTR deathFrame;
+    bool reverseDeathAnimation = false;
 
 
     struct {
@@ -1157,7 +1162,7 @@ void UpdateGameLogic(double deltaSeconds) {
                 else if (!it->collided) {
 
                     for (auto& object : objects) {
-                        if (object.destructible) {
+                        if (object.destructible && !object.dead) {
                             if (it->CheckCollision(object)) {
                                 object.damaged = true;
                                 object.damageBegins = std::chrono::steady_clock::now();
@@ -1188,87 +1193,114 @@ void UpdateGameLogic(double deltaSeconds) {
                 if (object->currentFramePath != nullptr) {
                     if (object->destructible) {
                         if (object->health <= 0) {
-                            object = objects.erase(object);
-                            if (object != objects.end()) {
-                                ++object;
+                            if (object->dead == false) {
+                                object->dead = true;
+                                object->currentFramePath = files.explosion1;
+                                object->lastDeathFrameUpdate = std::chrono::steady_clock::now();
                             }
-                            continue;
+                            if (std::chrono::steady_clock::now() - object->lastDeathFrameUpdate >= std::chrono::nanoseconds(66666666)) {
+                                if (object->currentFramePath == files.explosion1 && !object->reverseDeathAnimation) {
+                                    object->currentFramePath = files.explosion2;
+                                } else if (object->currentFramePath == files.explosion2 && !object->reverseDeathAnimation) {
+                                    object->currentFramePath = files.explosion3;
+                                } else if (object->currentFramePath == files.explosion3 && !object->reverseDeathAnimation) {
+                                    object->currentFramePath = files.explosion4;
+                                } else if (object->currentFramePath == files.explosion4 && !object->reverseDeathAnimation) {
+                                    object->currentFramePath = files.explosion3;
+                                    object->reverseDeathAnimation = true;
+                                } else if (object->currentFramePath == files.explosion3 && object->reverseDeathAnimation) {
+                                    object->currentFramePath = files.explosion2;
+                                } else if (object->currentFramePath == files.explosion2 && object->reverseDeathAnimation) {
+                                    object->currentFramePath = files.explosion1;
+                                } else if (object->currentFramePath == files.explosion1 && object->reverseDeathAnimation) {
+                                    object = objects.erase(object);
+                                    if (object != objects.end()) {
+                                        ++object;
+                                    }
+                                    continue;
+                                }
+                                object->lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                            }
                         }
-                        if (std::chrono::steady_clock::now() - object->damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
-                            object->damaged = false;
-                        }
-                        if (object->damaged) {
-                            object->currentFramePath = object->damagedFrame;
-                        }
-                        else {
-                            object->currentFramePath = object->defaultFrame;
+                        if (!object->dead) {
+                            if (std::chrono::steady_clock::now() - object->damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
+                                object->damaged = false;
+                            }
+                            if (object->damaged) {
+                                object->currentFramePath = object->damagedFrame;
+                            }
+                            else {
+                                object->currentFramePath = object->defaultFrame;
+                            }
                         }
                     }
-                    if (object->rotatable) {
-                        double newAngle = atan2(player.yPos - object->yPos, player.xPos - object->xPos);
-                        double angleDelta = newAngle - object->angleRadians;
-                        if (angleDelta > pi) {
-                            angleDelta -= (2 * pi);
-                        }
-                        else if (angleDelta < -pi) {
-                            angleDelta += (2 * pi);
-                        }
-                        if (angleDelta > 0) {
-                            object->angleRadians += object->turnRadius * ((deltaSeconds / 50) / 1);
-                        }
-                        else {
-                            object->angleRadians -= object->turnRadius * ((deltaSeconds / 50) / 1);
-                        }
-
-                        object->xPos += object->xVel * deltaSeconds * cos(object->angleRadians);
-                        object->yPos += object->yVel * deltaSeconds * sin(object->angleRadians);
-                    }
-                    if (object->canFire && abs(object->xPos - player.xPos) < 192 && abs(object->yPos - player.yPos) < 168) {
-                        double newAngle = atan2(player.yPos - object->yPos, player.xPos - object->xPos);
-                        double angleDelta = newAngle - object->angleRadians;
-                        if (angleDelta > pi) {
-                            angleDelta -= (2 * pi);
-                        }
-                        else if (angleDelta < -pi) {
-                            angleDelta += (2 * pi);
-                        }
-                        if (abs(angleDelta) <= pi / 12 && !object->shotFrame && std::chrono::steady_clock::now() - object->lastShotTime >= object->shotSpeed) {
-                            // Create new bullet, position it with player, give it its velocities
-                            enemyBullets.emplace_back(object->shotType);
-                            enemyBullets.back().xPos = object->xPos;
-                            enemyBullets.back().yPos = object->yPos;
-                            enemyBullets.back().shotVelocity = object->shotVelocity;
-                            enemyBullets.back().power = object->power;
-                            enemyBullets.back().UpdateHitBox();
-
-                            enemyBullets.back().angleRadians = object->angleRadians + pi / 2;
-                            enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
-                            if (abs(enemyBullets.back().yVel) < 0.0001) {
-                                enemyBullets.back().yVel = 0;
+                    if (!object->dead) {
+                        if (object->rotatable) {
+                            double newAngle = atan2(player.yPos - object->yPos, player.xPos - object->xPos);
+                            double angleDelta = newAngle - object->angleRadians;
+                            if (angleDelta > pi) {
+                                angleDelta -= (2 * pi);
                             }
-                            enemyBullets.back().xVel = round(sin(enemyBullets.back().angleRadians) * 100) / 100;
-                            if (abs(enemyBullets.back().xVel) < 0.0001) {
-                                enemyBullets.back().xVel = 0;
+                            else if (angleDelta < -pi) {
+                                angleDelta += (2 * pi);
+                            }
+                            if (angleDelta > 0) {
+                                object->angleRadians += object->turnRadius * ((deltaSeconds / 50) / 1);
+                            }
+                            else {
+                                object->angleRadians -= object->turnRadius * ((deltaSeconds / 50) / 1);
                             }
 
-                            //enemyBullets.back().modulator = double((rand() % 628)) / 100;
-                            //bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
-                            //int result = (rand() % 2);
-                            //if (modulatorTicker == true) {
-                            //    modulatorTicker = false;
-                            //    bullets.back().modulatorPositiveDelta = false;
-                            //}
-                            //else {
-                            //    modulatorTicker = true;
-                            //    bullets.back().modulatorPositiveDelta = true;
-                            //}
-                            object->shotFrame = object->defaultShotEffect;
+                            object->xPos += object->xVel * deltaSeconds * cos(object->angleRadians);
+                            object->yPos += object->yVel * deltaSeconds * sin(object->angleRadians);
                         }
-                        else {
-                            CycleShotEffect(*object);
+                        if (object->canFire && abs(object->xPos - player.xPos) < 192 && abs(object->yPos - player.yPos) < 168) {
+                            double newAngle = atan2(player.yPos - object->yPos, player.xPos - object->xPos);
+                            double angleDelta = newAngle - object->angleRadians;
+                            if (angleDelta > pi) {
+                                angleDelta -= (2 * pi);
+                            }
+                            else if (angleDelta < -pi) {
+                                angleDelta += (2 * pi);
+                            }
+                            if (abs(angleDelta) <= pi / 12 && !object->shotFrame && std::chrono::steady_clock::now() - object->lastShotTime >= object->shotSpeed) {
+                                // Create new bullet, position it with player, give it its velocities
+                                enemyBullets.emplace_back(object->shotType);
+                                enemyBullets.back().xPos = object->xPos;
+                                enemyBullets.back().yPos = object->yPos;
+                                enemyBullets.back().shotVelocity = object->shotVelocity;
+                                enemyBullets.back().power = object->power;
+                                enemyBullets.back().UpdateHitBox();
+
+                                enemyBullets.back().angleRadians = object->angleRadians + pi / 2;
+                                enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
+                                if (abs(enemyBullets.back().yVel) < 0.0001) {
+                                    enemyBullets.back().yVel = 0;
+                                }
+                                enemyBullets.back().xVel = round(sin(enemyBullets.back().angleRadians) * 100) / 100;
+                                if (abs(enemyBullets.back().xVel) < 0.0001) {
+                                    enemyBullets.back().xVel = 0;
+                                }
+
+                                //enemyBullets.back().modulator = double((rand() % 628)) / 100;
+                                //bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
+                                //int result = (rand() % 2);
+                                //if (modulatorTicker == true) {
+                                //    modulatorTicker = false;
+                                //    bullets.back().modulatorPositiveDelta = false;
+                                //}
+                                //else {
+                                //    modulatorTicker = true;
+                                //    bullets.back().modulatorPositiveDelta = true;
+                                //}
+                                object->shotFrame = object->defaultShotEffect;
+                            }
+                            else {
+                                CycleShotEffect(*object);
+                            }
                         }
+                        object->UpdateHitBox();
                     }
-                    object->UpdateHitBox();
                     if (object != objects.end()) {
                         ++object;
                     }
@@ -1414,6 +1446,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.basicShotEffectPurple5);
     spriteFilePaths.emplace_back(files.enemyShip1Damaged);
     spriteFilePaths.emplace_back(files.explosion1);
+    spriteFilePaths.emplace_back(files.explosion2);
+    spriteFilePaths.emplace_back(files.explosion3);
+    spriteFilePaths.emplace_back(files.explosion4);
     spriteFilePaths.emplace_back(files.doubleShotPickup);
     spriteFilePaths.emplace_back(files.base);
     spriteFilePaths.emplace_back(files.brody_the_toad);
@@ -1621,7 +1656,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                     std::chrono::duration<double> cDeltaTime = std::chrono::steady_clock::now() - lastLogicUpdate;
                     double deltaTime = cDeltaTime.count() * 50;
                     lastLogicUpdate = std::chrono::steady_clock::now();
-                    for (auto obj : objects)
+                    /*for (auto obj : objects)
                     {
                         if ((abs(obj.xPos - player.xPos) > 256) || (abs(obj.yPos - player.yPos) > 224))
                         {
@@ -1633,7 +1668,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                                 spriteFilePaths.emplace_back(obj.currentFramePath);
                             }
                         }
-                    }
+                    }*/
                     UpdateGameLogic(deltaTime);
 
                     TranslateMessage(&msg);
