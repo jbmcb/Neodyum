@@ -1198,27 +1198,35 @@ void UpdateGameLogic(double deltaSeconds) {
                                 object->currentFramePath = files.explosion1;
                                 object->lastDeathFrameUpdate = std::chrono::steady_clock::now();
                             }
-                            if (std::chrono::steady_clock::now() - object->lastDeathFrameUpdate >= std::chrono::nanoseconds(66666666)) {
-                                if (object->currentFramePath == files.explosion1 && !object->reverseDeathAnimation) {
-                                    object->currentFramePath = files.explosion2;
-                                } else if (object->currentFramePath == files.explosion2 && !object->reverseDeathAnimation) {
-                                    object->currentFramePath = files.explosion3;
-                                } else if (object->currentFramePath == files.explosion3 && !object->reverseDeathAnimation) {
-                                    object->currentFramePath = files.explosion4;
-                                } else if (object->currentFramePath == files.explosion4 && !object->reverseDeathAnimation) {
-                                    object->currentFramePath = files.explosion3;
-                                    object->reverseDeathAnimation = true;
-                                } else if (object->currentFramePath == files.explosion3 && object->reverseDeathAnimation) {
-                                    object->currentFramePath = files.explosion2;
-                                } else if (object->currentFramePath == files.explosion2 && object->reverseDeathAnimation) {
-                                    object->currentFramePath = files.explosion1;
-                                } else if (object->currentFramePath == files.explosion1 && object->reverseDeathAnimation) {
-                                    object = objects.erase(object);
-                                    if (object != objects.end()) {
-                                        ++object;
-                                    }
-                                    continue;
+                            bool updated(false);
+                            std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - object->lastDeathFrameUpdate;
+                            if (object->currentFramePath == files.explosion1 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                object->currentFramePath = files.explosion2;
+                                updated = true;
+                            } else if (object->currentFramePath == files.explosion2 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                object->currentFramePath = files.explosion3;
+                                updated = true;
+                            } else if (object->currentFramePath == files.explosion3 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                object->currentFramePath = files.explosion4;
+                                updated = true;
+                            } else if (object->currentFramePath == files.explosion4 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                object->currentFramePath = files.explosion3;
+                                updated = true;
+                                object->reverseDeathAnimation = true;
+                            } else if (object->currentFramePath == files.explosion3 && object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                object->currentFramePath = files.explosion2;
+                                updated = true;
+                            } else if (object->currentFramePath == files.explosion2 && object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                object->currentFramePath = files.explosion1;
+                                updated = true;
+                            } else if (object->currentFramePath == files.explosion1 && object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
+                                object = objects.erase(object);
+                                if (object != objects.end()) {
+                                    ++object;
                                 }
+                                continue;
+                            }
+                            if (updated) {
                                 object->lastDeathFrameUpdate = std::chrono::steady_clock::now();
                             }
                         }
