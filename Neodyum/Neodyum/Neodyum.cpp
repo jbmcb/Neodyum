@@ -84,9 +84,16 @@ struct {
     LPCWSTR entrance = L"Sprites\\Environment\\Entrance.png";
     LPCWSTR status_Bar = L"Sprites\\Menu\\Status_Bar.png";
     LPCWSTR health_Bar = L"Sprites\\Menu\\Health_Bar.png";
+    LPCWSTR boost_Bar = L"Sprites\\Menu\\Boost_Bar.png";
     LPCWSTR player_Death_Animation_1 = L"Sprites\\Ship\\Player_Death_Animation_1.png";
     LPCWSTR player_Death_Animation_2 = L"Sprites\\Ship\\Player_Death_Animation_2.png";
     LPCWSTR player_Death_Animation_3 = L"Sprites\\Ship\\Player_Death_Animation_3.png";
+    LPCWSTR jewel_Blue = L"Sprites\\Pickups\\Jewel_Blue.png";
+    LPCWSTR jewel_Green = L"Sprites\\Pickups\\Jewel_Green.png";
+    LPCWSTR jewel_Purple = L"Sprites\\Pickups\\Jewel_Purple.png";
+    LPCWSTR jewel_Red = L"Sprites\\Pickups\\Jewel_Red.png";
+    LPCWSTR jewel_Silver = L"Sprites\\Pickups\\Jewel_Silver.png";
+    LPCWSTR jewel_Yellow = L"Sprites\\Pickups\\Jewel_Yellow.png";
 } files;
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
@@ -138,6 +145,7 @@ void GetDirectionalInput(int& xDir, int& yDir, bool right, bool left, bool down,
     xDir = (right ? 1 : 0) - (left ? 1 : 0);
     yDir = (down ? 1 : 0) - (up ? 1 : 0);
 }
+
 
 // Represents any visible entity, created for later
 class Object
@@ -253,6 +261,9 @@ public:
     bool loadBullet = false;
     bool doubleShot = false;
     bool dead = false;
+    int currency = 0;
+    float boost = 100;
+    std::chrono::steady_clock::time_point runoutTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
 
 
     Player() {
@@ -537,7 +548,6 @@ void Render() {
                                     (screenY / 2) + (((object.yPos - player.yPos) * scalerY) + (((size.height / 2) - 8) * scalerY))
                                 );
 
-
                                 double angleDegrees = (object.angleRadians + pi / 2) * (180.0 / pi);
                                 D2D1_POINT_2F center = D2D1::Point2F((position.right + position.left) / 2, (position.top + position.bottom) / 2);
 
@@ -808,6 +818,23 @@ void Render() {
                     renderTarget->DrawBitmap(healthBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
                 }
             }
+            if (object.name == L"Boost_Bar") {
+                ID2D1Bitmap* boostBarBitmap = bitmaps[object.currentFramePath];
+                if (boostBarBitmap) {
+                    D2D1_SIZE_F size = boostBarBitmap->GetSize();
+                    D2D1_RECT_F portion = D2D1::RectF(
+                        object.xPos, object.yPos,
+                        object.xPos + ((size.width * scalerX) * (double(player.boost) / 100.0)), object.yPos + (size.height * scalerY)
+                    );
+                    D2D1_RECT_F source = D2D1::RectF(
+                        0, 0,
+                        size.width * (double(player.health) / double(player.maxHP)),
+                        size.height
+                    );
+
+                    renderTarget->DrawBitmap(boostBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
+                }
+            }
         }
 
         //ID2D1Bitmap* asteroid = bitmaps[files.asteroid1];
@@ -936,7 +963,27 @@ void UpdateGameLogic(double deltaSeconds) {
         // Apply Player Inputs
         double boost = 1;
         if (keys.lShift) {
-            boost = 1.4;
+            if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
+                boost = 2;
+                player.boost -= 1 * deltaSeconds;
+                if (player.boost <= 0) {
+                    player.boost = 0;
+                    player.runoutTime = std::chrono::steady_clock::now();
+                }
+            }
+            else {
+                if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
+                    player.boost += 0.66 * deltaSeconds;
+                }
+            }
+        }
+        else {
+            if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
+                player.boost += 0.66 * deltaSeconds;
+            }
+            if (player.boost > 100) {
+                player.boost = 100;
+            }
         }
         if (keys.up) {
             player.yPos -= (boost * deltaSeconds);
@@ -1187,6 +1234,10 @@ void UpdateGameLogic(double deltaSeconds) {
             }
         }
 
+        for (auto object = objects.begin(); object != objects.end(); ) {
+
+        }
+
         // Enemy logic
         if (!objects.empty()) {
             for (auto object = objects.begin(); object != objects.end(); ) {
@@ -1194,6 +1245,15 @@ void UpdateGameLogic(double deltaSeconds) {
                     if (object->destructible) {
                         if (object->health <= 0) {
                             if (object->dead == false) {
+                                // marker
+                                objects.emplace_back(L"Blue Jewel", object->xPos - scalerX, object->yPos - scalerY, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue,
+                                    0, 0, false, true, false);
+                                objects.emplace_back(L"Yellow Jewel", object->xPos + scalerX, object->yPos - scalerY, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow,
+                                    0, 0, false, true, false);
+                                objects.emplace_back(L"Purple Jewel", object->xPos + 1, object->yPos - 3, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple,
+                                    0, 0, false, true, false);
+                                objects.emplace_back(L"Red Jewel", object->xPos - 1, object->yPos + scalerX, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red,
+                                    0, 0, false, true, false);
                                 object->dead = true;
                                 object->currentFramePath = files.explosion1;
                                 object->lastDeathFrameUpdate = std::chrono::steady_clock::now();
@@ -1221,9 +1281,6 @@ void UpdateGameLogic(double deltaSeconds) {
                                 updated = true;
                             } else if (object->currentFramePath == files.explosion1 && object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
                                 object = objects.erase(object);
-                                if (object != objects.end()) {
-                                    ++object;
-                                }
                                 continue;
                             }
                             if (updated) {
@@ -1475,6 +1532,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.player_Death_Animation_1);
     spriteFilePaths.emplace_back(files.player_Death_Animation_2);
     spriteFilePaths.emplace_back(files.player_Death_Animation_3);
+    spriteFilePaths.emplace_back(files.jewel_Blue);
+    spriteFilePaths.emplace_back(files.jewel_Green);
+    spriteFilePaths.emplace_back(files.jewel_Purple);
+    spriteFilePaths.emplace_back(files.jewel_Red);
+    spriteFilePaths.emplace_back(files.jewel_Silver);
+    spriteFilePaths.emplace_back(files.jewel_Yellow);
+    spriteFilePaths.emplace_back(files.boost_Bar);
 
     // Audio
     // SDL_Init(SDL_INIT_AUDIO);
@@ -1631,6 +1695,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
 
     objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (6 * scalerY), 0,
         files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, true, false);
+
+    objects.emplace_back(L"Boost_Bar", leftBoundary + (6 * scalerX), (18 * scalerY), 0,
+        files.boost_Bar, false, 0, nullptr, files.boost_Bar, 0, 0, false, true, false);
 
 
 
