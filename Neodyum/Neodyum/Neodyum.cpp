@@ -79,7 +79,7 @@ struct {
     LPCWSTR shield_Generator = L"Sprites\\Enemies\\Shield_Generator.png";
     LPCWSTR shield_Generator_Damaged = L"Sprites\\Enemies\\Shield_Generator_Damaged.png";
     LPCWSTR base_Door = L"Sprites\\Environment\\Base_Door.png";
-    LPCWSTR base_Inside = L"Sprites\\Environment\\Base_Inside.png";
+    LPCWSTR base_Interior = L"Sprites\\Environment\\Base_Interior.png";
     LPCWSTR base_Core = L"Sprites\\Environment\\Base_Core.png";
     LPCWSTR entrance = L"Sprites\\Environment\\Entrance.png";
     LPCWSTR status_Bar = L"Sprites\\Menu\\Status_Bar.png";
@@ -94,6 +94,27 @@ struct {
     LPCWSTR jewel_Red = L"Sprites\\Pickups\\Jewel_Red.png";
     LPCWSTR jewel_Silver = L"Sprites\\Pickups\\Jewel_Silver.png";
     LPCWSTR jewel_Yellow = L"Sprites\\Pickups\\Jewel_Yellow.png";
+    LPCWSTR font_0 = L"Sprites\\Fonts\\font_0.png";
+    LPCWSTR font_1 = L"Sprites\\Fonts\\font_1.png";
+    LPCWSTR font_2 = L"Sprites\\Fonts\\font_2.png";
+    LPCWSTR font_3 = L"Sprites\\Fonts\\font_3.png";
+    LPCWSTR font_4 = L"Sprites\\Fonts\\font_4.png";
+    LPCWSTR font_5 = L"Sprites\\Fonts\\font_5.png";
+    LPCWSTR font_6 = L"Sprites\\Fonts\\font_6.png";
+    LPCWSTR font_7 = L"Sprites\\Fonts\\font_7.png";
+    LPCWSTR font_8 = L"Sprites\\Fonts\\font_8.png";
+    LPCWSTR font_9 = L"Sprites\\Fonts\\font_9.png";
+    LPCWSTR hp_pickup_1 = L"Sprites\\Pickups\\Health_Pickup_1.png";
+    LPCWSTR hp_pickup_2 = L"Sprites\\Pickups\\Health_Pickup_2.png";
+    LPCWSTR hp_pickup_3 = L"Sprites\\Pickups\\Health_Pickup_3.png";
+    LPCWSTR bomber_drone = L"Sprites\\Enemies\\Bomber_Drone_1.png";
+    LPCWSTR drone_Shot_1 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_1.png";
+    LPCWSTR drone_Shot_2 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_2.png";
+    LPCWSTR drone_Shot_3 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_3.png";
+    LPCWSTR drone_Shot_4 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_4.png";
+    LPCWSTR drone_Shot_5 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_5.png";
+    LPCWSTR drone_Shot_6 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_6.png";
+    LPCWSTR drone_Shot_7 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_7.png";
 } files;
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
@@ -139,6 +160,7 @@ struct
     bool q = false;
     bool s = false;
     bool l = false;
+    bool directionPressed = false;
 } keys;
 
 void GetDirectionalInput(int& xDir, int& yDir, bool right, bool left, bool down, bool up) {
@@ -175,7 +197,7 @@ public:
     bool rotatable = false;
     bool visible = false;
     double turnRadius;
-    std::chrono::steady_clock::time_point lastShotTime = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point lastShotTime = std::chrono::steady_clock::now() - std::chrono::hours(1);
     std::chrono::nanoseconds shotSpeed;
     bool canFire;
     LPCWSTR shotFrame = nullptr;
@@ -186,6 +208,9 @@ public:
     bool dead = false;
     LPCWSTR deathFrame;
     bool reverseDeathAnimation = false;
+    bool pickup = false;
+    std::chrono::steady_clock::time_point genericFrameMarker = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+    std::chrono::steady_clock::time_point timesinceInception = std::chrono::steady_clock::now();
 
 
     struct {
@@ -264,6 +289,7 @@ public:
     int currency = 0;
     float boost = 100;
     std::chrono::steady_clock::time_point runoutTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+    std::chrono::steady_clock::time_point currencyAcquired = std::chrono::steady_clock::now() - std::chrono::seconds(10);
 
 
     Player() {
@@ -436,6 +462,7 @@ Player player;
 Object pickup;
 Object base;
 std::vector<Object> objects;
+std::vector<Object> pickups;
 Object background;
 
 void Render() {
@@ -837,6 +864,68 @@ void Render() {
             }
         }
 
+        ID2D1Bitmap* currencyIconBitmap = bitmaps[files.jewel_Red];
+        if (currencyIconBitmap) {
+            D2D1_SIZE_F size = currencyIconBitmap->GetSize();
+            D2D1_RECT_F position = D2D1::RectF(
+                (4 * scalerX) + leftBoundary, 
+                25 * scalerY, 
+                (4 * scalerX) + (size.width * scalerX) + leftBoundary,
+                (25 * scalerY) + (size.height * scalerY)
+            );
+            renderTarget->DrawBitmap(currencyIconBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+        }
+
+        std::string digits = std::to_string(player.currency);
+        int spaces = 0;
+        for (int i = 0; i < digits.length(); i++) {
+            LPCWSTR filename;
+            switch (digits[i]) {
+                case '0':
+                    filename = files.font_0;
+                    break;
+                case '1':
+                    filename = files.font_1;
+                    break;
+                case '2':
+                    filename = files.font_2;
+                    break;
+                case '3':
+                    filename = files.font_3;
+                    break;
+                case '4':
+                    filename = files.font_4;
+                    break;
+                case '5':
+                    filename = files.font_5;
+                    break;
+                case '6':
+                    filename = files.font_6;
+                    break;
+                case '7':
+                    filename = files.font_7;
+                    break;
+                case '8':
+                    filename = files.font_8;
+                    break;
+                case '9':
+                    filename = files.font_9;
+                    break;
+            }
+            ID2D1Bitmap* digitBitmap = bitmaps[filename];
+            if (digitBitmap) {
+                D2D1_SIZE_F size = digitBitmap->GetSize();
+                D2D1_RECT_F position = D2D1::RectF(
+                    (11 * scalerX) + (spaces * scalerX) + leftBoundary,
+                    24 * scalerY,
+                    (11 * scalerX) + (spaces * scalerX) + (size.width * scalerX) + leftBoundary,
+                    (24 * scalerY) + (size.height * scalerY)
+                );
+                renderTarget->DrawBitmap(digitBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+                spaces += size.width + 1;
+            }
+        }
+
         //ID2D1Bitmap* asteroid = bitmaps[files.asteroid1];
         //if (asteroid) {
         //    D2D1_SIZE_F size = asteroid->GetSize();
@@ -962,7 +1051,7 @@ void UpdateGameLogic(double deltaSeconds) {
 
         // Apply Player Inputs
         double boost = 1;
-        if (keys.lShift) {
+        if (keys.lShift && keys.directionPressed) {
             if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
                 boost = 2;
                 player.boost -= 1 * deltaSeconds;
@@ -1234,75 +1323,97 @@ void UpdateGameLogic(double deltaSeconds) {
             }
         }
 
-        for (auto object = objects.begin(); object != objects.end(); ) {
-
-        }
-
         // Enemy logic
         if (!objects.empty()) {
-            for (auto object = objects.begin(); object != objects.end(); ) {
-                if (object->currentFramePath != nullptr) {
-                    if (object->destructible) {
-                        if (object->health <= 0) {
-                            if (object->dead == false) {
+            for (int i = 0; i < objects.size(); i++) {
+                if (objects[i].currentFramePath != nullptr) {
+                    if (objects[i].destructible) {
+                        if (objects[i].health <= 0) {
+                            if (objects[i].dead == false) {
                                 // marker
-                                objects.emplace_back(L"Blue Jewel", object->xPos - scalerX, object->yPos - scalerY, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue,
-                                    0, 0, false, true, false);
-                                objects.emplace_back(L"Yellow Jewel", object->xPos + scalerX, object->yPos - scalerY, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow,
-                                    0, 0, false, true, false);
-                                objects.emplace_back(L"Purple Jewel", object->xPos + 1, object->yPos - 3, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple,
-                                    0, 0, false, true, false);
-                                objects.emplace_back(L"Red Jewel", object->xPos - 1, object->yPos + scalerX, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red,
-                                    0, 0, false, true, false);
-                                object->dead = true;
-                                object->currentFramePath = files.explosion1;
-                                object->lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                                int qty = (rand() % 3) + 3;
+                                float percentage = player.health / player.maxHP;
+                                for (int j = 0; j < qty; j++) {
+                                    int rng = (rand() % 100) + 1;
+                                    bool rollHP = false;
+                                    float xOffset = 8 * sin(((rand() % 314) - 628) / 100);
+                                    float yOffset = 8 * cos(((rand() % 314) - 628) / 100);
+                                    if (((percentage <= 0.75) && rng >= 75) || ((percentage <= 0.5) && rng >= 50) || ((percentage <= 0.33) && rng >= 25)) {
+                                        rollHP = true;
+                                    }
+                                    if (rollHP) {
+                                        objects.emplace_back(L"Health Pickup", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.hp_pickup_2, false, 0, nullptr, files.hp_pickup_2, 0, 0, false, true, false);
+                                        objects.back().genericFrameMarker = std::chrono::steady_clock::now();
+                                        objects.back().pickup = true;
+                                    }
+                                    else {
+                                        int rng = (rand() % 100) + 1;
+                                        if (rng <= 40) {
+                                            objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
+                                        }
+                                        else if (rng <= 70) {
+                                            objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
+                                        }
+                                        else if (rng <= 90) {
+                                            objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
+                                        }
+                                        else {
+                                            objects.emplace_back(L"Yellow Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
+                                        }
+                                        objects.back().UpdateHitBox();
+                                        objects.back().pickup = true;
+                                    }
+                                }
+                                objects[i].dead = true;
+                                objects[i].currentFramePath = files.explosion1;
+                                objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
                             }
                             bool updated(false);
-                            std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - object->lastDeathFrameUpdate;
-                            if (object->currentFramePath == files.explosion1 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                object->currentFramePath = files.explosion2;
+                            std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - objects[i].lastDeathFrameUpdate;
+                            if (objects[i].currentFramePath == files.explosion1 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                objects[i].currentFramePath = files.explosion2;
                                 updated = true;
-                            } else if (object->currentFramePath == files.explosion2 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                object->currentFramePath = files.explosion3;
+                            } else if (objects[i].currentFramePath == files.explosion2 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                objects[i].currentFramePath = files.explosion3;
                                 updated = true;
-                            } else if (object->currentFramePath == files.explosion3 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                object->currentFramePath = files.explosion4;
+                            } else if (objects[i].currentFramePath == files.explosion3 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                objects[i].currentFramePath = files.explosion4;
                                 updated = true;
-                            } else if (object->currentFramePath == files.explosion4 && !object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                object->currentFramePath = files.explosion3;
+                            } else if (objects[i].currentFramePath == files.explosion4 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                objects[i].currentFramePath = files.explosion3;
                                 updated = true;
-                                object->reverseDeathAnimation = true;
-                            } else if (object->currentFramePath == files.explosion3 && object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                object->currentFramePath = files.explosion2;
+                                objects[i].reverseDeathAnimation = true;
+                            } else if (objects[i].currentFramePath == files.explosion3 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                objects[i].currentFramePath = files.explosion2;
                                 updated = true;
-                            } else if (object->currentFramePath == files.explosion2 && object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                object->currentFramePath = files.explosion1;
+                            } else if (objects[i].currentFramePath == files.explosion2 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                                objects[i].currentFramePath = files.explosion1;
                                 updated = true;
-                            } else if (object->currentFramePath == files.explosion1 && object->reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
-                                object = objects.erase(object);
+                            } else if (objects[i].currentFramePath == files.explosion1 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
+                                objects.erase(objects.begin() + i);
+                                i--;
                                 continue;
                             }
                             if (updated) {
-                                object->lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                                objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
                             }
                         }
-                        if (!object->dead) {
-                            if (std::chrono::steady_clock::now() - object->damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
-                                object->damaged = false;
+                        if (!objects[i].dead) {
+                            if (std::chrono::steady_clock::now() - objects[i].damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
+                                objects[i].damaged = false;
                             }
-                            if (object->damaged) {
-                                object->currentFramePath = object->damagedFrame;
+                            if (objects[i].damaged) {
+                                objects[i].currentFramePath = objects[i].damagedFrame;
                             }
                             else {
-                                object->currentFramePath = object->defaultFrame;
+                                objects[i].currentFramePath = objects[i].defaultFrame;
                             }
                         }
                     }
-                    if (!object->dead) {
-                        if (object->rotatable) {
-                            double newAngle = atan2(player.yPos - object->yPos, player.xPos - object->xPos);
-                            double angleDelta = newAngle - object->angleRadians;
+                    if (!objects[i].dead) {
+                        if (objects[i].rotatable) {
+                            double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
+                            double angleDelta = newAngle - objects[i].angleRadians;
                             if (angleDelta > pi) {
                                 angleDelta -= (2 * pi);
                             }
@@ -1310,34 +1421,35 @@ void UpdateGameLogic(double deltaSeconds) {
                                 angleDelta += (2 * pi);
                             }
                             if (angleDelta > 0) {
-                                object->angleRadians += object->turnRadius * ((deltaSeconds / 50) / 1);
+                                objects[i].angleRadians += objects[i].turnRadius * ((deltaSeconds / 50) / 1);
                             }
                             else {
-                                object->angleRadians -= object->turnRadius * ((deltaSeconds / 50) / 1);
+                                objects[i].angleRadians -= objects[i].turnRadius * ((deltaSeconds / 50) / 1);
                             }
 
-                            object->xPos += object->xVel * deltaSeconds * cos(object->angleRadians);
-                            object->yPos += object->yVel * deltaSeconds * sin(object->angleRadians);
+                            objects[i].xPos += objects[i].xVel * deltaSeconds * cos(objects[i].angleRadians);
+                            objects[i].yPos += objects[i].yVel * deltaSeconds * sin(objects[i].angleRadians);
                         }
-                        if (object->canFire && abs(object->xPos - player.xPos) < 192 && abs(object->yPos - player.yPos) < 168) {
-                            double newAngle = atan2(player.yPos - object->yPos, player.xPos - object->xPos);
-                            double angleDelta = newAngle - object->angleRadians;
+                        if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 192 && abs(objects[i].yPos - player.yPos) < 168) {
+                            double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
+                            double angleDelta = newAngle - objects[i].angleRadians;
                             if (angleDelta > pi) {
                                 angleDelta -= (2 * pi);
                             }
                             else if (angleDelta < -pi) {
                                 angleDelta += (2 * pi);
                             }
-                            if (abs(angleDelta) <= pi / 12 && !object->shotFrame && std::chrono::steady_clock::now() - object->lastShotTime >= object->shotSpeed) {
+                            if (abs(angleDelta) <= pi / 12 && !objects[i].shotFrame && std::chrono::steady_clock::now() - objects[i].lastShotTime >= objects[i].shotSpeed) {
                                 // Create new bullet, position it with player, give it its velocities
-                                enemyBullets.emplace_back(object->shotType);
-                                enemyBullets.back().xPos = object->xPos;
-                                enemyBullets.back().yPos = object->yPos;
-                                enemyBullets.back().shotVelocity = object->shotVelocity;
-                                enemyBullets.back().power = object->power;
+                                enemyBullets.emplace_back(objects[i].shotType);
+                                enemyBullets.back().xPos = objects[i].xPos;
+                                enemyBullets.back().yPos = objects[i].yPos;
+                                enemyBullets.back().shotVelocity = objects[i].shotVelocity;
+                                enemyBullets.back().power = objects[i].power;
+                                enemyBullets.back().defaultFrame = objects.at(i).shotType;
                                 enemyBullets.back().UpdateHitBox();
 
-                                enemyBullets.back().angleRadians = object->angleRadians + pi / 2;
+                                enemyBullets.back().angleRadians = objects[i].angleRadians + pi / 2;
                                 enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
                                 if (abs(enemyBullets.back().yVel) < 0.0001) {
                                     enemyBullets.back().yVel = 0;
@@ -1358,16 +1470,45 @@ void UpdateGameLogic(double deltaSeconds) {
                                 //    modulatorTicker = true;
                                 //    bullets.back().modulatorPositiveDelta = true;
                                 //}
-                                object->shotFrame = object->defaultShotEffect;
+                                objects[i].shotFrame = objects[i].defaultShotEffect;
                             }
                             else {
-                                CycleShotEffect(*object);
+                                CycleShotEffect(objects[i]);
                             }
                         }
-                        object->UpdateHitBox();
+                        objects[i].UpdateHitBox();
                     }
-                    if (object != objects.end()) {
-                        ++object;
+                    if (objects.at(i).pickup) {
+                        if (std::chrono::steady_clock::now() - objects.at(i).timesinceInception >= std::chrono::seconds(2)) {
+                            float dx = (player.xPos - objects.at(i).xPos) / 35;
+                            float dy = (player.yPos - objects.at(i).yPos) / 35;
+                            double length = sqrt(dx * dx + dy * dy);
+                            objects.at(i).xVel = (dx / length) * 5;
+                            objects.at(i).yVel = (dy / length) * 5;
+                            objects.at(i).xPos += objects.at(i).xVel * deltaSeconds;
+                            objects.at(i).yPos += objects.at(i).yVel * deltaSeconds;
+                        }
+                        if (objects.at(i).name == L"Health Pickup") {
+                            if (player.CheckCollision(objects.at(i))) {
+                                player.health = std::min(player.health + 5, player.maxHP);
+                                objects.erase(objects.begin() + i);
+                                i--;
+                                continue;
+                            }
+                            if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::seconds(2)) {
+                                objects.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                                objects.at(i).currentFramePath = files.hp_pickup_2;
+                            }
+                            else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(700)) {
+                                objects.at(i).currentFramePath = files.hp_pickup_3;
+                            }
+                            else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(500)) {
+                                objects.at(i).currentFramePath = files.hp_pickup_2;
+                            }
+                            else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(250)) {
+                                objects.at(i).currentFramePath = files.hp_pickup_1;
+                            }
+                        }
                     }
                 }
             }
@@ -1375,36 +1516,80 @@ void UpdateGameLogic(double deltaSeconds) {
 
         // Enemy Bullet Logic
         if (!enemyBullets.empty()) {
-            for (auto bullet = enemyBullets.begin(); bullet != enemyBullets.end(); ) {
-                if (bullet->collided && std::chrono::steady_clock::now() - bullet->explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
-                    bullet = enemyBullets.erase(bullet);
+            for (int i = 0; i < enemyBullets.size(); i++) {
+                if (enemyBullets.at(i).collided && std::chrono::steady_clock::now() - enemyBullets.at(i).explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
+                    enemyBullets.erase(enemyBullets.begin() + i);
+                    i--;
+                    continue;
                 }
-                else if (!bullet->collided) {
+                else if (!enemyBullets.at(i).collided) {
+                    if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1) {
+                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(6)) {
+                            enemyBullets.erase(enemyBullets.begin() + i);
+                            i--;
+                            continue;
+                        }
+                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(3)) {
+                            enemyBullets.at(i).xVel = 0;
+                            enemyBullets.at(i).yVel = 0;
+                            if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::milliseconds(3550)) {
+                                if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(333)) {
+                                    if (enemyBullets.at(i).currentFramePath == files.drone_Shot_6) {
+                                        enemyBullets.at(i).currentFramePath = files.drone_Shot_7;
+                                        enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                                    }
+                                    else {
+                                        enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
+                                        enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                                    }
+                                }
+                            }
+                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::milliseconds(3300)) {
+                                enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
+                                enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                            } else if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::milliseconds(3150)) {
+                                enemyBullets.at(i).currentFramePath = files.drone_Shot_5;
+                            } else {
+                                enemyBullets.at(i).currentFramePath = files.drone_Shot_4;
+                            }
+                        }
+                        else {
+                            if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(800)) {
+                                enemyBullets.at(i).currentFramePath = files.drone_Shot_1;
+                                enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                            } else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(600)) {
+                                enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
+                            }
+                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(400)) {
+                                enemyBullets.at(i).currentFramePath = files.drone_Shot_3;
+                            }
+                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(300)) {
+                                enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
+                            }
+                        }
+                        
+                    }
                     if (!player.dead) {
-                        if (bullet->CheckCollision(player)) {
+                        if (enemyBullets.at(i).CheckCollision(player)) {
                             player.damaged = true;
                             //object.damageBegins = std::chrono::steady_clock::now();
                             //object.currentFramePath = object.damagedFrame;
-                            player.health -= bullet->power;
+                            player.health -= enemyBullets.at(i).power;
                             if (player.health <= 0) {
                                 player.dead = true;
                                 player.currentFramePath = files.player_Death_Animation_1;
                                 player.lastDeathFrameUpdate = std::chrono::steady_clock::now();
                             }
-                            bullet->currentFramePath = files.explosion1;
-                            bullet->collided = true;
-                            bullet->explosionBegin = std::chrono::steady_clock::now();
+                            enemyBullets.at(i).currentFramePath = files.explosion1;
+                            enemyBullets.at(i).collided = true;
+                            enemyBullets.at(i).explosionBegin = std::chrono::steady_clock::now();
                         }
                     }
-
-                    if (!bullet->collided) {
-                        bullet->xPos += bullet->shotVelocity * (deltaSeconds * bullet->xVel);
-                        bullet->yPos += bullet->shotVelocity * (deltaSeconds * bullet->yVel);
+                    if (!enemyBullets.at(i).collided) {
+                        enemyBullets.at(i).xPos += enemyBullets.at(i).shotVelocity * (deltaSeconds * enemyBullets.at(i).xVel);
+                        enemyBullets.at(i).yPos += enemyBullets.at(i).shotVelocity * (deltaSeconds * enemyBullets.at(i).yVel);
                     }
-                    bullet->UpdateHitBox();
-                }
-                if (bullet != enemyBullets.end()) {
-                    ++bullet;
+                    enemyBullets.at(i).UpdateHitBox();
                 }
             }
         }
@@ -1442,7 +1627,7 @@ void UpdateGameLogic(double deltaSeconds) {
             for (auto object : objects) {
                 if (object.name == L"Entrance") {
                     if (player.CheckCollision(object)) {
-                        background = files.base_Inside;
+                        background = files.base_Interior;
                         player.xPos = 5;
                         player.yPos = 224 / 2;
                         baseEntered = true;
@@ -1459,6 +1644,25 @@ void UpdateGameLogic(double deltaSeconds) {
                 pickup.xPos = 0;
                 pickup.yPos = 0;
                 pickup.currentFramePath = nullptr;
+            }
+        }
+        for (int i = 0; i < objects.size(); i++) {
+            if (objects.at(i).pickup) {
+                if (player.CheckCollision(objects.at(i))) {
+                    player.currencyAcquired = std::chrono::steady_clock::now();
+                    if (objects.at(i).name == L"Red Jewel") {
+                        player.currency += 1;
+                    } else if (objects.at(i).name == L"Purple Jewel") {
+                        player.currency += 5;
+                    } else if (objects.at(i).name == L"Yellow Jewel") {
+                        player.currency += 10;
+                    } else if (objects.at(i).name == L"Blue Jewel") {
+                        player.currency += 2;
+                    }
+                    objects.erase(objects.begin() + i);
+                    i--;
+                    continue;
+                }
             }
         }
     }
@@ -1525,7 +1729,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.shield_Generator);
     spriteFilePaths.emplace_back(files.shield_Generator_Damaged);
     spriteFilePaths.emplace_back(files.base_Door);
-    spriteFilePaths.emplace_back(files.base_Inside);
+    spriteFilePaths.emplace_back(files.base_Interior);
     spriteFilePaths.emplace_back(files.entrance);
     spriteFilePaths.emplace_back(files.status_Bar);
     spriteFilePaths.emplace_back(files.health_Bar);
@@ -1539,6 +1743,27 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.jewel_Silver);
     spriteFilePaths.emplace_back(files.jewel_Yellow);
     spriteFilePaths.emplace_back(files.boost_Bar);
+    spriteFilePaths.emplace_back(files.font_0);
+    spriteFilePaths.emplace_back(files.font_1);
+    spriteFilePaths.emplace_back(files.font_2);
+    spriteFilePaths.emplace_back(files.font_3);
+    spriteFilePaths.emplace_back(files.font_4);
+    spriteFilePaths.emplace_back(files.font_5);
+    spriteFilePaths.emplace_back(files.font_6);
+    spriteFilePaths.emplace_back(files.font_7);
+    spriteFilePaths.emplace_back(files.font_8);
+    spriteFilePaths.emplace_back(files.font_9);
+    spriteFilePaths.emplace_back(files.hp_pickup_1);
+    spriteFilePaths.emplace_back(files.hp_pickup_2);
+    spriteFilePaths.emplace_back(files.hp_pickup_3);
+    spriteFilePaths.emplace_back(files.bomber_drone);
+    spriteFilePaths.emplace_back(files.drone_Shot_1);
+    spriteFilePaths.emplace_back(files.drone_Shot_2);
+    spriteFilePaths.emplace_back(files.drone_Shot_3);
+    spriteFilePaths.emplace_back(files.drone_Shot_4);
+    spriteFilePaths.emplace_back(files.drone_Shot_5);
+    spriteFilePaths.emplace_back(files.drone_Shot_6);
+    spriteFilePaths.emplace_back(files.drone_Shot_7);
 
     // Audio
     // SDL_Init(SDL_INIT_AUDIO);
@@ -1552,15 +1777,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     background.currentFramePath = files.background;
 
     // Initializations
-    objects.emplace_back(L"Enemy Ship 1",
+    objects.emplace_back(L"Bomber Drone",
         1280,
         600,
         3,
-        files.enemyShip1,
+        files.bomber_drone,
         true,
         0,
-        files.enemyShip1Damaged,
-        files.enemyShip1,
+        files.bomber_drone,
+        files.bomber_drone,
         0.5,
         0.5,
         true,
@@ -1568,9 +1793,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
         true
     );
     objects[0].turnRadius = pi / 4;
-    objects[0].shotSpeed = std::chrono::milliseconds(1500);
-    objects[0].shotVelocity = 3.5;
-    objects[0].shotType = files.basicShotPurple;
+    objects[0].shotSpeed = std::chrono::milliseconds(6000);
+    objects[0].shotVelocity = 1;
+    objects[0].shotType = files.drone_Shot_1;
     objects[0].defaultShotEffect = files.basicShotEffectPurple1;
     objects[0].power = 1;
 
@@ -1754,7 +1979,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
             D2DFactory->Release();
         }
     }
-
     return 0;
 }
 
@@ -1767,15 +1991,19 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         {
         case VK_LEFT:
             keys.left = true;
+            keys.directionPressed = true;
             break;
         case VK_RIGHT:
             keys.right = true;
+            keys.directionPressed = true;
             break;
         case VK_UP:
             keys.up = true;
+            keys.directionPressed = true;
             break;
         case VK_DOWN:
             keys.down = true;
+            keys.directionPressed = true;
             break;
         case VK_SPACE:
             keys.space = true;
@@ -1804,15 +2032,27 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         {
         case VK_LEFT:
             keys.left = false;
+            if (!keys.right && !keys.up && !keys.down) {
+                keys.directionPressed = false;
+            }
             break;
         case VK_RIGHT:
             keys.right = false;
+            if (!keys.left && !keys.up && !keys.down) {
+                keys.directionPressed = false;
+            }
             break;
         case VK_UP:
             keys.up = false;
+            if (!keys.right && !keys.left && !keys.down) {
+                keys.directionPressed = false;
+            }
             break;
         case VK_DOWN:
             keys.down = false;
+            if (!keys.right && !keys.up && !keys.left) {
+                keys.directionPressed = false;
+            }
             break;
         case VK_SPACE:
             keys.space = false;
