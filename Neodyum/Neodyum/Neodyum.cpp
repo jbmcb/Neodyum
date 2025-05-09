@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <random>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -146,6 +147,8 @@ std::chrono::steady_clock::time_point pauseBuffer = std::chrono::steady_clock::n
 
 bool modulatorTicker = true;
 bool splashscreen = false;
+
+std::random_device generator;
 
 // Booleans for key inputs
 struct
@@ -1331,14 +1334,19 @@ void UpdateGameLogic(double deltaSeconds) {
                         if (objects[i].health <= 0) {
                             if (objects[i].dead == false) {
                                 // marker
-                                int qty = (rand() % 3) + 3;
+                                std::uniform_int_distribution<int> distribution(3, 5);
+                                int qty = distribution(generator);
                                 float percentage = player.health / player.maxHP;
                                 for (int j = 0; j < qty; j++) {
-                                    int rng = (rand() % 100) + 1;
+                                    std::uniform_int_distribution<int> distribution(1, 100);
+                                    int rng = distribution(generator);
                                     bool rollHP = false;
-                                    float xOffset = 8 * sin(((rand() % 314) - 628) / 100);
-                                    float yOffset = 8 * cos(((rand() % 314) - 628) / 100);
-                                    if (((percentage <= 0.75) && rng >= 75) || ((percentage <= 0.5) && rng >= 50) || ((percentage <= 0.33) && rng >= 25)) {
+                                    std::uniform_real_distribution<float> fdistribution(-pi, pi);
+                                    float angle = fdistribution(generator);
+                                    float xOffset = 8 * sin(angle);
+                                    angle = fdistribution(generator);
+                                    float yOffset = 8 * sin(angle);
+                                    if (((percentage <= 0.75) && rng >= 90) || ((percentage <= 0.5) && rng >= 80) || ((percentage <= 0.33) && rng >= 50)) {
                                         rollHP = true;
                                     }
                                     if (rollHP) {
@@ -1347,14 +1355,14 @@ void UpdateGameLogic(double deltaSeconds) {
                                         objects.back().pickup = true;
                                     }
                                     else {
-                                        int rng = (rand() % 100) + 1;
-                                        if (rng <= 40) {
+                                        rng = distribution(generator);
+                                        if (rng <= 50) {
                                             objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
                                         }
-                                        else if (rng <= 70) {
+                                        else if (rng <= 80) {
                                             objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
                                         }
-                                        else if (rng <= 90) {
+                                        else if (rng <= 95) {
                                             objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
                                         }
                                         else {
@@ -1674,7 +1682,6 @@ void UpdateGameLogic(double deltaSeconds) {
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
-    srand(time(NULL));
 
     // Filenames vector
     spriteFilePaths.emplace_back(files.background);
@@ -1771,8 +1778,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     // Mix_Music* background_Music = Mix_LoadMUS("C:\\Users\\My PC\\source\\repos\\CSS 385 - Program 1 Hello World\\CSS 385 - Program 1 Hello World\\background_music.mp3");
 
     player.power = 1;
-    player.health = 10;
-    player.maxHP = 10;
+    player.health = 100;
+    player.maxHP = 100;
 
     background.currentFramePath = files.background;
 
@@ -1797,7 +1804,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     objects[0].shotVelocity = 1;
     objects[0].shotType = files.drone_Shot_1;
     objects[0].defaultShotEffect = files.basicShotEffectPurple1;
-    objects[0].power = 1;
+    objects[0].power = 10;
 
     base.xPos = 1800;
     base.yPos = 720;
@@ -1850,7 +1857,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
         objects[1 + i].shotVelocity = 5;
         objects[1 + i].shotType = files.basicShotBlue;
         objects[1 + i].defaultShotEffect = files.basicShotEffectBlue1;
-        objects[1 + i].power = 1;
+        objects[1 + i].power = 10;
     }
 
     std::pair <double, double> shieldOffsets[12];
