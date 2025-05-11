@@ -187,9 +187,9 @@ public:
     bool modulatorPositiveDelta = true;
     bool damaged = false;
     std::chrono::steady_clock::time_point damageBegins;
-    int power;
-    int health;
-    int maxHP;
+    float power;
+    float health;
+    float maxHP;
     bool collided = false;
     std::chrono::steady_clock::time_point explosionBegin;
     LPCWSTR name;
@@ -214,6 +214,8 @@ public:
     bool pickup = false;
     std::chrono::steady_clock::time_point genericFrameMarker = std::chrono::steady_clock::now() - std::chrono::seconds(10);
     std::chrono::steady_clock::time_point timesinceInception = std::chrono::steady_clock::now();
+    bool exploding = false;
+    bool pulsating = false;
 
 
     struct {
@@ -225,7 +227,7 @@ public:
 
     Object() {}
 
-    Object(LPCWSTR objName, double xPosition, double yPosition, int HP, LPCWSTR filepath,
+    Object(LPCWSTR objName, double xPosition, double yPosition, float HP, LPCWSTR filepath,
         bool canKill, unsigned int order, LPCWSTR dmgedFrame, LPCWSTR defltFrame, double xVelocity,
         double yVelocity, bool canRotate, bool canSee, bool canShoot) {
         name = objName;
@@ -463,7 +465,7 @@ std::vector<Object> bullets;
 std::vector<Object> enemyBullets;
 Player player;
 Object pickup;
-Object base;
+std::vector<Object> bases;
 std::vector<Object> objects;
 std::vector<Object> pickups;
 Object background;
@@ -516,19 +518,21 @@ void Render() {
             renderTarget->DrawBitmap(bPickup, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
 
-        ID2D1Bitmap* baseBitmap = bitmaps[files.base];
+        for (int i = 0; i < bases.size(); i++) {
+            ID2D1Bitmap* baseBitmap = bitmaps[files.base];
 
-        if (baseBitmap) {
-            D2D1_SIZE_F size = baseBitmap->GetSize();
+            if (baseBitmap) {
+                D2D1_SIZE_F size = baseBitmap->GetSize();
 
-            D2D1_RECT_F position = D2D1::RectF(
-                ((screenX / 2) + ((1800 - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
-                ((screenY / 2) + ((720 - player.yPos) * scalerY)) - ((size.height / 2) * scalerY),
-                ((screenX / 2) + ((1800 - player.xPos) * scalerX)) + ((size.width / 2) * scalerX),
-                ((screenY / 2) + ((720 - player.yPos) * scalerY)) + ((size.height / 2) * scalerY)
-            );
+                D2D1_RECT_F position = D2D1::RectF(
+                    ((screenX / 2) + ((bases.at(i).xPos - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
+                    ((screenY / 2) + ((bases.at(i).yPos - player.yPos) * scalerY)) - ((size.height / 2) * scalerY),
+                    ((screenX / 2) + ((bases.at(i).xPos - player.xPos) * scalerX)) + ((size.width / 2) * scalerX),
+                    ((screenY / 2) + ((bases.at(i).yPos - player.yPos) * scalerY)) + ((size.height / 2) * scalerY)
+                );
 
-            renderTarget->DrawBitmap(baseBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+                renderTarget->DrawBitmap(baseBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            }
         }
 
         if (!objects.empty()) {
@@ -1057,7 +1061,7 @@ void UpdateGameLogic(double deltaSeconds) {
         if (keys.lShift && keys.directionPressed) {
             if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
                 boost = 2;
-                player.boost -= 1 * deltaSeconds;
+                //player.boost -= 1 * deltaSeconds;
                 if (player.boost <= 0) {
                     player.boost = 0;
                     player.runoutTime = std::chrono::steady_clock::now();
@@ -1239,6 +1243,7 @@ void UpdateGameLogic(double deltaSeconds) {
             bullets.back().xPos = xPosition;
             bullets.back().yPos = yPosition;
             bullets.back().UpdateHitBox();
+            bullets.back().power = player.power;
             bullets.back().angleRadians = player.angleRadians;
             bullets.back().yVel = round(-cos(player.angleRadians) * 100) / 100;
             bullets.back().modulator = double((rand() % 628)) / 100;
@@ -1525,22 +1530,38 @@ void UpdateGameLogic(double deltaSeconds) {
         // Enemy Bullet Logic
         if (!enemyBullets.empty()) {
             for (int i = 0; i < enemyBullets.size(); i++) {
+                
                 if (enemyBullets.at(i).collided && std::chrono::steady_clock::now() - enemyBullets.at(i).explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
-                    enemyBullets.erase(enemyBullets.begin() + i);
-                    i--;
-                    continue;
-                }
-                else if (!enemyBullets.at(i).collided) {
+                    if (enemyBullets.at(i).defaultFrame != files.drone_Shot_1) {
+                        enemyBullets.erase(enemyBullets.begin() + i);
+                        i--;
+                        continue;
+                    }
+                } else if (!enemyBullets.at(i).collided) {
                     if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1) {
                         if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(6)) {
                             enemyBullets.erase(enemyBullets.begin() + i);
                             i--;
                             continue;
                         }
-                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(3)) {
+                        Player playerWithRadius = player;
+                        int buffer = 20;
+                        playerWithRadius.hitbox.right += buffer;
+                        playerWithRadius.hitbox.left -= buffer;
+                        playerWithRadius.hitbox.up -= buffer;
+                        playerWithRadius.hitbox.down += buffer;
+                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(2) || enemyBullets.at(i).CheckCollision(playerWithRadius) || enemyBullets.at(i).exploding) {
                             enemyBullets.at(i).xVel = 0;
                             enemyBullets.at(i).yVel = 0;
-                            if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::milliseconds(3550)) {
+                            if (!enemyBullets.at(i).exploding) {
+                                enemyBullets.at(i).exploding = true;
+                                enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                            }
+                            if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(550) || enemyBullets.at(i).pulsating) {
+                                if (!enemyBullets.at(i).pulsating) {
+                                    enemyBullets.at(i).pulsating = true;
+                                    enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                                }
                                 if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(333)) {
                                     if (enemyBullets.at(i).currentFramePath == files.drone_Shot_6) {
                                         enemyBullets.at(i).currentFramePath = files.drone_Shot_7;
@@ -1552,10 +1573,9 @@ void UpdateGameLogic(double deltaSeconds) {
                                     }
                                 }
                             }
-                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::milliseconds(3300)) {
+                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(300)) {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
-                                enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                            } else if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::milliseconds(3150)) {
+                            } else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(150)) {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_5;
                             } else {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_4;
@@ -1579,18 +1599,23 @@ void UpdateGameLogic(double deltaSeconds) {
                     }
                     if (!player.dead) {
                         if (enemyBullets.at(i).CheckCollision(player)) {
+                            if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1 && (enemyBullets.at(i).exploding || enemyBullets.at(i).pulsating)) {
+                                enemyBullets.at(i).power = 0.5;
+                            }
+                            else {
+                                //object.damageBegins = std::chrono::steady_clock::now();
+                                //object.currentFramePath = object.damagedFrame;
+                                enemyBullets.at(i).currentFramePath = files.explosion1;
+                                enemyBullets.at(i).collided = true;
+                                enemyBullets.at(i).explosionBegin = std::chrono::steady_clock::now();
+                            }
                             player.damaged = true;
-                            //object.damageBegins = std::chrono::steady_clock::now();
-                            //object.currentFramePath = object.damagedFrame;
                             player.health -= enemyBullets.at(i).power;
                             if (player.health <= 0) {
                                 player.dead = true;
                                 player.currentFramePath = files.player_Death_Animation_1;
                                 player.lastDeathFrameUpdate = std::chrono::steady_clock::now();
                             }
-                            enemyBullets.at(i).currentFramePath = files.explosion1;
-                            enemyBullets.at(i).collided = true;
-                            enemyBullets.at(i).explosionBegin = std::chrono::steady_clock::now();
                         }
                     }
                     if (!enemyBullets.at(i).collided) {
@@ -1787,7 +1812,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     objects.emplace_back(L"Bomber Drone",
         1280,
         600,
-        3,
+        2,
         files.bomber_drone,
         true,
         0,
@@ -1801,13 +1826,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     );
     objects[0].turnRadius = pi / 4;
     objects[0].shotSpeed = std::chrono::milliseconds(6000);
-    objects[0].shotVelocity = 1;
+    objects[0].shotVelocity = 2;
     objects[0].shotType = files.drone_Shot_1;
     objects[0].defaultShotEffect = files.basicShotEffectPurple1;
     objects[0].power = 10;
-
-    base.xPos = 1800;
-    base.yPos = 720;
+    
     std::pair <double, double> turretOffsets[12];
     turretOffsets[0].first = -130.5;
     turretOffsets[1].first = -151.5;
@@ -1835,31 +1858,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     turretOffsets[10].second = 140.5;
     turretOffsets[11].second = 140.5;
 
-    for (int i = 0; i <= 11; i++) {
-        objects.emplace_back(
-            L"Turret",
-            base.xPos + turretOffsets[i].first,
-            base.yPos + turretOffsets[i].second,
-            3,
-            files.turret,
-            true,
-            0,
-            files.turret_Damaged,
-            files.turret,
-            0,
-            0,
-            true,
-            true,
-            true
-        );
-        objects[1 + i].turnRadius = pi / 4;
-        objects[1 + i].shotSpeed = std::chrono::milliseconds(1250);
-        objects[1 + i].shotVelocity = 5;
-        objects[1 + i].shotType = files.basicShotBlue;
-        objects[1 + i].defaultShotEffect = files.basicShotEffectBlue1;
-        objects[1 + i].power = 10;
-    }
-
+    bases.emplace_back(files.base);
+    bases.at(0).xPos = 1800;
+    bases.at(0).yPos = 1200;
+    bases.emplace_back(files.base);
+    bases.at(1).xPos = 2560;
+    bases.at(1).yPos = 240;
+    bases.emplace_back(files.base);
+    bases.at(2).xPos = 3840;
+    bases.at(2).yPos = 720;
     std::pair <double, double> shieldOffsets[12];
     shieldOffsets[0].first = -130.5;
     shieldOffsets[1].first = -130.5;
@@ -1869,58 +1876,82 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     shieldOffsets[1].second = 126.5;
     shieldOffsets[2].second = -127.5;
     shieldOffsets[3].second = 124.5;
-    for (int i = 0; i <= 3; i++) {
+    for (int i = 0; i < bases.size(); i++) {
+        for (int j = 0; j <= 11; j++) {
+            objects.emplace_back(
+                L"Turret",
+                bases.at(i).xPos + turretOffsets[j].first,
+                bases.at(i).yPos + turretOffsets[j].second,
+                3,
+                files.turret,
+                true,
+                0,
+                files.turret_Damaged,
+                files.turret,
+                0,
+                0,
+                true,
+                true,
+                true
+            );
+            objects[1 + j + (i * 18)].turnRadius = pi / 4;
+            objects[1 + j + (i * 18)].shotSpeed = std::chrono::milliseconds(1250);
+            objects[1 + j + (i * 18)].shotVelocity = 5;
+            objects[1 + j + (i * 18)].shotType = files.basicShotBlue;
+            objects[1 + j + (i * 18)].defaultShotEffect = files.basicShotEffectBlue1;
+            objects[1 + j + (i * 18)].power = 10;
+        }
+        for (int j = 0; j <= 3; j++) {
+            objects.emplace_back(
+                L"Shield Generator",
+                bases.at(i).xPos + shieldOffsets[j].first,
+                bases.at(i).yPos + shieldOffsets[j].second,
+                5,
+                files.shield_Generator,
+                true,
+                0,
+                files.shield_Generator_Damaged,
+                files.shield_Generator,
+                0,
+                0,
+                false,
+                true,
+                false
+            );
+        }
         objects.emplace_back(
-            L"Shield Generator",
-            base.xPos + shieldOffsets[i].first,
-            base.yPos + shieldOffsets[i].second,
-            10,
-            files.shield_Generator,
-            true,
+            L"Base Door",
+            bases.at(i).xPos - 181.5,
+            bases.at(i).yPos - 0.5,
+            -1,
+            files.base_Door,
+            false,
             0,
-            files.shield_Generator_Damaged,
-            files.shield_Generator,
+            nullptr,
+            files.base_Door,
             0,
             0,
             false,
             true,
             false
         );
+        objects.emplace_back(
+            L"Entrance",
+            bases.at(i).xPos - 181.5,
+            bases.at(i).yPos - 0.5,
+            -1,
+            files.entrance,
+            false,
+            0,
+            nullptr,
+            files.entrance,
+            0,
+            0,
+            false,
+            false,
+            false
+        );
     }
-
-    objects.emplace_back(
-        L"Base Door",
-        base.xPos - 181.5,
-        base.yPos - 0.5,
-        -1,
-        files.base_Door,
-        false,
-        0,
-        nullptr,
-        files.base_Door,
-        0,
-        0,
-        false,
-        true,
-        false
-    );
-
-    objects.emplace_back(
-        L"Entrance",
-        base.xPos - 181.5,
-        base.yPos - 0.5,
-        -1,
-        files.entrance,
-        false,
-        0,
-        nullptr,
-        files.entrance,
-        0,
-        0,
-        false,
-        false,
-        false
-    );
 
     objects.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
         files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, true, false);
