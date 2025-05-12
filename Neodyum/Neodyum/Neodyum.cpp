@@ -164,6 +164,8 @@ struct
     bool s = false;
     bool l = false;
     bool directionPressed = false;
+    bool ctrl = false;
+    bool f = false;
 } keys;
 
 void GetDirectionalInput(int& xDir, int& yDir, bool right, bool left, bool down, bool up) {
@@ -216,6 +218,11 @@ public:
     std::chrono::steady_clock::time_point timesinceInception = std::chrono::steady_clock::now();
     bool exploding = false;
     bool pulsating = false;
+    bool randomSpawner = false;
+    bool burstFire = false;
+    bool burstAvailable = false;
+    std::chrono::steady_clock::time_point timeSinceBurst = std::chrono::steady_clock::now();
+    int shotsInBurst = 0;
 
 
     struct {
@@ -607,8 +614,10 @@ void Render() {
 
         // Ship and and effects will need to have uniform rotation, so setting that upfront...
         // Finds direction angle based on inputs
-        double angleRadians = atan2(player.directionX, player.directionY);
-        double angleDegrees = angleRadians * (180.0 / 3.14159265359);
+        double angleRadians = 0;
+        double angleDegrees = (player.angleRadians * pi) / 180;
+        angleRadians = atan2(player.directionX, player.directionY);
+        angleDegrees = angleRadians * (180.0 / 3.14159265359);
         player.angleRadians = angleRadians;
         D2D1_POINT_2F center = D2D1::Point2F(screenX / 2, screenY / 2);
 
@@ -1056,6 +1065,90 @@ void UpdateGameLogic(double deltaSeconds) {
             object.UpdateHitBox();
         }
 
+        bool spawnEnemies = true;
+        for (int i = 0; i < objects.size(); i++) {
+            if (objects.at(i).randomSpawner) {
+                spawnEnemies = false;
+            }
+        }
+        if (spawnEnemies) {
+            for (int i = 0; i < 3; i++) {
+                std::uniform_int_distribution<int> distribution(0, 1);
+                bool binary = distribution(generator);
+                std::uniform_int_distribution<int> fdistribution(0, 960);
+                int placement = fdistribution(generator);
+                int xOffset = 0;
+                int yOffset = 0;
+                if (placement <= 256) {
+                    xOffset = placement / 2;
+                    yOffset = -124;
+                }
+                else if (placement >= 480 && placement <= 736) {
+                    xOffset - (placement - 480) / 2;
+                    yOffset = 124;
+                }
+                else if (placement > 256 && placement < 480) {
+                    yOffset = (placement - 256) / 2;
+                    xOffset = 140;
+                }
+                else {
+                    yOffset = (placement - 736) / 2;
+                    xOffset = -140;
+                }
+                if (binary) {
+                    objects.emplace_back(L"Bomber Drone",
+                        player.xPos + xOffset,
+                        player.yPos + yOffset,
+                        2,
+                        files.bomber_drone,
+                        true,
+                        0,
+                        files.bomber_drone,
+                        files.bomber_drone,
+                        0.25,
+                        0.25,
+                        true,
+                        true,
+                        true
+                    );
+                    objects.back().turnRadius = pi / 4;
+                    objects.back().shotSpeed = std::chrono::milliseconds(6000);
+                    objects.back().shotVelocity = 2;
+                    objects.back().shotType = files.drone_Shot_1;
+                    objects.back().defaultShotEffect = files.basicShotEffectPurple1;
+                    objects.back().power = 10;
+                    objects.back().randomSpawner = true;
+                    objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos) + pi;
+                }
+                else {
+                    objects.emplace_back(L"Enemy Ship 1",
+                        player.xPos + xOffset,
+                        player.yPos + yOffset,
+                        2,
+                        files.enemyShip1,
+                        true,
+                        0,
+                        files.enemyShip1,
+                        files.enemyShip1,
+                        0.75,
+                        0.75,
+                        true,
+                        true,
+                        true
+                    );
+                    objects.back().turnRadius = pi / 2;
+                    objects.back().shotSpeed = std::chrono::milliseconds(50);
+                    objects.back().shotVelocity = 4;
+                    objects.back().shotType = files.basicShotPurple;
+                    objects.back().defaultShotEffect = files.basicShotEffectPurple1;
+                    objects.back().power = 10;
+                    objects.back().randomSpawner = true;
+                    objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos);
+                    objects.back().burstFire = true;
+                }
+            }
+        }
+
         // Apply Player Inputs
         double boost = 1;
         if (keys.lShift && keys.directionPressed) {
@@ -1095,8 +1188,10 @@ void UpdateGameLogic(double deltaSeconds) {
         }
 
         if (keys.right || keys.left || keys.up || keys.down) {
-            player.directionX = keys.right - keys.left;
-            player.directionY = keys.up - keys.down;
+            if (!keys.f) {
+                player.directionX = keys.right - keys.left;
+                player.directionY = keys.up - keys.down;
+            }
         }
 
         if (!player.dead) {
@@ -1331,14 +1426,13 @@ void UpdateGameLogic(double deltaSeconds) {
             }
         }
 
-        // Enemy logic
+        // Master Object logic
         if (!objects.empty()) {
             for (int i = 0; i < objects.size(); i++) {
                 if (objects[i].currentFramePath != nullptr) {
                     if (objects[i].destructible) {
                         if (objects[i].health <= 0) {
                             if (objects[i].dead == false) {
-                                // marker
                                 std::uniform_int_distribution<int> distribution(3, 5);
                                 int qty = distribution(generator);
                                 float percentage = player.health / player.maxHP;
@@ -1452,8 +1546,22 @@ void UpdateGameLogic(double deltaSeconds) {
                             else if (angleDelta < -pi) {
                                 angleDelta += (2 * pi);
                             }
-                            if (abs(angleDelta) <= pi / 12 && !objects[i].shotFrame && std::chrono::steady_clock::now() - objects[i].lastShotTime >= objects[i].shotSpeed) {
+                            if (objects[i].burstFire && !objects[i].burstAvailable && (std::chrono::steady_clock::now() - objects[i].timeSinceBurst >= std::chrono::seconds(2))) {
+                                objects[i].burstAvailable = true;
+                                objects[i].shotsInBurst = 0;
+                            }
+                            if (abs(angleDelta) <= pi / 12 && !objects[i].shotFrame && std::chrono::steady_clock::now() - objects[i].lastShotTime >= objects[i].shotSpeed
+                                && ((objects[i].burstFire && objects[i].burstAvailable) || !objects[i].burstFire)) {
                                 // Create new bullet, position it with player, give it its velocities
+                                if (objects[i].burstFire) {
+                                    objects[i].shotsInBurst++;
+                                    if (objects[i].shotsInBurst >= 3) {
+                                        objects[i].burstAvailable = false;
+                                    }
+                                    else if (objects[i].shotsInBurst == 1) {
+                                        objects[i].timeSinceBurst = std::chrono::steady_clock::now();
+                                    }
+                                }
                                 enemyBullets.emplace_back(objects[i].shotType);
                                 enemyBullets.back().xPos = objects[i].xPos;
                                 enemyBullets.back().yPos = objects[i].yPos;
@@ -1461,7 +1569,6 @@ void UpdateGameLogic(double deltaSeconds) {
                                 enemyBullets.back().power = objects[i].power;
                                 enemyBullets.back().defaultFrame = objects.at(i).shotType;
                                 enemyBullets.back().UpdateHitBox();
-
                                 enemyBullets.back().angleRadians = objects[i].angleRadians + pi / 2;
                                 enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
                                 if (abs(enemyBullets.back().yVel) < 0.0001) {
@@ -1492,7 +1599,7 @@ void UpdateGameLogic(double deltaSeconds) {
                         objects[i].UpdateHitBox();
                     }
                     if (objects.at(i).pickup) {
-                        if (std::chrono::steady_clock::now() - objects.at(i).timesinceInception >= std::chrono::seconds(2)) {
+                        if (std::chrono::steady_clock::now() - objects.at(i).timesinceInception >= std::chrono::milliseconds(750)) {
                             float dx = (player.xPos - objects.at(i).xPos) / 35;
                             float dy = (player.yPos - objects.at(i).yPos) / 35;
                             double length = sqrt(dx * dx + dy * dy);
@@ -1503,7 +1610,7 @@ void UpdateGameLogic(double deltaSeconds) {
                         }
                         if (objects.at(i).name == L"Health Pickup") {
                             if (player.CheckCollision(objects.at(i))) {
-                                player.health = std::min(player.health + 5, player.maxHP);
+                                player.health = std::min(player.health + 10, player.maxHP);
                                 objects.erase(objects.begin() + i);
                                 i--;
                                 continue;
@@ -1682,6 +1789,9 @@ void UpdateGameLogic(double deltaSeconds) {
         for (int i = 0; i < objects.size(); i++) {
             if (objects.at(i).pickup) {
                 if (player.CheckCollision(objects.at(i))) {
+                    if (objects.at(i).name == L"Health Pickup") {
+                        player.health = std::min(player.health + 10, player.maxHP);
+                    }
                     player.currencyAcquired = std::chrono::steady_clock::now();
                     if (objects.at(i).name == L"Red Jewel") {
                         player.currency += 1;
@@ -1809,28 +1919,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     background.currentFramePath = files.background;
 
     // Initializations
-    objects.emplace_back(L"Bomber Drone",
-        1280,
-        600,
-        2,
-        files.bomber_drone,
-        true,
-        0,
-        files.bomber_drone,
-        files.bomber_drone,
-        0.5,
-        0.5,
-        true,
-        true,
-        true
-    );
-    objects[0].turnRadius = pi / 4;
-    objects[0].shotSpeed = std::chrono::milliseconds(6000);
-    objects[0].shotVelocity = 2;
-    objects[0].shotType = files.drone_Shot_1;
-    objects[0].defaultShotEffect = files.basicShotEffectPurple1;
-    objects[0].power = 10;
-    
     std::pair <double, double> turretOffsets[12];
     turretOffsets[0].first = -130.5;
     turretOffsets[1].first = -151.5;
@@ -1894,12 +1982,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 true,
                 true
             );
-            objects[1 + j + (i * 18)].turnRadius = pi / 4;
-            objects[1 + j + (i * 18)].shotSpeed = std::chrono::milliseconds(1250);
-            objects[1 + j + (i * 18)].shotVelocity = 5;
-            objects[1 + j + (i * 18)].shotType = files.basicShotBlue;
-            objects[1 + j + (i * 18)].defaultShotEffect = files.basicShotEffectBlue1;
-            objects[1 + j + (i * 18)].power = 10;
+            objects[j + (i * 18)].turnRadius = pi / 4;
+            objects[j + (i * 18)].shotSpeed = std::chrono::milliseconds(1250);
+            objects[j + (i * 18)].shotVelocity = 5;
+            objects[j + (i * 18)].shotType = files.basicShotBlue;
+            objects[j + (i * 18)].defaultShotEffect = files.basicShotEffectBlue1;
+            objects[j + (i * 18)].power = 10;
         }
         for (int j = 0; j <= 3; j++) {
             objects.emplace_back(
@@ -2061,6 +2149,12 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         case VK_L:
             keys.l = true;
             break;
+        case VK_CONTROL:
+            keys.ctrl = true;
+            break;
+        case 'F':
+            keys.f = true;
+            break;
         }
         break;
     }
@@ -2109,6 +2203,12 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             break;
         case VK_L:
             keys.l = false;
+            break;
+        case VK_CONTROL:
+            keys.ctrl = false;
+            break;
+        case 'F':
+            keys.f = false;
             break;
         }
         break;
