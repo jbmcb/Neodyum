@@ -148,7 +148,7 @@ std::chrono::steady_clock::time_point pauseBuffer = std::chrono::steady_clock::n
 bool modulatorTicker = true;
 bool splashscreen = false;
 
-std::random_device generator;
+std::mt19937 generator(std::random_device{}());
 
 // Booleans for key inputs
 struct
@@ -356,6 +356,39 @@ public:
 
 };
 
+class Star : public Object {
+public:
+    float r, g, b, a, rate;
+    bool direction;
+    Star(int x, int y, int red, int green, int blue, float alpha) {
+        xPos = x;
+        yPos = y;
+        r = red;
+        g = green;
+        b = blue;
+        a = alpha;
+        std::uniform_int_distribution<int> range(50, 100);
+        int roll = range(generator);
+        rate = float(roll) / 10000.0;
+    }
+    void Pulsate(double deltaTime) {
+        if (direction) {
+            a += rate * deltaTime;
+            if (a >= 1.0) {
+                a = 1.0;
+                direction = false;
+            }
+        }
+        else {
+            a -= rate * deltaTime;
+            if (a <= 0) {
+                a = 0;
+                direction = true;
+            }
+        }
+    }
+};
+
 void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
     HRESULT hr = S_OK;
 
@@ -476,6 +509,8 @@ std::vector<Object> bases;
 std::vector<Object> objects;
 std::vector<Object> pickups;
 Object background;
+std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+std::vector<Star> stars;
 
 void Render() {
 
@@ -499,7 +534,7 @@ void Render() {
         renderTarget->PushAxisAlignedClip(aspectEnforcer, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
         // Pulls bitmap for background
-        ID2D1Bitmap* backgroundBitmap = bitmaps[background.currentFramePath];
+        /*ID2D1Bitmap* backgroundBitmap = bitmaps[background.currentFramePath];
 
         if (backgroundBitmap) {
 
@@ -509,7 +544,27 @@ void Render() {
 
             // Render a slice of the background equal to the camera coords, with no interpolation or transparency, to the defined display bounds
             renderTarget->DrawBitmap(backgroundBitmap, screen, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, cameraPos);
+        }*/
+
+        ID2D1SolidColorBrush* brush;
+        renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0), &brush);
+        for (int i = 0; i < stars.size(); i++) {
+            D2D1_RECT_F star = D2D1::RectF(
+                (stars.at(i).xPos - player.xPos) * scalerX,
+                (stars.at(i).yPos - player.yPos) * scalerY,
+                ((stars.at(i).xPos - player.xPos) * scalerX) + scalerX,
+                ((stars.at(i).yPos - player.yPos) * scalerY) + scalerY);
+
+            
+            renderTarget->CreateSolidColorBrush(D2D1::ColorF(
+                stars.at(i).r / 255.0, 
+                stars.at(i).g / 255.0, 
+                stars.at(i).b / 255.0,  
+                stars.at(i).a), 
+                &brush);
+            renderTarget->FillRectangle(star, brush);
         }
+        brush->Release();
 
         ID2D1Bitmap* bPickup = bitmaps[pickup.currentFramePath];
         if (bPickup) {
@@ -1058,20 +1113,26 @@ void CycleShotEffect(Object& object) {
     }
 }
 
-void UpdateGameLogic(double deltaSeconds) {
+void UpdateGameLogic(double deltaTime) {
 
     if (!paused && !splashscreen) {
         for (auto& object : objects) {
             object.UpdateHitBox();
         }
 
+        for (auto& star : stars) {
+            star.Pulsate(deltaTime);
+        }
+
         bool spawnEnemies = true;
+        bool spawnsExist = false;
         for (int i = 0; i < objects.size(); i++) {
             if (objects.at(i).randomSpawner) {
                 spawnEnemies = false;
+                spawnsExist = true;
             }
         }
-        if (spawnEnemies) {
+        if (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10))) {
             for (int i = 0; i < 3; i++) {
                 std::uniform_int_distribution<int> distribution(0, 1);
                 bool binary = distribution(generator);
@@ -1143,7 +1204,7 @@ void UpdateGameLogic(double deltaSeconds) {
                     objects.back().defaultShotEffect = files.basicShotEffectPurple1;
                     objects.back().power = 10;
                     objects.back().randomSpawner = true;
-                    objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos);
+                    objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos) + pi;
                     objects.back().burstFire = true;
                 }
             }
@@ -1154,7 +1215,7 @@ void UpdateGameLogic(double deltaSeconds) {
         if (keys.lShift && keys.directionPressed) {
             if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
                 boost = 2;
-                //player.boost -= 1 * deltaSeconds;
+                //player.boost -= 1 * deltaTime;
                 if (player.boost <= 0) {
                     player.boost = 0;
                     player.runoutTime = std::chrono::steady_clock::now();
@@ -1162,29 +1223,29 @@ void UpdateGameLogic(double deltaSeconds) {
             }
             else {
                 if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
-                    player.boost += 0.66 * deltaSeconds;
+                    player.boost += 0.66 * deltaTime;
                 }
             }
         }
         else {
             if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
-                player.boost += 0.66 * deltaSeconds;
+                player.boost += 0.66 * deltaTime;
             }
             if (player.boost > 100) {
                 player.boost = 100;
             }
         }
         if (keys.up) {
-            player.yPos -= (boost * deltaSeconds);
+            player.yPos -= (boost * deltaTime);
         }
         if (keys.down) {
-            player.yPos += (boost * deltaSeconds);
+            player.yPos += (boost * deltaTime);
         }
         if (keys.right) {
-            player.xPos += (boost * deltaSeconds);
+            player.xPos += (boost * deltaTime);
         }
         if (keys.left) {
-            player.xPos -= (boost * deltaSeconds);
+            player.xPos -= (boost * deltaTime);
         }
 
         if (keys.right || keys.left || keys.up || keys.down) {
@@ -1415,8 +1476,8 @@ void UpdateGameLogic(double deltaSeconds) {
                     }
 
                     if (!it->collided) {
-                        it->xPos += 7 * (deltaSeconds * it->xVel);
-                        it->yPos += 7 * (deltaSeconds * it->yVel);
+                        it->xPos += 7 * (deltaTime * it->xVel);
+                        it->yPos += 7 * (deltaTime * it->yVel);
                     }
                     it->UpdateHitBox();
                 }
@@ -1426,6 +1487,7 @@ void UpdateGameLogic(double deltaSeconds) {
             }
         }
 
+        int spawnerCounter = 0;
         // Master Object logic
         if (!objects.empty()) {
             for (int i = 0; i < objects.size(); i++) {
@@ -1455,13 +1517,13 @@ void UpdateGameLogic(double deltaSeconds) {
                                     }
                                     else {
                                         rng = distribution(generator);
-                                        if (rng <= 50) {
+                                        if (rng <= 85) {
                                             objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
                                         }
-                                        else if (rng <= 80) {
+                                        else if (rng <= 95) {
                                             objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
                                         }
-                                        else if (rng <= 95) {
+                                        else if (rng <= 91) {
                                             objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
                                         }
                                         else {
@@ -1528,14 +1590,14 @@ void UpdateGameLogic(double deltaSeconds) {
                                 angleDelta += (2 * pi);
                             }
                             if (angleDelta > 0) {
-                                objects[i].angleRadians += objects[i].turnRadius * ((deltaSeconds / 50) / 1);
+                                objects[i].angleRadians += objects[i].turnRadius * ((deltaTime / 50) / 1);
                             }
                             else {
-                                objects[i].angleRadians -= objects[i].turnRadius * ((deltaSeconds / 50) / 1);
+                                objects[i].angleRadians -= objects[i].turnRadius * ((deltaTime / 50) / 1);
                             }
 
-                            objects[i].xPos += objects[i].xVel * deltaSeconds * cos(objects[i].angleRadians);
-                            objects[i].yPos += objects[i].yVel * deltaSeconds * sin(objects[i].angleRadians);
+                            objects[i].xPos += objects[i].xVel * deltaTime * cos(objects[i].angleRadians);
+                            objects[i].yPos += objects[i].yVel * deltaTime * sin(objects[i].angleRadians);
                         }
                         if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 192 && abs(objects[i].yPos - player.yPos) < 168) {
                             double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
@@ -1605,8 +1667,8 @@ void UpdateGameLogic(double deltaSeconds) {
                             double length = sqrt(dx * dx + dy * dy);
                             objects.at(i).xVel = (dx / length) * 5;
                             objects.at(i).yVel = (dy / length) * 5;
-                            objects.at(i).xPos += objects.at(i).xVel * deltaSeconds;
-                            objects.at(i).yPos += objects.at(i).yVel * deltaSeconds;
+                            objects.at(i).xPos += objects.at(i).xVel * deltaTime;
+                            objects.at(i).yPos += objects.at(i).yVel * deltaTime;
                         }
                         if (objects.at(i).name == L"Health Pickup") {
                             if (player.CheckCollision(objects.at(i))) {
@@ -1630,8 +1692,14 @@ void UpdateGameLogic(double deltaSeconds) {
                             }
                         }
                     }
+                    if (objects.at(i).randomSpawner) {
+                        spawnerCounter++;
+                    }
                 }
             }
+        }
+        if ((spawnerCounter == 0) && spawnsExist) {
+            timeSinceSpawn = std::chrono::steady_clock::now();
         }
 
         // Enemy Bullet Logic
@@ -1726,8 +1794,8 @@ void UpdateGameLogic(double deltaSeconds) {
                         }
                     }
                     if (!enemyBullets.at(i).collided) {
-                        enemyBullets.at(i).xPos += enemyBullets.at(i).shotVelocity * (deltaSeconds * enemyBullets.at(i).xVel);
-                        enemyBullets.at(i).yPos += enemyBullets.at(i).shotVelocity * (deltaSeconds * enemyBullets.at(i).yVel);
+                        enemyBullets.at(i).xPos += enemyBullets.at(i).shotVelocity * (deltaTime * enemyBullets.at(i).xVel);
+                        enemyBullets.at(i).yPos += enemyBullets.at(i).shotVelocity * (deltaTime * enemyBullets.at(i).yVel);
                     }
                     enemyBullets.at(i).UpdateHitBox();
                 }
@@ -1906,6 +1974,38 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.drone_Shot_5);
     spriteFilePaths.emplace_back(files.drone_Shot_6);
     spriteFilePaths.emplace_back(files.drone_Shot_7);
+
+    for (int y = 0; y <= 2240; y++) {
+        for (int x = 0; x <= 2560; x++) {
+            std::uniform_int_distribution<int> range(1, 10000);
+            int roll = range(generator);
+            if (roll <= 25) {
+                int r, g, b;
+                roll = range(generator);
+                if (roll <= 9200) {
+                    r = g = b = 200;
+                }
+                else if (roll <= 9466) {
+                    r = 102;
+                    g = 138;
+                    b = 200;
+                }
+                else if (roll <= 9732) {
+                    r = 200;
+                    g = 133;
+                    b = 65;
+                }
+                else {
+                    r = 200;
+                    g = 53;
+                    b = 46;
+                }
+                roll = range(generator);
+                float alpha = std::max(float(roll) / 10000.0, 0.01);
+                stars.emplace_back(x, y, r, g, b, alpha);
+            }
+        }
+    }
 
     // Audio
     // SDL_Init(SDL_INIT_AUDIO);
