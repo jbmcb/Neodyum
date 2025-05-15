@@ -14,6 +14,7 @@
 #include <iostream>
 #include <string>
 #include <random>
+#include <unordered_map>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -367,9 +368,11 @@ public:
         g = green;
         b = blue;
         a = alpha;
-        std::uniform_int_distribution<int> range(50, 100);
+        std::uniform_int_distribution<int> range(25, 75);
         int roll = range(generator);
         rate = float(roll) / 10000.0;
+        std::uniform_int_distribution<int> range1(0, 1);
+        direction = range1(generator);
     }
     void Pulsate(double deltaTime) {
         if (direction) {
@@ -510,7 +513,7 @@ std::vector<Object> objects;
 std::vector<Object> pickups;
 Object background;
 std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
-std::vector<Star> stars;
+std::unordered_map<std::pair<int, int>, std::vector<Star>> starGrid;
 
 void Render() {
 
@@ -548,21 +551,33 @@ void Render() {
 
         ID2D1SolidColorBrush* brush;
         renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0), &brush);
-        for (int i = 0; i < stars.size(); i++) {
-            D2D1_RECT_F star = D2D1::RectF(
-                (stars.at(i).xPos - player.xPos) * scalerX,
-                (stars.at(i).yPos - player.yPos) * scalerY,
-                ((stars.at(i).xPos - player.xPos) * scalerX) + scalerX,
-                ((stars.at(i).yPos - player.yPos) * scalerY) + scalerY);
+        int rightBound = int(player.xPos + 128) / 256; 
+        int lowBound = int(player.yPos + 112) / 224;
 
-            
-            renderTarget->CreateSolidColorBrush(D2D1::ColorF(
-                stars.at(i).r / 255.0, 
-                stars.at(i).g / 255.0, 
-                stars.at(i).b / 255.0,  
-                stars.at(i).a), 
-                &brush);
-            renderTarget->FillRectangle(star, brush);
+        int leftBound = (int(player.xPos) - 128) / 256;
+        int upBound = (int(player.yPos) - 112) / 224;
+
+        for (int y = upBound; y <= lowBound; ++y) {
+            for (int x = leftBound; x <= rightBound; ++x) {
+                auto it = starGrid.find({ x, y });
+                if (it != starGrid.end()) {
+                    for (const Star& star : it->second) {
+                        D2D1_RECT_F pixel = D2D1::RectF(
+                            (star.xPos - player.xPos) * scalerX,
+                            (star.yPos - player.yPos) * scalerY,
+                            ((star.xPos - player.xPos) * scalerX) + scalerX,
+                            ((star.yPos - player.yPos) * scalerY) + scalerY);
+
+                        renderTarget->CreateSolidColorBrush(D2D1::ColorF(
+                            star.r / 255.0,
+                            star.g / 255.0,
+                            star.b / 255.0,
+                            star.a),
+                            &brush);
+                        renderTarget->FillRectangle(pixel, brush);
+                    }
+                }
+            }
         }
         brush->Release();
 
@@ -1120,8 +1135,21 @@ void UpdateGameLogic(double deltaTime) {
             object.UpdateHitBox();
         }
 
-        for (auto& star : stars) {
-            star.Pulsate(deltaTime);
+        int rightBound = int(player.xPos + 128) / 256;
+        int lowBound = int(player.yPos + 112) / 224;
+
+        int leftBound = (int(player.xPos) - 128) / 256;
+        int upBound = (int(player.yPos) - 112) / 224;
+
+        for (int y = upBound; y <= lowBound; ++y) {
+            for (int x = leftBound; x <= rightBound; ++x) {
+                auto it = starGrid.find({ x, y });
+                if (it != starGrid.end()) {
+                    for (Star star : it->second) {
+                        star.Pulsate(deltaTime);
+                    }
+                }
+            }
         }
 
         bool spawnEnemies = true;
@@ -1975,9 +2003,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.drone_Shot_6);
     spriteFilePaths.emplace_back(files.drone_Shot_7);
 
-    for (int y = 0; y <= 2240; y++) {
-        for (int x = 0; x <= 2560; x++) {
-            std::uniform_int_distribution<int> range(1, 10000);
+    std::uniform_int_distribution<int> range(1, 10000);
+    for (int y = 0; y <= 5000; y++) {
+        for (int x = 0; x <= 5000; x++) {
             int roll = range(generator);
             if (roll <= 25) {
                 int r, g, b;
@@ -2002,7 +2030,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 }
                 roll = range(generator);
                 float alpha = std::max(float(roll) / 10000.0, 0.01);
-                stars.emplace_back(x, y, r, g, b, alpha);
+                std::pair<int, int> cell = { x / 256, y / 224 };
+                starGrid[cell].emplace_back(x, y, r, g, b, alpha);
             }
         }
     }
