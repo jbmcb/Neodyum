@@ -151,6 +151,12 @@ bool splashscreen = false;
 
 std::mt19937 generator(std::random_device{}());
 
+struct hash_function {
+    std::size_t operator()(const std::pair<int, int>& p) const {
+        return std::hash<int>{}(p.first)* (std::hash<int>{}(p.second) << 1);
+    }
+};
+
 // Booleans for key inputs
 struct
 {
@@ -513,7 +519,7 @@ std::vector<Object> objects;
 std::vector<Object> pickups;
 Object background;
 std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
-std::unordered_map<std::pair<int, int>, std::vector<Star>> starGrid;
+std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
 
 void Render() {
 
@@ -522,64 +528,69 @@ void Render() {
     renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
     if (!paused && !splashscreen) {
-        // Camera position
-        D2D1_RECT_F cameraPos = D2D1::RectF(
-            player.xPos - 128,
-            player.yPos - 112,
-            player.xPos + 128,
-            player.yPos + 112
-        );
-
         // Keeps stuff from being rendered outside boundaries
         D2D1_RECT_F aspectEnforcer = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
 
         // Push the clipping rectangle onto the render target
         renderTarget->PushAxisAlignedClip(aspectEnforcer, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        // Pulls bitmap for background
-        /*ID2D1Bitmap* backgroundBitmap = bitmaps[background.currentFramePath];
-
-        if (backgroundBitmap) {
-
-            // Gets the size of the background 
+        if (background.currentFramePath == files.base_Interior) {
+            // Pulls bitmap for background
+            ID2D1Bitmap* backgroundBitmap = bitmaps[background.currentFramePath];
             D2D1_SIZE_F size = backgroundBitmap->GetSize();
-            D2D1_RECT_F screen = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
 
-            // Render a slice of the background equal to the camera coords, with no interpolation or transparency, to the defined display bounds
-            renderTarget->DrawBitmap(backgroundBitmap, screen, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, cameraPos);
-        }*/
+            float left = std::max(0.0, std::max(player.xPos - 128, 0.0));
+            float right = std::min(std::max(0.0, player.xPos + 128), double(size.width));
+            if (left == 0) {
+                right = 256;
+            }
+            if (right - left < 256) {
+                left = right - 256;
+            }
 
-        ID2D1SolidColorBrush* brush;
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0), &brush);
-        int rightBound = int(player.xPos + 128) / 256; 
-        int lowBound = int(player.yPos + 112) / 224;
+            // Camera position
+            D2D1_RECT_F cameraPos = D2D1::RectF(left, 0, right, 224);
 
-        int leftBound = (int(player.xPos) - 128) / 256;
-        int upBound = (int(player.yPos) - 112) / 224;
+            if (backgroundBitmap) {
+                D2D1_RECT_F screen = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
 
-        for (int y = upBound; y <= lowBound; ++y) {
-            for (int x = leftBound; x <= rightBound; ++x) {
-                auto it = starGrid.find({ x, y });
-                if (it != starGrid.end()) {
-                    for (const Star& star : it->second) {
-                        D2D1_RECT_F pixel = D2D1::RectF(
-                            (star.xPos - player.xPos) * scalerX,
-                            (star.yPos - player.yPos) * scalerY,
-                            ((star.xPos - player.xPos) * scalerX) + scalerX,
-                            ((star.yPos - player.yPos) * scalerY) + scalerY);
+                // Render a slice of the background equal to the camera coords, with no interpolation or transparency, to the defined display bounds
+                 renderTarget->DrawBitmap(backgroundBitmap, screen, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, cameraPos);
+            }
+        }
+        else {
+            ID2D1SolidColorBrush* brush;
+            renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0), &brush);
+            int rightBound = (int(player.xPos + 128) / 256) + 1;
+            int lowBound = (int(player.yPos + 112) / 224) + 1;
 
-                        renderTarget->CreateSolidColorBrush(D2D1::ColorF(
-                            star.r / 255.0,
-                            star.g / 255.0,
-                            star.b / 255.0,
-                            star.a),
-                            &brush);
-                        renderTarget->FillRectangle(pixel, brush);
+            int leftBound = (int(player.xPos) - 128) / 256;
+            int upBound = (int(player.yPos) - 112) / 224;
+
+            for (int y = upBound; y <= lowBound; ++y) {
+                for (int x = leftBound; x <= rightBound; ++x) {
+                    auto it = starGrid.find({ x, y });
+                    if (it != starGrid.end()) {
+                        for (const Star& star : it->second) {
+                            D2D1_RECT_F pixel = D2D1::RectF(
+                                (star.xPos - player.xPos) * scalerX,
+                                (star.yPos - player.yPos) * scalerY,
+                                ((star.xPos - player.xPos) * scalerX) + scalerX,
+                                ((star.yPos - player.yPos) * scalerY) + scalerY);
+
+                            renderTarget->CreateSolidColorBrush(D2D1::ColorF(
+                                star.r / 255.0,
+                                star.g / 255.0,
+                                star.b / 255.0,
+                                star.a),
+                                &brush);
+                            renderTarget->FillRectangle(pixel, brush);
+                        }
                     }
                 }
             }
+            brush->Release();
         }
-        brush->Release();
 
         ID2D1Bitmap* bPickup = bitmaps[pickup.currentFramePath];
         if (bPickup) {
@@ -1135,17 +1146,17 @@ void UpdateGameLogic(double deltaTime) {
             object.UpdateHitBox();
         }
 
-        int rightBound = int(player.xPos + 128) / 256;
-        int lowBound = int(player.yPos + 112) / 224;
+        int rightBound = (int(player.xPos + 128) / 256) + 1;
+        int lowBound = (int(player.yPos + 112) / 224) + 1;
 
-        int leftBound = (int(player.xPos) - 128) / 256;
-        int upBound = (int(player.yPos) - 112) / 224;
+        int leftBound = ((int(player.xPos) - 128) / 256);
+        int upBound = ((int(player.yPos) - 112) / 224);
 
         for (int y = upBound; y <= lowBound; ++y) {
             for (int x = leftBound; x <= rightBound; ++x) {
                 auto it = starGrid.find({ x, y });
                 if (it != starGrid.end()) {
-                    for (Star star : it->second) {
+                    for (Star &star : it->second) {
                         star.Pulsate(deltaTime);
                     }
                 }
@@ -1156,10 +1167,17 @@ void UpdateGameLogic(double deltaTime) {
         bool spawnsExist = false;
         for (int i = 0; i < objects.size(); i++) {
             if (objects.at(i).randomSpawner) {
+                if ((abs(objects.at(i).xPos - player.xPos) > 256) || (abs(objects.at(i).yPos - player.yPos) > 224)) {
+                    objects.erase(objects.begin() + i);
+                    i--;
+                    timeSinceSpawn = std::chrono::steady_clock::now();
+                    continue;
+                }
                 spawnEnemies = false;
                 spawnsExist = true;
             }
         }
+        spawnEnemies = false;
         if (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10))) {
             for (int i = 0; i < 3; i++) {
                 std::uniform_int_distribution<int> distribution(0, 1);
@@ -1852,8 +1870,8 @@ void UpdateGameLogic(double deltaTime) {
 
         bool baseDoorFound = false;
         for (auto object : objects) {
-            if (object.name == L"Shield Generator") {
-                shieldGeneratorFound = true;
+            if (object.name == L"Base Door") {
+                //baseDoorFound = true;
                 break;
             }
         }
@@ -2044,6 +2062,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     player.power = 1;
     player.health = 100;
     player.maxHP = 100;
+    player.xPos = 1600;
+    player.yPos = 1200;
 
     background.currentFramePath = files.background;
 
