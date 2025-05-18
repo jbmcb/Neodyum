@@ -151,6 +151,13 @@ bool splashscreen = false;
 
 std::mt19937 generator(std::random_device{}());
 
+// Hash Function
+struct hash_func {
+    std::size_t operator()(const std::pair<int, int>& p) const {
+        return std::hash<int>{}(p.first) ^ (std::hash<int>{}(p.second) << 1);
+    }
+};
+
 // Booleans for key inputs
 struct
 {
@@ -513,7 +520,7 @@ std::vector<Object> objects;
 std::vector<Object> pickups;
 Object background;
 std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
-std::unordered_map<std::pair<int, int>, std::vector<Star>> starGrid;
+std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_func> starGrid;
 
 void Render() {
 
@@ -551,11 +558,11 @@ void Render() {
 
         ID2D1SolidColorBrush* brush;
         renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0), &brush);
-        int rightBound = int(player.xPos + 128) / 256; 
-        int lowBound = int(player.yPos + 112) / 224;
+        int rightBound = (int(player.xPos + 128) / 256) + 1; 
+        int lowBound = (int(player.yPos + 112) / 224) + 1;
 
-        int leftBound = (int(player.xPos) - 128) / 256;
-        int upBound = (int(player.yPos) - 112) / 224;
+        int leftBound = ((int(player.xPos) - 128) / 256) - 1;
+        int upBound = ((int(player.yPos) - 112) / 224) - 1;
 
         for (int y = upBound; y <= lowBound; ++y) {
             for (int x = leftBound; x <= rightBound; ++x) {
@@ -1135,17 +1142,17 @@ void UpdateGameLogic(double deltaTime) {
             object.UpdateHitBox();
         }
 
-        int rightBound = int(player.xPos + 128) / 256;
-        int lowBound = int(player.yPos + 112) / 224;
+        int rightBound = (int(player.xPos + 128) / 256) + 1;
+        int lowBound = (int(player.yPos + 112) / 224) + 1;
 
-        int leftBound = (int(player.xPos) - 128) / 256;
-        int upBound = (int(player.yPos) - 112) / 224;
+        int leftBound = ((int(player.xPos) - 128) / 256) - 1;
+        int upBound = ((int(player.yPos) - 112) / 224) - 1;
 
         for (int y = upBound; y <= lowBound; ++y) {
             for (int x = leftBound; x <= rightBound; ++x) {
                 auto it = starGrid.find({ x, y });
                 if (it != starGrid.end()) {
-                    for (Star star : it->second) {
+                    for (Star& star : it->second) {
                         star.Pulsate(deltaTime);
                     }
                 }
@@ -2004,8 +2011,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.drone_Shot_7);
 
     std::uniform_int_distribution<int> range(1, 10000);
-    for (int y = 0; y <= 5000; y++) {
-        for (int x = 0; x <= 5000; x++) {
+    for (int y = 0; y <= 2000; y++) {
+        for (int x = 0; x <= 2000; x++) {
             int roll = range(generator);
             if (roll <= 25) {
                 int r, g, b;
@@ -2044,6 +2051,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     player.power = 1;
     player.health = 100;
     player.maxHP = 100;
+    player.xPos = 1000;
+    player.yPos = 1000;
 
     background.currentFramePath = files.background;
 
