@@ -156,4 +156,5 @@ C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.3412
               _Objty=Object
           ]
   
+  LINK : C:\Users\jacob\source\repos\Neodyum\Neodyum\x64\Debug\Neodyum.exe not found or not built by the last incremental link; performing full link
   Neodyum.vcxproj -> C:\Users\jacob\source\repos\Neodyum\Neodyum\x64\Debug\Neodyum.exe
