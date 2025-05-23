@@ -2,7 +2,7 @@
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(373,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(374,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(375,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(379,28): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(379,29): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(385,23): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(392,23): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(532,82): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
@@ -124,7 +124,7 @@ C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1551,96): warnin
           ]
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1717,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1718,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2063,29): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2094,29): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
           with
           [
               _Ty=double

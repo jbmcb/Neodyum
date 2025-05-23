@@ -376,7 +376,7 @@ public:
         a = alpha;
         std::uniform_int_distribution<int> range(25, 75);
         int roll = range(generator);
-        rate = float(roll) / 10000.0;
+        rate = (float(roll) / 10000.0);
         std::uniform_int_distribution<int> range1(0, 1);
         direction = range1(generator);
     }
@@ -2039,6 +2039,37 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
         for (int x = 0; x <= 5000; x++) {
             int roll = range(generator);
             if (roll <= 25) {
+                std::pair<int, int> cell = { x / 256, y / 224 };
+                std::vector<std::pair<int, int>> chunks = { cell };
+                if (x == 0) {
+                    chunks.emplace_back( (x - 1) / 256, y / 224 );
+                }
+                else if (x == 256) {
+                    chunks.emplace_back((x + 1) / 256, y / 224);
+                }
+                if (y == 0) {
+                    chunks.emplace_back( x / 256, (y - 1) / 224);
+                }
+                else if (y == 224) {
+                    chunks.emplace_back(x / 256, (y + 1) / 224);
+                }
+
+                bool starFound = true;
+                for (const auto chunk : chunks) {
+                    auto it = starGrid.find(chunk);
+                    if (it != starGrid.end()) {
+                        for (const auto& star : it->second) {
+                            if (std::abs(star.xPos - x) <= 1 || std::abs(star.yPos - y) <= 1) {
+                                starFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (starFound) {
+                        break;
+                    }
+                }
+
                 int r, g, b;
                 roll = range(generator);
                 if (roll <= 9200) {
@@ -2061,7 +2092,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 }
                 roll = range(generator);
                 float alpha = std::max(float(roll) / 10000.0, 0.01);
-                std::pair<int, int> cell = { x / 256, y / 224 };
                 starGrid[cell].emplace_back(x, y, r, g, b, alpha);
             }
         }
