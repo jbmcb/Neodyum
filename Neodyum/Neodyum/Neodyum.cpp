@@ -151,10 +151,9 @@ bool splashscreen = false;
 
 std::mt19937 generator(std::random_device{}());
 
-// Hash Function
-struct hash_func {
+struct hash_function {
     std::size_t operator()(const std::pair<int, int>& p) const {
-        return std::hash<int>{}(p.first) ^ (std::hash<int>{}(p.second) << 1);
+        return std::hash<int>{}(p.first)* (std::hash<int>{}(p.second) << 1);
     }
 };
 
@@ -517,11 +516,10 @@ Player player;
 Object pickup;
 std::vector<Object> bases;
 std::vector<Object> objects;
-
 std::vector<Object> pickups;
 Object background;
 std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
-std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_func> starGrid;
+std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
 
 void Render() {
 
@@ -530,64 +528,69 @@ void Render() {
     renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
     if (!paused && !splashscreen) {
-        // Camera position
-        D2D1_RECT_F cameraPos = D2D1::RectF(
-            player.xPos - 128,
-            player.yPos - 112,
-            player.xPos + 128,
-            player.yPos + 112
-        );
-
         // Keeps stuff from being rendered outside boundaries
         D2D1_RECT_F aspectEnforcer = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
 
         // Push the clipping rectangle onto the render target
         renderTarget->PushAxisAlignedClip(aspectEnforcer, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        // Pulls bitmap for background
-        /*ID2D1Bitmap* backgroundBitmap = bitmaps[background.currentFramePath];
-
-        if (backgroundBitmap) {
-
-            // Gets the size of the background 
+        if (background.currentFramePath == files.base_Interior) {
+            // Pulls bitmap for background
+            ID2D1Bitmap* backgroundBitmap = bitmaps[background.currentFramePath];
             D2D1_SIZE_F size = backgroundBitmap->GetSize();
-            D2D1_RECT_F screen = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
 
-            // Render a slice of the background equal to the camera coords, with no interpolation or transparency, to the defined display bounds
-            renderTarget->DrawBitmap(backgroundBitmap, screen, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, cameraPos);
-        }*/
+            float left = std::max(0.0, std::max(player.xPos - 128, 0.0));
+            float right = std::min(std::max(0.0, player.xPos + 128), double(size.width));
+            if (left == 0) {
+                right = 256;
+            }
+            if (right - left < 256) {
+                left = right - 256;
+            }
 
-        ID2D1SolidColorBrush* brush;
-        renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0), &brush);
-        int rightBound = (int(player.xPos + 128) / 256) + 1; 
-        int lowBound = (int(player.yPos + 112) / 224) + 1;
+            // Camera position
+            D2D1_RECT_F cameraPos = D2D1::RectF(left, 0, right, 224);
 
-        int leftBound = ((int(player.xPos) - 128) / 256) - 1;
-        int upBound = ((int(player.yPos) - 112) / 224) - 1;
+            if (backgroundBitmap) {
+                D2D1_RECT_F screen = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
 
-        for (int y = upBound; y <= lowBound; ++y) {
-            for (int x = leftBound; x <= rightBound; ++x) {
-                auto it = starGrid.find({ x, y });
-                if (it != starGrid.end()) {
-                    for (const Star& star : it->second) {
-                        D2D1_RECT_F pixel = D2D1::RectF(
-                            (star.xPos - player.xPos) * scalerX,
-                            (star.yPos - player.yPos) * scalerY,
-                            ((star.xPos - player.xPos) * scalerX) + scalerX,
-                            ((star.yPos - player.yPos) * scalerY) + scalerY);
+                // Render a slice of the background equal to the camera coords, with no interpolation or transparency, to the defined display bounds
+                renderTarget->DrawBitmap(backgroundBitmap, screen, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, cameraPos);
+            }
+        }
+        else {
+            ID2D1SolidColorBrush* brush;
+            renderTarget->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0), &brush);
+            int rightBound = (int(player.xPos + 128) / 256) + 1;
+            int lowBound = (int(player.yPos + 112) / 224) + 1;
 
-                        renderTarget->CreateSolidColorBrush(D2D1::ColorF(
-                            star.r / 255.0,
-                            star.g / 255.0,
-                            star.b / 255.0,
-                            star.a),
-                            &brush);
-                        renderTarget->FillRectangle(pixel, brush);
+            int leftBound = (int(player.xPos) - 128) / 256;
+            int upBound = (int(player.yPos) - 112) / 224;
+
+            for (int y = upBound; y <= lowBound; ++y) {
+                for (int x = leftBound; x <= rightBound; ++x) {
+                    auto it = starGrid.find({ x, y });
+                    if (it != starGrid.end()) {
+                        for (const Star& star : it->second) {
+                            D2D1_RECT_F pixel = D2D1::RectF(
+                                (star.xPos - player.xPos) * scalerX,
+                                (star.yPos - player.yPos) * scalerY,
+                                ((star.xPos - player.xPos) * scalerX) + scalerX,
+                                ((star.yPos - player.yPos) * scalerY) + scalerY);
+
+                            renderTarget->CreateSolidColorBrush(D2D1::ColorF(
+                                star.r / 255.0,
+                                star.g / 255.0,
+                                star.b / 255.0,
+                                star.a),
+                                &brush);
+                            renderTarget->FillRectangle(pixel, brush);
+                        }
                     }
                 }
             }
+            brush->Release();
         }
-        brush->Release();
 
         ID2D1Bitmap* bPickup = bitmaps[pickup.currentFramePath];
         if (bPickup) {
@@ -962,8 +965,8 @@ void Render() {
         if (currencyIconBitmap) {
             D2D1_SIZE_F size = currencyIconBitmap->GetSize();
             D2D1_RECT_F position = D2D1::RectF(
-                (4 * scalerX) + leftBoundary, 
-                25 * scalerY, 
+                (4 * scalerX) + leftBoundary,
+                25 * scalerY,
                 (4 * scalerX) + (size.width * scalerX) + leftBoundary,
                 (25 * scalerY) + (size.height * scalerY)
             );
@@ -975,36 +978,36 @@ void Render() {
         for (int i = 0; i < digits.length(); i++) {
             LPCWSTR filename;
             switch (digits[i]) {
-                case '0':
-                    filename = files.font_0;
-                    break;
-                case '1':
-                    filename = files.font_1;
-                    break;
-                case '2':
-                    filename = files.font_2;
-                    break;
-                case '3':
-                    filename = files.font_3;
-                    break;
-                case '4':
-                    filename = files.font_4;
-                    break;
-                case '5':
-                    filename = files.font_5;
-                    break;
-                case '6':
-                    filename = files.font_6;
-                    break;
-                case '7':
-                    filename = files.font_7;
-                    break;
-                case '8':
-                    filename = files.font_8;
-                    break;
-                case '9':
-                    filename = files.font_9;
-                    break;
+            case '0':
+                filename = files.font_0;
+                break;
+            case '1':
+                filename = files.font_1;
+                break;
+            case '2':
+                filename = files.font_2;
+                break;
+            case '3':
+                filename = files.font_3;
+                break;
+            case '4':
+                filename = files.font_4;
+                break;
+            case '5':
+                filename = files.font_5;
+                break;
+            case '6':
+                filename = files.font_6;
+                break;
+            case '7':
+                filename = files.font_7;
+                break;
+            case '8':
+                filename = files.font_8;
+                break;
+            case '9':
+                filename = files.font_9;
+                break;
             }
             ID2D1Bitmap* digitBitmap = bitmaps[filename];
             if (digitBitmap) {
@@ -1146,8 +1149,8 @@ void UpdateGameLogic(double deltaTime) {
         int rightBound = (int(player.xPos + 128) / 256) + 1;
         int lowBound = (int(player.yPos + 112) / 224) + 1;
 
-        int leftBound = ((int(player.xPos) - 128) / 256) - 1;
-        int upBound = ((int(player.yPos) - 112) / 224) - 1;
+        int leftBound = ((int(player.xPos) - 128) / 256);
+        int upBound = ((int(player.yPos) - 112) / 224);
 
         for (int y = upBound; y <= lowBound; ++y) {
             for (int x = leftBound; x <= rightBound; ++x) {
@@ -1164,10 +1167,17 @@ void UpdateGameLogic(double deltaTime) {
         bool spawnsExist = false;
         for (int i = 0; i < objects.size(); i++) {
             if (objects.at(i).randomSpawner) {
+                if ((abs(objects.at(i).xPos - player.xPos) > 256) || (abs(objects.at(i).yPos - player.yPos) > 224)) {
+                    objects.erase(objects.begin() + i);
+                    i--;
+                    timeSinceSpawn = std::chrono::steady_clock::now();
+                    continue;
+                }
                 spawnEnemies = false;
                 spawnsExist = true;
             }
         }
+        spawnEnemies = false;
         if (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10))) {
             for (int i = 0; i < 3; i++) {
                 std::uniform_int_distribution<int> distribution(0, 1);
@@ -1578,23 +1588,29 @@ void UpdateGameLogic(double deltaTime) {
                             if (objects[i].currentFramePath == files.explosion1 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
                                 objects[i].currentFramePath = files.explosion2;
                                 updated = true;
-                            } else if (objects[i].currentFramePath == files.explosion2 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            }
+                            else if (objects[i].currentFramePath == files.explosion2 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
                                 objects[i].currentFramePath = files.explosion3;
                                 updated = true;
-                            } else if (objects[i].currentFramePath == files.explosion3 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            }
+                            else if (objects[i].currentFramePath == files.explosion3 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
                                 objects[i].currentFramePath = files.explosion4;
                                 updated = true;
-                            } else if (objects[i].currentFramePath == files.explosion4 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            }
+                            else if (objects[i].currentFramePath == files.explosion4 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
                                 objects[i].currentFramePath = files.explosion3;
                                 updated = true;
                                 objects[i].reverseDeathAnimation = true;
-                            } else if (objects[i].currentFramePath == files.explosion3 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            }
+                            else if (objects[i].currentFramePath == files.explosion3 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
                                 objects[i].currentFramePath = files.explosion2;
                                 updated = true;
-                            } else if (objects[i].currentFramePath == files.explosion2 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            }
+                            else if (objects[i].currentFramePath == files.explosion2 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
                                 objects[i].currentFramePath = files.explosion1;
                                 updated = true;
-                            } else if (objects[i].currentFramePath == files.explosion1 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
+                            }
+                            else if (objects[i].currentFramePath == files.explosion1 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
                                 objects.erase(objects.begin() + i);
                                 i--;
                                 continue;
@@ -1741,14 +1757,15 @@ void UpdateGameLogic(double deltaTime) {
         // Enemy Bullet Logic
         if (!enemyBullets.empty()) {
             for (int i = 0; i < enemyBullets.size(); i++) {
-                
+
                 if (enemyBullets.at(i).collided && std::chrono::steady_clock::now() - enemyBullets.at(i).explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
                     if (enemyBullets.at(i).defaultFrame != files.drone_Shot_1) {
                         enemyBullets.erase(enemyBullets.begin() + i);
                         i--;
                         continue;
                     }
-                } else if (!enemyBullets.at(i).collided) {
+                }
+                else if (!enemyBullets.at(i).collided) {
                     if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1) {
                         if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(6)) {
                             enemyBullets.erase(enemyBullets.begin() + i);
@@ -1786,9 +1803,11 @@ void UpdateGameLogic(double deltaTime) {
                             }
                             else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(300)) {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
-                            } else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(150)) {
+                            }
+                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(150)) {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_5;
-                            } else {
+                            }
+                            else {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_4;
                             }
                         }
@@ -1796,7 +1815,8 @@ void UpdateGameLogic(double deltaTime) {
                             if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(800)) {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_1;
                                 enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                            } else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(600)) {
+                            }
+                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(600)) {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
                             }
                             else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(400)) {
@@ -1806,7 +1826,7 @@ void UpdateGameLogic(double deltaTime) {
                                 enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
                             }
                         }
-                        
+
                     }
                     if (!player.dead) {
                         if (enemyBullets.at(i).CheckCollision(player)) {
@@ -1860,8 +1880,8 @@ void UpdateGameLogic(double deltaTime) {
 
         bool baseDoorFound = false;
         for (auto object : objects) {
-            if (object.name == L"Shield Generator") {
-                shieldGeneratorFound = true;
+            if (object.name == L"Base Door") {
+                //baseDoorFound = true;
                 break;
             }
         }
@@ -1899,11 +1919,14 @@ void UpdateGameLogic(double deltaTime) {
                     player.currencyAcquired = std::chrono::steady_clock::now();
                     if (objects.at(i).name == L"Red Jewel") {
                         player.currency += 1;
-                    } else if (objects.at(i).name == L"Purple Jewel") {
+                    }
+                    else if (objects.at(i).name == L"Purple Jewel") {
                         player.currency += 5;
-                    } else if (objects.at(i).name == L"Yellow Jewel") {
+                    }
+                    else if (objects.at(i).name == L"Yellow Jewel") {
                         player.currency += 10;
-                    } else if (objects.at(i).name == L"Blue Jewel") {
+                    }
+                    else if (objects.at(i).name == L"Blue Jewel") {
                         player.currency += 2;
                     }
                     objects.erase(objects.begin() + i);
@@ -2012,8 +2035,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.drone_Shot_7);
 
     std::uniform_int_distribution<int> range(1, 10000);
-    for (int y = 0; y <= 2000; y++) {
-        for (int x = 0; x <= 2000; x++) {
+    for (int y = 0; y <= 5000; y++) {
+        for (int x = 0; x <= 5000; x++) {
             int roll = range(generator);
             if (roll <= 25) {
                 int r, g, b;
@@ -2052,8 +2075,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     player.power = 1;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = 1000;
-    player.yPos = 1000;
+    player.xPos = 1600;
+    player.yPos = 1200;
 
     background.currentFramePath = files.background;
 

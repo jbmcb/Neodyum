@@ -1,160 +1,174 @@
 ﻿  Neodyum.cpp
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(374,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(375,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(376,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(380,28): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(386,23): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(393,23): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(537,25): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(536,25): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(535,25): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(534,25): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(541,82): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(541,67): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(541,50): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(576,67): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(575,67): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(574,55): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(573,55): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(581,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(580,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(579,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(599,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(598,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(597,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(596,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(615,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(614,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(613,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(612,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(633,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(632,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(631,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(630,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(643,167): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(643,105): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(646,85): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(666,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(665,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(664,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(663,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(673,89): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(699,67): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(699,54): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(702,65): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(719,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(718,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(717,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(716,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(735,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(734,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(733,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(732,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(742,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(741,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(740,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(739,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(769,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(768,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(767,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(766,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(787,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(786,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(785,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(784,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(807,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(806,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(805,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(804,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(814,73): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(859,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(858,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(857,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(856,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(866,73): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(919,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(919,37): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(918,44): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(918,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(930,126): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(930,37): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(929,44): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(929,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(934,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(947,110): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(947,37): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(946,44): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(946,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(951,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(967,32): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(966,56): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(965,20): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(964,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1015,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1014,82): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1013,24): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1012,57): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1018,38): warning C4244: '+=': conversion from 'FLOAT' to 'int', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1043,79): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1043,64): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1043,47): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1055,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1054,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1053,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1052,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1069,78): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1069,63): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1069,46): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1183,29): warning C4552: '-': result of expression not used
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1261,42): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1267,38): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,94): warning C4305: 'argument': truncation from 'double' to '_Ty'
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,94): warning C4305:         with
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,94): warning C4305:         [
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,94): warning C4305:             _Ty=float
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,94): warning C4305:         ]
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,89): warning C4305: 'argument': truncation from 'double' to '_Ty'
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,89): warning C4305:         with
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,89): warning C4305:         [
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,89): warning C4305:             _Ty=float
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1540,89): warning C4305:         ]
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1700,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1701,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2039,29): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2039,29): warning C4244:         with
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2039,29): warning C4244:         [
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2039,29): warning C4244:             _Ty=double
-C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2039,29): warning C4244:         ]
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\xmemory(700,103): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\xmemory(700,103): warning C4244:         with
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\xmemory(700,103): warning C4244:         [
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\xmemory(700,103): warning C4244:             _Ty=int
-C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\xmemory(700,103): warning C4244:         ]
-  (compiling source file 'Neodyum.cpp')
-      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\xmemory(700,103):
-      the template instantiation context (the oldest one first) is
-          C:\Users\jacob\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1195,29):
-          see reference to function template instantiation 'void std::vector<Object,std::allocator<Object>>::emplace_back<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
-          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\vector(858,24):
-          see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_one_at_back<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(373,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(374,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(375,13): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(379,28): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(385,23): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(392,23): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(532,82): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(532,67): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(532,50): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(542,24): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
           with
           [
-              _Ty=Object
+              _Ty=double
           ]
-          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\vector(776,20):
-          see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_back_with_unused_capacity<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(543,25): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
           with
           [
-              _Ty=Object
+              _Ty=double
           ]
-          C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.34120\include\vector(794,27):
-          see reference to function template instantiation 'void std::_Default_allocator_traits<_Alloc>::construct<_Ty,const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(_Alloc &,_Objty *const ,const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(555,82): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(555,67): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(555,50): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(579,71): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(578,71): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(577,59): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(576,59): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(584,40): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(583,40): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(582,40): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(603,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(602,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(601,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(600,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(619,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(618,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(617,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(616,84): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(637,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(636,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(635,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(634,87): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(647,167): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(647,105): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(650,85): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(670,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(669,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(668,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(667,51): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(677,89): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(703,67): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(703,54): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(706,65): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(723,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(722,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(721,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(720,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(739,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(738,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(737,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(736,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(746,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(745,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(744,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(743,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(773,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(772,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(771,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(770,35): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(791,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(790,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(789,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(788,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(811,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(810,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(809,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(808,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(818,73): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(863,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(862,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(861,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(860,79): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(870,73): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(923,75): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(923,37): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(922,44): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(922,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(934,126): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(934,37): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(933,44): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(933,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(938,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(951,110): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(951,37): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(950,44): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(950,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(955,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(971,32): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(970,56): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(969,20): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(968,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1019,36): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1018,82): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1017,24): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1016,57): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1022,38): warning C4244: '+=': conversion from 'FLOAT' to 'int', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1047,79): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1047,64): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1047,47): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1059,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1058,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1057,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1056,31): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1073,78): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1073,63): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1073,46): warning C4244: 'argument': conversion from 'double' to 'FLOAT', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1194,29): warning C4552: '-': result of expression not used
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1272,42): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1278,38): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1551,96): warning C4305: 'argument': truncation from 'double' to '_Ty'
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1717,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1718,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2063,29): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
+          with
+          [
+              _Ty=double
+          ]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\include\xmemory(680,68): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+          with
+          [
+              _Ty=int
+          ]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\include\vector(852,1): message : see reference to function template instantiation 'void std::_Default_allocator_traits<_Alloc>::construct<_Ty,const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(_Alloc &,_Objty *const ,const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
           with
           [
               _Alloc=std::allocator<Object>,
               _Ty=Object,
               _Objty=Object
           ]
-  
-  LINK : C:\Users\jacob\source\repos\Neodyum\Neodyum\x64\Debug\Neodyum.exe not found or not built by the last incremental link; performing full link
-  Neodyum.vcxproj -> C:\Users\jacob\source\repos\Neodyum\Neodyum\x64\Debug\Neodyum.exe
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\include\vector(863,36): message : see reference to function template instantiation 'void std::_Default_allocator_traits<_Alloc>::construct<_Ty,const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(_Alloc &,_Objty *const ,const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+          with
+          [
+              _Alloc=std::allocator<Object>,
+              _Ty=Object,
+              _Objty=Object
+          ]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\include\vector(839,1): message : see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_back_with_unused_capacity<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+          with
+          [
+              _Ty=Object
+          ]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\include\vector(845,13): message : see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_back_with_unused_capacity<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+          with
+          [
+              _Ty=Object
+          ]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\include\vector(925,1): message : see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_one_at_back<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+          with
+          [
+              _Ty=Object
+          ]
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\include\vector(927,14): message : see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_one_at_back<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+          with
+          [
+              _Ty=Object
+          ]
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1220,21): message : see reference to function template instantiation 'void std::vector<Object,std::allocator<Object>>::emplace_back<const wchar_t(&)[13],double,double,int,LPCWSTR&,bool,int,LPCWSTR&,LPCWSTR&,double,double,bool,bool,bool>(const wchar_t (&)[13],double &&,double &&,int &&,LPCWSTR &,bool &&,int &&,LPCWSTR &,LPCWSTR &,double &&,double &&,bool &&,bool &&,bool &&)' being compiled
+  Neodyum.vcxproj -> C:\Users\My PC\source\repos\Neodyum\Neodyum\x64\Debug\Neodyum.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
