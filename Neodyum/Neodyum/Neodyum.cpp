@@ -516,6 +516,7 @@ Player player;
 Object pickup;
 std::vector<Object> bases;
 std::vector<Object> objects;
+
 std::vector<Object> pickups;
 Object background;
 std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
