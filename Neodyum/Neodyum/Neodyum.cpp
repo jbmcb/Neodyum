@@ -534,10 +534,13 @@ void Render() {
         // Push the clipping rectangle onto the render target
         renderTarget->PushAxisAlignedClip(aspectEnforcer, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
+        float bgWidth(0), bgHeight(0);
         if (background.currentFramePath == files.base_Interior) {
             // Pulls bitmap for background
             ID2D1Bitmap* backgroundBitmap = bitmaps[background.currentFramePath];
             D2D1_SIZE_F size = backgroundBitmap->GetSize();
+            bgWidth = size.width;
+            bgHeight = size.height;
 
             float left = std::max(0.0, std::max(player.xPos - 128, 0.0));
             float right = std::min(std::max(0.0, player.xPos + 128), double(size.width));
@@ -692,35 +695,59 @@ void Render() {
                 }
             }
         }
-
-        // Ship and and effects will need to have uniform rotation, so setting that upfront...
-        // Finds direction angle based on inputs
-        double angleRadians = 0;
-        double angleDegrees = (player.angleRadians * pi) / 180;
-        angleRadians = atan2(player.directionX, player.directionY);
-        angleDegrees = angleRadians * (180.0 / 3.14159265359);
-        player.angleRadians = angleRadians;
-        D2D1_POINT_2F center = D2D1::Point2F(screenX / 2, screenY / 2);
-
-        // Rotates sprite. Makes art less consistent but saves time
-        D2D1_MATRIX_3X2_F rotation = D2D1::Matrix3x2F::Rotation(angleDegrees, center);
-
-        // Rotates bitmap based on rotation calculations
-        renderTarget->SetTransform(rotation);
-
         if (!player.dead) {
             // Pulls bitmap for player ship
             ID2D1Bitmap* playerBitmap = bitmaps[player.currentFramePath];
+            float xOffset(0), yOffset(0);
 
             if (playerBitmap) {
                 D2D1_SIZE_F size = playerBitmap->GetSize();
-
                 // Correct ship size basd on scale and screen position
-                D2D1_RECT_F shipDisplayPosition = D2D1::RectF(
-                    (screenX / 2) - ((size.width / 2) * scalerX),
-                    (screenY / 2) - ((size.height / 2) * scalerY),
-                    (screenX / 2) + ((size.width / 2) * scalerX),
-                    (screenY / 2) + ((size.height / 2) * scalerY)
+                D2D1_RECT_F shipDisplayPosition;
+                if (background.currentFramePath == files.base_Interior) {
+                    if (player.xPos < 128) {
+                        xOffset = player.xPos - 128;
+                    }
+                    else if (player.xPos > (bgWidth - 128)) {
+                        xOffset = player.xPos - (bgWidth - 128);
+                    }
+
+                    if (player.yPos < 112) {
+                        yOffset = player.yPos - 112;
+                    }
+                    else if (player.yPos > (bgHeight - 112)) {
+                        yOffset = player.yPos - (bgHeight - 112);
+                    }
+                    //xOffset *= cos(player.angleRadians);
+                    //yOffset *= sin(player.angleRadians);
+                    // Correct ship size basd on scale and screen position
+                    /*shipDisplayPosition = D2D1::RectF(
+                        leftBoundary + ((player.xPos - (size.width / 2)) * scalerX),
+                        (player.yPos) - ((size.height / 2) * scalerY),
+                        leftBoundary + ((player.xPos + (size.width / 2)) * scalerX),
+                        (player.yPos) + ((size.height / 2) * scalerY)
+                    );*/
+                }
+                // Ship and and effects will need to have uniform rotation, so setting that upfront...
+                    // Finds direction angle based on inputs
+                double angleRadians = 0;
+                double angleDegrees = (player.angleRadians * pi) / 180;
+                angleRadians = atan2(player.directionX, player.directionY);
+                angleDegrees = angleRadians * (180.0 / 3.14159265359);
+                player.angleRadians = angleRadians;
+                D2D1_POINT_2F center = D2D1::Point2F(screenX / 2, screenY / 2);
+
+
+                // Rotates bitmap based on rotation calculations, translates position with respect to scrollable areas
+                D2D1::Matrix3x2F rotation = D2D1::Matrix3x2F::Rotation(angleDegrees, D2D1::Point2F(screenX / 2, screenY / 2));
+                D2D1::Matrix3x2F translation = D2D1::Matrix3x2F::Translation(xOffset * scalerX, yOffset * scalerY);
+                D2D1::Matrix3x2F fullTransform = rotation * translation;
+                renderTarget->SetTransform(fullTransform);
+                shipDisplayPosition = D2D1::RectF(
+                    (screenX / 2) - (((size.width / 2)) * scalerX),
+                    (screenY / 2) - (((size.height / 2)) * scalerY),
+                    (screenX / 2) + (((size.width / 2)) * scalerX),
+                    (screenY / 2) + (((size.height / 2)) * scalerY)
                 );
 
                 // Render bitmap at display position with no transparency or interpolation
@@ -1892,8 +1919,8 @@ void UpdateGameLogic(double deltaTime) {
                 if (object.name == L"Entrance") {
                     if (player.CheckCollision(object)) {
                         background = files.base_Interior;
-                        player.xPos = 5;
-                        player.yPos = 224 / 2;
+                        player.xPos = 128;
+                        player.yPos = 112;
                         baseEntered = true;
                     }
                 }
@@ -2234,13 +2261,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     }
 
     objects.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
-        files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, true, false);
+        files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, false, false);
 
     objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (6 * scalerY), 0,
-        files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, true, false);
+        files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, false, false);
 
     objects.emplace_back(L"Boost_Bar", leftBoundary + (6 * scalerX), (18 * scalerY), 0,
-        files.boost_Bar, false, 0, nullptr, files.boost_Bar, 0, 0, false, true, false);
+        files.boost_Bar, false, 0, nullptr, files.boost_Bar, 0, 0, false, false, false);
 
 
 
