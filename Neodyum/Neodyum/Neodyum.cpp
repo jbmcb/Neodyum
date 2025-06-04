@@ -2109,8 +2109,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 }
                 else if (roll <= 9732) {
                     r = 200;
-                    g = 133;
-                    b = 65;
+                    g = 200;
+                    b = 200;
                 }
                 else {
                     r = 200;
