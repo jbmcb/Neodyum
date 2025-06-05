@@ -2146,7 +2146,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                     b = 46;
                 }
                 roll = range(generator);
-                float alpha = std::max(float(roll) / 10000.0, 0.01);
+                float alpha = std::max(float(roll) / 100000.0, 0.01);
                 starGrid[cell].emplace_back(x, y, r, g, b, alpha);
             }
             roll = range(generator);
