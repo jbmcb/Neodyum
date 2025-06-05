@@ -117,6 +117,8 @@ struct {
     LPCWSTR drone_Shot_5 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_5.png";
     LPCWSTR drone_Shot_6 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_6.png";
     LPCWSTR drone_Shot_7 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_7.png";
+    LPCWSTR asteroid_2 = L"Sprites\\Environment\\Asteroid_2.png";
+
 } files;
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
@@ -398,6 +400,15 @@ public:
     }
 };
 
+class Asteroid : public Object {
+public:
+    Asteroid(int x, int y) {
+        xPos = x;
+        yPos = y;
+        currentFramePath = files.asteroid_2;
+    }
+};
+
 void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
     HRESULT hr = S_OK;
 
@@ -520,6 +531,7 @@ std::vector<Object> pickups;
 Object background;
 std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
 std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
+std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
 
 void Render() {
 
@@ -588,6 +600,21 @@ void Render() {
                                 star.a),
                                 &brush);
                             renderTarget->FillRectangle(pixel, brush);
+                        }
+                    }
+                    auto it2 = asteroids.find({ x, y });
+                    if (it2 != asteroids.end()) {
+                        for (const Asteroid& asteroid : it2->second) {
+                            ID2D1Bitmap* asteroidBmp = bitmaps[asteroid.currentFramePath];
+                            D2D1_SIZE_F size = asteroidBmp->GetSize();
+                            D2D1_RECT_F position = D2D1::RectF(
+                                ((screenX / 2) + ((asteroid.xPos - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
+                                ((screenY / 2) + ((asteroid.yPos - player.yPos) * scalerY)) - ((size.height / 2) * scalerY),
+                                ((screenX / 2) + ((asteroid.xPos - player.xPos) * scalerX)) + ((size.width / 2) * scalerX),
+                                ((screenY / 2) + ((asteroid.yPos - player.yPos) * scalerY)) + ((size.height / 2) * scalerY)
+                            );
+
+                            renderTarget->DrawBitmap(asteroidBmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
                         }
                     }
                 }
@@ -2060,12 +2087,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.drone_Shot_5);
     spriteFilePaths.emplace_back(files.drone_Shot_6);
     spriteFilePaths.emplace_back(files.drone_Shot_7);
+    spriteFilePaths.emplace_back(files.asteroid_2);
 
-    std::uniform_int_distribution<int> range(1, 10000);
+    std::uniform_int_distribution<int> range(1, 100000);
     for (int y = 0; y <= 5000; y++) {
         for (int x = 0; x <= 5000; x++) {
             int roll = range(generator);
-            if (roll <= 25) {
+            if (roll <= 250) {
                 std::pair<int, int> cell = { x / 256, y / 224 };
                 std::vector<std::pair<int, int>> chunks = { cell };
                 if (x == 0) {
@@ -2099,15 +2127,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
 
                 int r, g, b;
                 roll = range(generator);
-                if (roll <= 9200) {
+                if (roll <= 92000) {
                     r = g = b = 200;
                 }
-                else if (roll <= 9466) {
+                else if (roll <= 94660) {
                     r = 102;
                     g = 138;
                     b = 200;
                 }
-                else if (roll <= 9732) {
+                else if (roll <= 97320) {
                     r = 200;
                     g = 200;
                     b = 200;
@@ -2120,6 +2148,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 roll = range(generator);
                 float alpha = std::max(float(roll) / 10000.0, 0.01);
                 starGrid[cell].emplace_back(x, y, r, g, b, alpha);
+            }
+            roll = range(generator);
+            if (roll <= 5) {
+                std::pair<int, int> cell = { x / 256, y / 224 };
+                asteroids[cell].emplace_back(x, y);
             }
         }
     }
