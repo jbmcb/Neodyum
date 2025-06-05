@@ -378,7 +378,7 @@ public:
         a = alpha;
         std::uniform_int_distribution<int> range(25, 75);
         int roll = range(generator);
-        rate = (float(roll) / 10000.0);
+        rate = (float(roll) / 20000.0);
         std::uniform_int_distribution<int> range1(0, 1);
         direction = range1(generator);
     }
@@ -602,6 +602,11 @@ void Render() {
                             renderTarget->FillRectangle(pixel, brush);
                         }
                     }
+                }
+            }
+            brush->Release();
+            for (int y = upBound; y <= lowBound; ++y) {
+                for (int x = leftBound; x <= rightBound; ++x) {
                     auto it2 = asteroids.find({ x, y });
                     if (it2 != asteroids.end()) {
                         for (const Asteroid& asteroid : it2->second) {
@@ -619,7 +624,6 @@ void Render() {
                     }
                 }
             }
-            brush->Release();
         }
 
         ID2D1Bitmap* bPickup = bitmaps[pickup.currentFramePath];
@@ -2090,10 +2094,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.asteroid_2);
 
     std::uniform_int_distribution<int> range(1, 100000);
-    for (int y = 0; y <= 5000; y++) {
-        for (int x = 0; x <= 5000; x++) {
+    for (int y = 0; y <= 2500; y++) {
+        bool updated = false;
+        for (int x = 0; x <= 2500; x++) {
             int roll = range(generator);
             if (roll <= 250) {
+                updated = true;
                 std::pair<int, int> cell = { x / 256, y / 224 };
                 std::vector<std::pair<int, int>> chunks = { cell };
                 if (x == 0) {
