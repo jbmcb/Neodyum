@@ -1235,7 +1235,6 @@ void UpdateGameLogic(double deltaTime) {
                 spawnsExist = true;
             }
         }
-        spawnEnemies = false;
         if (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10))) {
             for (int i = 0; i < 3; i++) {
                 std::uniform_int_distribution<int> distribution(0, 1);
@@ -2094,9 +2093,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.asteroid_2);
 
     std::uniform_int_distribution<int> range(1, 100000);
-    for (int y = 0; y <= 2500; y++) {
+    for (int y = 0; y <= 2200; y++) {
         bool updated = false;
-        for (int x = 0; x <= 2500; x++) {
+        for (int x = 0; x <= 4000; x++) {
             int roll = range(generator);
             if (roll <= 250) {
                 updated = true;
@@ -2171,8 +2170,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     player.power = 1;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = 1600;
-    player.yPos = 1200;
+    player.xPos = 200;
+    player.yPos = 1000;
 
     background.currentFramePath = files.background;
 
@@ -2205,14 +2204,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     turretOffsets[11].second = 140.5;
 
     bases.emplace_back(files.base);
-    bases.at(0).xPos = 1800;
-    bases.at(0).yPos = 1200;
+    bases.at(0).xPos = 800;
+    bases.at(0).yPos = 1700;
     bases.emplace_back(files.base);
-    bases.at(1).xPos = 2560;
+    bases.at(1).xPos = 1600;
     bases.at(1).yPos = 240;
     bases.emplace_back(files.base);
-    bases.at(2).xPos = 3840;
-    bases.at(2).yPos = 720;
+    bases.at(2).xPos = 2500;
+    bases.at(2).yPos = 1000;
     std::pair <double, double> shieldOffsets[12];
     shieldOffsets[0].first = -130.5;
     shieldOffsets[1].first = -130.5;
@@ -2403,6 +2402,8 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             break;
         case VK_S:
             keys.s = true;
+            keys.down = true;
+            keys.directionPressed = true;
             break;
         case VK_L:
             keys.l = true;
@@ -2411,6 +2412,21 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             keys.ctrl = true;
             break;
         case 'F':
+            keys.f = true;
+            break;
+        case 'W':
+            keys.up = true;
+            keys.directionPressed = true;
+            break;
+        case 'A':
+            keys.left = true;
+            keys.directionPressed = true;
+            break;
+        case 'D':
+            keys.right = true;
+            keys.directionPressed = true;
+            break;
+        case 'J':
             keys.f = true;
             break;
         }
@@ -2458,6 +2474,10 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             break;
         case VK_S:
             keys.s = false;
+            keys.down = false;
+            if (!keys.right && !keys.up && !keys.left) {
+                keys.directionPressed = false;
+            }
             break;
         case VK_L:
             keys.l = false;
@@ -2466,6 +2486,27 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             keys.ctrl = false;
             break;
         case 'F':
+            keys.f = false;
+            break;
+        case 'W':
+            keys.up = false;
+            if (!keys.right && !keys.left && !keys.down) {
+                keys.directionPressed = false;
+            }
+            break;
+        case 'A':
+            keys.left = false;
+            if (!keys.right && !keys.up && !keys.down) {
+                keys.directionPressed = false;
+            }
+            break;
+        case 'D':
+            keys.right = false;
+            if (!keys.left && !keys.up && !keys.down) {
+                keys.directionPressed = false;
+            }
+            break;
+        case 'J':
             keys.f = false;
             break;
         }
