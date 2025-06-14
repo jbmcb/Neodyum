@@ -118,6 +118,9 @@ struct {
     LPCWSTR drone_Shot_6 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_6.png";
     LPCWSTR drone_Shot_7 = L"Sprites\\Projectiles\\Bomber_Drone_Shot_7.png";
     LPCWSTR asteroid_2 = L"Sprites\\Environment\\Asteroid_2.png";
+    LPCWSTR map_frame = L"Sprites\\Menu\\Map_Frame.png";
+    LPCWSTR base_icon = L"Sprites\\Menu\\Base_Icon.png";
+    LPCWSTR boss_icon = L"Sprites\\Menu\\Boss_Icon.png";
 
 } files;
 
@@ -152,6 +155,11 @@ bool modulatorTicker = true;
 bool splashscreen = false;
 
 std::mt19937 generator(std::random_device{}());
+int mapSizeX = 5000;
+int mapSizeY = 5000;
+
+std::chrono::steady_clock::time_point mapTick = std::chrono::steady_clock::now();
+bool displayMap;
 
 struct hash_function {
     std::size_t operator()(const std::pair<int, int>& p) const {
@@ -183,7 +191,7 @@ void GetDirectionalInput(int& xDir, int& yDir, bool right, bool left, bool down,
 }
 
 
-// Represents any visible entity, created for later
+// Represents any visible entity
 class Object
 {
 public:
@@ -417,8 +425,7 @@ void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
 
         // make a windows render target based on screen dimensions
         D2D1_SIZE_U size = D2D1::SizeU(screenX, screenY);
-        hr = D2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(hWnd, size),
-            &renderTarget);
+        hr = D2DFactory->CreateHwndRenderTarget(D2D1::RenderTargetProperties(), D2D1::HwndRenderTargetProperties(hWnd, size), &renderTarget);
     }
 
     if (FAILED(hr)) {
@@ -506,12 +513,12 @@ void ReleaseD2DResourcesFromMemory()
         renderTarget = NULL;
     }
 
-    for (auto& bitmap : bitmaps)
+    for (auto& pair : bitmaps) 
     {
-        ID2D1Bitmap* bitmaps = bitmap.second;
-        if (bitmaps)
+        ID2D1Bitmap* bitmap = pair.second;
+        if (bitmap) 
         {
-            bitmaps->Release();
+            bitmap->Release();
         }
     }
     bitmaps.clear();
@@ -1081,6 +1088,46 @@ void Render() {
             }
         }
 
+        /*if (std::chrono::steady_clock::now() - mapTick >= std::chrono::nanoseconds(8333333)) {
+            if (displayMap == true) {
+                displayMap = false;
+            }
+            else {
+                displayMap = true;
+            }
+            mapTick = std::chrono::steady_clock::now();
+        }*/
+
+
+        if (true) {
+            ID2D1Bitmap* mapBmp = bitmaps[files.map_frame];
+            if (mapBmp) {
+                D2D1_SIZE_F mapFrameSize = mapBmp->GetSize();
+                D2D1_RECT_F position = D2D1::RectF(
+                    screenX - leftBoundary - ((mapFrameSize.width + 4) * scalerX),
+                    screenY - ((mapFrameSize.height + 4) * scalerY),
+                    screenX - leftBoundary - (4 * scalerX),
+                    screenY - (4 * scalerY)
+                );
+                renderTarget->DrawBitmap(mapBmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+
+                ID2D1SolidColorBrush* brush;
+                renderTarget->CreateSolidColorBrush(D2D1::ColorF(153 / 255.0F, 213 / 255.0F, 234 / 255.0F), &brush);
+
+                float proportionX = player.xPos / mapSizeX;
+                float proportionY = player.yPos / mapSizeY;
+                D2D1_RECT_F playerIcon = D2D1::RectF(
+                    screenX - leftBoundary - ((mapFrameSize.width + 4 - (mapFrameSize.width * proportionX)) * scalerX),
+                    screenY - ((mapFrameSize.height + 4 - (mapFrameSize.height * proportionY)) * scalerY),
+                    screenX - leftBoundary - ((mapFrameSize.width + 5 - (mapFrameSize.width * proportionX)) * scalerX),
+                    screenY - ((mapFrameSize.height + 5 - (mapFrameSize.height * proportionY)) * scalerY)
+                );
+                renderTarget->FillRectangle(playerIcon, brush);
+                brush->Release();
+            }
+        }
+        
+
         //ID2D1Bitmap* asteroid = bitmaps[files.asteroid1];
         //if (asteroid) {
         //    D2D1_SIZE_F size = asteroid->GetSize();
@@ -1623,10 +1670,10 @@ void UpdateGameLogic(double deltaTime) {
                                         if (rng <= 85) {
                                             objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
                                         }
-                                        else if (rng <= 95) {
+                                        else if (rng <= 94) {
                                             objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
                                         }
-                                        else if (rng <= 91) {
+                                        else if (rng <= 98) {
                                             objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
                                         }
                                         else {
@@ -1888,7 +1935,7 @@ void UpdateGameLogic(double deltaTime) {
                     if (!player.dead) {
                         if (enemyBullets.at(i).CheckCollision(player)) {
                             if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1 && (enemyBullets.at(i).exploding || enemyBullets.at(i).pulsating)) {
-                                enemyBullets.at(i).power = 0.5;
+                                enemyBullets.at(i).power = 1;
                             }
                             else {
                                 //object.damageBegins = std::chrono::steady_clock::now();
@@ -1898,7 +1945,7 @@ void UpdateGameLogic(double deltaTime) {
                                 enemyBullets.at(i).explosionBegin = std::chrono::steady_clock::now();
                             }
                             player.damaged = true;
-                            player.health -= enemyBullets.at(i).power;
+                            player.health -= enemyBullets.at(i).power * deltaTime;
                             if (player.health <= 0) {
                                 player.dead = true;
                                 player.currentFramePath = files.player_Death_Animation_1;
@@ -2091,11 +2138,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.drone_Shot_6);
     spriteFilePaths.emplace_back(files.drone_Shot_7);
     spriteFilePaths.emplace_back(files.asteroid_2);
+    spriteFilePaths.emplace_back(files.map_frame);
+    spriteFilePaths.emplace_back(files.base_icon);
+    spriteFilePaths.emplace_back(files.boss_icon);
 
     std::uniform_int_distribution<int> range(1, 100000);
-    for (int y = 0; y <= 2200; y++) {
+    for (int y = 0; y <= mapSizeY; y++) {
         bool updated = false;
-        for (int x = 0; x <= 4000; x++) {
+        for (int x = 0; x <= mapSizeX; x++) {
             int roll = range(generator);
             if (roll <= 250) {
                 updated = true;
@@ -2114,7 +2164,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                     chunks.emplace_back(x / 256, (y + 1) / 224);
                 }
 
-                bool starFound = true;
+                bool starFound = false;
                 for (const auto chunk : chunks) {
                     auto it = starGrid.find(chunk);
                     if (it != starGrid.end()) {
@@ -2170,8 +2220,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     player.power = 1;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = 200;
-    player.yPos = 1000;
+    player.xPos = float(mapSizeX) / 2;
+    player.yPos = float(mapSizeY) / 2;
 
     background.currentFramePath = files.background;
 
