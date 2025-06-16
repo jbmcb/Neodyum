@@ -1088,7 +1088,7 @@ void Render() {
             }
         }
 
-        /*if (std::chrono::steady_clock::now() - mapTick >= std::chrono::nanoseconds(8333333)) {
+        /*if (std::chrono::steady_clock::now() - mapTick >= std::chrono::nanoseconds(16666666)) {
             if (displayMap == true) {
                 displayMap = false;
             }
@@ -1117,11 +1117,13 @@ void Render() {
                 float proportionX = player.xPos / mapSizeX;
                 float proportionY = player.yPos / mapSizeY;
                 D2D1_RECT_F playerIcon = D2D1::RectF(
-                    screenX - leftBoundary - ((mapFrameSize.width + 4 - (mapFrameSize.width * proportionX)) * scalerX),
-                    screenY - ((mapFrameSize.height + 4 - (mapFrameSize.height * proportionY)) * scalerY),
-                    screenX - leftBoundary - ((mapFrameSize.width + 5 - (mapFrameSize.width * proportionX)) * scalerX),
-                    screenY - ((mapFrameSize.height + 5 - (mapFrameSize.height * proportionY)) * scalerY)
+                    screenX - leftBoundary - (int(mapFrameSize.width + 4 - (mapFrameSize.width * proportionX)) * scalerX),
+                    screenY - (int(mapFrameSize.height + 4 - (mapFrameSize.height * proportionY)) * scalerY),
+                    screenX - leftBoundary - (int(mapFrameSize.width + 5 - (mapFrameSize.width * proportionX)) * scalerX),
+                    screenY - (int(mapFrameSize.height + 5 - (mapFrameSize.height * proportionY)) * scalerY)
                 );
+
+                
                 renderTarget->FillRectangle(playerIcon, brush);
                 brush->Release();
             }
@@ -2351,10 +2353,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     objects.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
         files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, false, false);
 
-    objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (6 * scalerY), 0,
+    objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (5 * scalerY), 0,
         files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, false, false);
 
-    objects.emplace_back(L"Boost_Bar", leftBoundary + (6 * scalerX), (18 * scalerY), 0,
+    objects.emplace_back(L"Boost_Bar", leftBoundary + (6 * scalerX), (11 * scalerY), 0,
         files.boost_Bar, false, 0, nullptr, files.boost_Bar, 0, 0, false, false, false);
 
 
