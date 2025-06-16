@@ -15,6 +15,9 @@
 #include <string>
 #include <random>
 #include <unordered_map>
+#include <thread>
+#include <unordered_set>
+#include <mutex>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -160,6 +163,10 @@ int mapSizeY = 1000000;
 
 std::chrono::steady_clock::time_point mapTick = std::chrono::steady_clock::now();
 bool displayMap;
+
+bool isMultiCore = std::thread::hardware_concurrency() > 1;
+
+
 
 struct hash_function {
     std::size_t operator()(const std::pair<int, int>& p) const {
@@ -539,6 +546,8 @@ Object background;
 std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
 std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
 std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
+std::unordered_set<std::pair<int, int>, hash_function> pendingChunks;
+std::mutex chunkInProgress;
 
 void Render() {
 
@@ -1283,65 +1292,155 @@ void UpdateGameLogic(double deltaTime) {
                 }
                 else {
                     std::pair<int, int> cell = { x, y };
-                    std::vector<std::pair<int, int>> chunks = { cell };
-                    std::uniform_int_distribution<int> range(1, 100000);
-                    bool updated = false;
-                    for (int i = y * 224; i <= ((y * 224) + 224); i++) {
-                        for (int j = x * 256; j <= ((x * 256) + 256); j++) {
-                            int roll = range(generator);
-                            if (roll <= 250) {
-                                updated = true;
-                                std::pair<int, int> cell = { x , y };
-                                std::vector<std::pair<int, int>> chunks = { cell };
 
-                                bool starFound = false;
-                                for (const auto chunk : chunks) {
-                                    auto it = starGrid.find(chunk);
-                                    if (it != starGrid.end()) {
-                                        for (const auto& star : it->second) {
-                                            if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
-                                                starFound = true;
-                                                break;
+                    std::lock_guard<std::mutex> lock(chunkInProgress);
+                    if (pendingChunks.count(cell)) {
+                        continue;
+                    }
+                    else {
+                        pendingChunks.insert(cell);
+                    }
+
+                    if (isMultiCore) {
+                        std::thread([cell, x, y]() mutable {
+                            std::vector<std::pair<int, int>> chunks = { cell };
+                            std::uniform_int_distribution<int> range(1, 100000);
+
+                            for (int i = y * 224; i <= ((y * 224) + 224); i++) {
+                                for (int j = x * 256; j <= ((x * 256) + 256); j++) {
+                                    int roll = range(generator);
+                                    if (roll <= 250) {
+                                        bool starFound = false;
+                                        auto it = starGrid.find(cell);
+                                        if (it != starGrid.end()) {
+                                            for (const auto& star : it->second) {
+                                                if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
+                                                    starFound = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (!starFound) {
+                                            int r, g, b;
+                                            roll = range(generator);
+                                            if (roll <= 92000) {
+                                                r = g = b = 200;
+                                            }
+                                            else if (roll <= 94660) {
+                                                r = 102;
+                                                g = 138;
+                                                b = 200;
+                                            }
+                                            else if (roll <= 97320) {
+                                                r = 200;
+                                                g = 200;
+                                                b = 200;
+                                            }
+                                            else {
+                                                r = 200;
+                                                g = 53;
+                                                b = 46;
+                                            }
+                                            roll = range(generator);
+                                            float alpha = std::max(float(roll) / 100000.0, 0.01);
+
+                                            std::lock_guard<std::mutex> lock(chunkInProgress);
+                                            starGrid[cell].emplace_back(j, i, r, g, b, alpha);
+                                        }
+                                    }
+                                    roll = range(generator);
+                                    if (roll <= 5) {
+                                        std::lock_guard<std::mutex> lock(chunkInProgress);
+                                        asteroids[cell].emplace_back(j, i);
+                                    }
+                                }
+                            }
+
+                            std::lock_guard<std::mutex> lock(chunkInProgress);
+                            pendingChunks.erase(cell);
+                        }).detach();
+
+                    }
+                    else {
+                        int rightBound = (int(player.xPos + 128) / 256) + 1;
+                        int lowBound = (int(player.yPos + 112) / 224) + 1;
+
+                        int leftBound = ((int(player.xPos) - 128) / 256);
+                        int upBound = ((int(player.yPos) - 112) / 224);
+
+                        for (int y = upBound; y <= lowBound; ++y) {
+                            for (int x = leftBound; x <= rightBound; ++x) {
+                                auto it = starGrid.find({ x, y });
+                                if (it != starGrid.end()) {
+                                    for (Star& star : it->second) {
+                                        star.Pulsate(deltaTime);
+                                    }
+                                }
+                                else {
+                                    std::pair<int, int> cell = { x, y };
+                                    std::vector<std::pair<int, int>> chunks = { cell };
+                                    std::uniform_int_distribution<int> range(1, 100000);
+                                    bool updated = false;
+                                    for (int i = y * 224; i <= ((y * 224) + 224); i++) {
+                                        for (int j = x * 256; j <= ((x * 256) + 256); j++) {
+                                            int roll = range(generator);
+                                            if (roll <= 250) {
+                                                updated = true;
+                                                std::pair<int, int> cell = { x , y };
+                                                std::vector<std::pair<int, int>> chunks = { cell };
+
+                                                bool starFound = false;
+                                                for (const auto chunk : chunks) {
+                                                    auto it = starGrid.find(chunk);
+                                                    if (it != starGrid.end()) {
+                                                        for (const auto& star : it->second) {
+                                                            if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
+                                                                starFound = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    if (starFound) {
+                                                        break;
+                                                    }
+                                                }
+
+                                                int r, g, b;
+                                                roll = range(generator);
+                                                if (roll <= 92000) {
+                                                    r = g = b = 200;
+                                                }
+                                                else if (roll <= 94660) {
+                                                    r = 102;
+                                                    g = 138;
+                                                    b = 200;
+                                                }
+                                                else if (roll <= 97320) {
+                                                    r = 200;
+                                                    g = 200;
+                                                    b = 200;
+                                                }
+                                                else {
+                                                    r = 200;
+                                                    g = 53;
+                                                    b = 46;
+                                                }
+                                                roll = range(generator);
+                                                float alpha = std::max(float(roll) / 100000.0, 0.01);
+                                                starGrid[cell].emplace_back(j, i, r, g, b, alpha);
+                                            }
+                                            roll = range(generator);
+                                            if (roll <= 5) {
+                                                std::pair<int, int> cell = { x, y };
+                                                asteroids[cell].emplace_back(j, i);
                                             }
                                         }
                                     }
-                                    if (starFound) {
-                                        break;
-                                    }
-                                }
 
-                                int r, g, b;
-                                roll = range(generator);
-                                if (roll <= 92000) {
-                                    r = g = b = 200;
                                 }
-                                else if (roll <= 94660) {
-                                    r = 102;
-                                    g = 138;
-                                    b = 200;
-                                }
-                                else if (roll <= 97320) {
-                                    r = 200;
-                                    g = 200;
-                                    b = 200;
-                                }
-                                else {
-                                    r = 200;
-                                    g = 53;
-                                    b = 46;
-                                }
-                                roll = range(generator);
-                                float alpha = std::max(float(roll) / 100000.0, 0.01);
-                                starGrid[cell].emplace_back(j, i, r, g, b, alpha);
-                            }
-                            roll = range(generator);
-                            if (roll <= 5) {
-                                std::pair<int, int> cell = { x, y};
-                                asteroids[cell].emplace_back(j, i);
                             }
                         }
                     }
-
                 }
             }
         }
