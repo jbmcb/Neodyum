@@ -155,8 +155,8 @@ bool modulatorTicker = true;
 bool splashscreen = false;
 
 std::mt19937 generator(std::random_device{}());
-int mapSizeX = 5000;
-int mapSizeY = 5000;
+int mapSizeX = 1000000;
+int mapSizeY = 1000000;
 
 std::chrono::steady_clock::time_point mapTick = std::chrono::steady_clock::now();
 bool displayMap;
@@ -1122,10 +1122,24 @@ void Render() {
                     screenX - leftBoundary - (int(mapFrameSize.width + 5 - (mapFrameSize.width * proportionX)) * scalerX),
                     screenY - (int(mapFrameSize.height + 5 - (mapFrameSize.height * proportionY)) * scalerY)
                 );
-
-                
                 renderTarget->FillRectangle(playerIcon, brush);
                 brush->Release();
+
+                ID2D1Bitmap* baseIconBMP = bitmaps[files.base_icon];
+                if (baseIconBMP) {
+                    D2D1_SIZE_F size = baseIconBMP->GetSize();
+                    for (auto base : bases) {
+                        proportionX = base.xPos / mapSizeX;
+                        proportionY = base.yPos / mapSizeY;
+                        position = D2D1::RectF(
+                            screenX - leftBoundary - (int(mapFrameSize.width + 4 + (size.width / 2) - (mapFrameSize.width * proportionX)) * scalerX),
+                            screenY - (int(mapFrameSize.height + 4 + (size.height / 2) - (mapFrameSize.height * proportionY)) * scalerY),
+                            screenX - leftBoundary - (int(mapFrameSize.width + 4 - (size.width / 2) - (mapFrameSize.width * proportionX)) * scalerX),
+                            screenY - (int(mapFrameSize.height + 4 - (size.height / 2) - (mapFrameSize.height * proportionY)) * scalerY)
+                        );
+                        renderTarget->DrawBitmap(baseIconBMP, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+                    }
+                }
             }
         }
         
@@ -1267,8 +1281,72 @@ void UpdateGameLogic(double deltaTime) {
                         star.Pulsate(deltaTime);
                     }
                 }
+                else {
+                    std::pair<int, int> cell = { x, y };
+                    std::vector<std::pair<int, int>> chunks = { cell };
+                    std::uniform_int_distribution<int> range(1, 100000);
+                    bool updated = false;
+                    for (int i = y * 224; i <= ((y * 224) + 224); i++) {
+                        for (int j = x * 256; j <= ((x * 256) + 256); j++) {
+                            int roll = range(generator);
+                            if (roll <= 250) {
+                                updated = true;
+                                std::pair<int, int> cell = { x , y };
+                                std::vector<std::pair<int, int>> chunks = { cell };
+
+                                bool starFound = false;
+                                for (const auto chunk : chunks) {
+                                    auto it = starGrid.find(chunk);
+                                    if (it != starGrid.end()) {
+                                        for (const auto& star : it->second) {
+                                            if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
+                                                starFound = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (starFound) {
+                                        break;
+                                    }
+                                }
+
+                                int r, g, b;
+                                roll = range(generator);
+                                if (roll <= 92000) {
+                                    r = g = b = 200;
+                                }
+                                else if (roll <= 94660) {
+                                    r = 102;
+                                    g = 138;
+                                    b = 200;
+                                }
+                                else if (roll <= 97320) {
+                                    r = 200;
+                                    g = 200;
+                                    b = 200;
+                                }
+                                else {
+                                    r = 200;
+                                    g = 53;
+                                    b = 46;
+                                }
+                                roll = range(generator);
+                                float alpha = std::max(float(roll) / 100000.0, 0.01);
+                                starGrid[cell].emplace_back(j, i, r, g, b, alpha);
+                            }
+                            roll = range(generator);
+                            if (roll <= 5) {
+                                std::pair<int, int> cell = { x, y};
+                                asteroids[cell].emplace_back(j, i);
+                            }
+                        }
+                    }
+
+                }
             }
         }
+
+        
 
         bool spawnEnemies = true;
         bool spawnsExist = false;
@@ -2144,10 +2222,23 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.base_icon);
     spriteFilePaths.emplace_back(files.boss_icon);
 
+    player.power = 1;
+    player.health = 100;
+    player.maxHP = 100;
+    player.xPos = float(mapSizeX) / 2;
+    player.yPos = float(mapSizeY) / 2;
+
+
+
     std::uniform_int_distribution<int> range(1, 100000);
-    for (int y = 0; y <= mapSizeY; y++) {
+    int minY = std::max(int(player.yPos / 224) - 1, 0);
+    int minX = std::max(int(player.xPos / 256) - 1, 0);
+    int maxY = std::min(int(player.yPos / 224) + 1, int(mapSizeY / 224));
+    int maxX = std::min(int(player.xPos / 256) + 2, int(mapSizeY / 256));
+
+    for (int y = minY; y <= maxY; y++) {
         bool updated = false;
-        for (int x = 0; x <= mapSizeX; x++) {
+        for (int x = minX; x <= maxX; x++) {
             int roll = range(generator);
             if (roll <= 250) {
                 updated = true;
@@ -2219,12 +2310,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     // Mix_OpenAudio(32000, MIX_DEFAULT_FORMAT, 2, 2048);
     // Mix_Music* background_Music = Mix_LoadMUS("C:\\Users\\My PC\\source\\repos\\CSS 385 - Program 1 Hello World\\CSS 385 - Program 1 Hello World\\background_music.mp3");
 
-    player.power = 1;
-    player.health = 100;
-    player.maxHP = 100;
-    player.xPos = float(mapSizeX) / 2;
-    player.yPos = float(mapSizeY) / 2;
-
     background.currentFramePath = files.background;
 
     // Initializations
@@ -2256,14 +2341,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     turretOffsets[11].second = 140.5;
 
     bases.emplace_back(files.base);
-    bases.at(0).xPos = 800;
-    bases.at(0).yPos = 1700;
+    bases.at(0).xPos = 13000;
+    bases.at(0).yPos = 16000;
     bases.emplace_back(files.base);
-    bases.at(1).xPos = 1600;
-    bases.at(1).yPos = 240;
+    bases.at(1).xPos = 15000;
+    bases.at(1).yPos = 5000;
     bases.emplace_back(files.base);
-    bases.at(2).xPos = 2500;
-    bases.at(2).yPos = 1000;
+    bases.at(2).xPos = 18000;
+    bases.at(2).yPos = 10000;
     std::pair <double, double> shieldOffsets[12];
     shieldOffsets[0].first = -130.5;
     shieldOffsets[1].first = -130.5;
