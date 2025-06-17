@@ -124,6 +124,8 @@ struct {
     LPCWSTR map_frame = L"Sprites\\Menu\\Map_Frame.png";
     LPCWSTR base_icon = L"Sprites\\Menu\\Base_Icon.png";
     LPCWSTR boss_icon = L"Sprites\\Menu\\Boss_Icon.png";
+    LPCWSTR player_tilt_left = L"Sprites\\Ship\\Player_Tilt_Left.png";
+    LPCWSTR player_tilt_right = L"Sprites\\Ship\\Player_Tilt_Right.png";
 
 } files;
 
@@ -805,18 +807,23 @@ void Render() {
 
             if (redLightBitmap) {
                 D2D1_SIZE_F size = redLightBitmap->GetSize();
+                int xOff1(0), xOff2(0), yOff1(0), yOff2(0);
+                if (player.currentFramePath == files.player_tilt_left || player.currentFramePath == files.player_tilt_right) {
+                    xOff1 = -1;
+                    xOff2 = 1;
+                }
 
                 D2D1_RECT_F displayPos1 = D2D1::RectF(
-                    (screenX / 2) - (((size.width / 2) - 4) * scalerX),
+                    (screenX / 2) - (((size.width / 2) - 4 - xOff1) * scalerX),
                     (screenY / 2) - (((size.height / 2) + 2) * scalerY),
-                    (screenX / 2) + (((size.width / 2) + 4) * scalerX),
+                    (screenX / 2) + (((size.width / 2) + 4 + xOff1) * scalerX),
                     (screenY / 2) + (((size.height / 2) - 2) * scalerY)
                 );
 
                 D2D1_RECT_F displayPos2 = D2D1::RectF(
-                    (screenX / 2) - (((size.width / 2) + 4) * scalerX),
+                    (screenX / 2) - (((size.width / 2) + 4 - xOff2) * scalerX),
                     (screenY / 2) - (((size.height / 2) + 2) * scalerY),
-                    (screenX / 2) + (((size.width / 2) - 4) * scalerX),
+                    (screenX / 2) + (((size.width / 2) - 4 + xOff2) * scalerX),
                     (screenY / 2) + (((size.height / 2) - 2) * scalerY)
                 );
 
@@ -1582,9 +1589,25 @@ void UpdateGameLogic(double deltaTime) {
                 player.directionX = keys.right - keys.left;
                 player.directionY = keys.up - keys.down;
             }
+            else {
+                if (abs(player.directionX) > 0 && player.directionY == 0 && (keys.up || keys.down)) {
+                    if (keys.up && !keys.down) {
+                        player.currentFramePath = (player.directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
+                    }
+                    else if (keys.down && !keys.up) {
+                        player.currentFramePath = (player.directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
+                    }
+                }
+                else if (player.currentFramePath != files.playerFrame1 && player.currentFramePath != files.playerFrame2) {
+                    player.currentFramePath = files.playerFrame1;
+                }
+                //else if (abs(player.directionY) > 0 && player.directionX == 0) {
+                //    player.currentFramePath = (keys.right - keys.left) ? files.player_tilt_right : files.player_tilt_left;
+                //}
+            }
         }
 
-        if (!player.dead) {
+        if (!player.dead && !keys.f) {
             // Cycle Thruster Animation
             if (std::chrono::steady_clock::now() - player.lastThrusterTime >= std::chrono::milliseconds(100)) {
                 player.lastThrusterTime = std::chrono::steady_clock::now();
@@ -2320,6 +2343,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.map_frame);
     spriteFilePaths.emplace_back(files.base_icon);
     spriteFilePaths.emplace_back(files.boss_icon);
+    spriteFilePaths.emplace_back(files.player_tilt_left);
+    spriteFilePaths.emplace_back(files.player_tilt_right);
 
     player.power = 1;
     player.health = 100;
