@@ -1597,6 +1597,9 @@ void UpdateGameLogic(double deltaTime) {
                     else if (keys.down && !keys.up) {
                         player.currentFramePath = (player.directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
                     }
+                    else {
+                        player.currentFramePath = files.playerFrame1;
+                    }
                 }
                 else if (abs(player.directionY) > 0 && player.directionX == 0 && (keys.left || keys.right)) {
                     if (keys.left && !keys.right) {
@@ -1604,6 +1607,9 @@ void UpdateGameLogic(double deltaTime) {
                     }
                     else if (keys.right && !keys.left) {
                         player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                    }
+                    else {
+                        player.currentFramePath = files.playerFrame1;
                     }
                 }
                 else if ((player.directionX > 0 && player.directionY > 0) && !(keys.up && keys.right)) {
@@ -1613,6 +1619,9 @@ void UpdateGameLogic(double deltaTime) {
                     else if (keys.up) {
                         player.currentFramePath = files.player_tilt_left;
                     }
+                    else {
+                        player.currentFramePath = files.playerFrame1;
+                    }
                 }
                 else if ((player.directionX < 0 && player.directionY < 0) && !(keys.down && keys.left)) {
                     if (keys.left) {
@@ -1620,6 +1629,9 @@ void UpdateGameLogic(double deltaTime) {
                     }
                     else if (keys.down) {
                         player.currentFramePath = files.player_tilt_left;
+                    }
+                    else {
+                        player.currentFramePath = files.playerFrame1;
                     }
                 }
                 else if ((player.directionX > 0 && player.directionY < 0) && !(keys.down && keys.right)) {
@@ -1629,6 +1641,9 @@ void UpdateGameLogic(double deltaTime) {
                     else if (keys.right) {
                         player.currentFramePath = files.player_tilt_left;
                     }
+                    else {
+                        player.currentFramePath = files.playerFrame1;
+                    }
                 }
                 else if ((player.directionX < 0 && player.directionY > 0) && !(keys.up && keys.left)) {
                     if (keys.up) {
@@ -1636,6 +1651,9 @@ void UpdateGameLogic(double deltaTime) {
                     }
                     else if (keys.left) {
                         player.currentFramePath = files.player_tilt_left;
+                    }
+                    else {
+                        player.currentFramePath = files.playerFrame1;
                     }
                 }
                 //else if ()
