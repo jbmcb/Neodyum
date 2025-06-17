@@ -1468,7 +1468,7 @@ void UpdateGameLogic(double deltaTime) {
                 spawnsExist = true;
             }
         }
-        if (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10))) {
+        if (false/*spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10))*/) {
             for (int i = 0; i < 3; i++) {
                 std::uniform_int_distribution<int> distribution(0, 1);
                 bool binary = distribution(generator);
@@ -1590,7 +1590,7 @@ void UpdateGameLogic(double deltaTime) {
                 player.directionY = keys.up - keys.down;
             }
             else {
-                if (abs(player.directionX) > 0 && player.directionY == 0 && (keys.up || keys.down)) {
+                if (abs(player.directionX) > 0 && player.directionY == 0 && !(keys.right && !keys.down && !keys.up && !keys.down)) {
                     if (keys.up && !keys.down) {
                         player.currentFramePath = (player.directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
                     }
@@ -1598,13 +1598,57 @@ void UpdateGameLogic(double deltaTime) {
                         player.currentFramePath = (player.directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
                     }
                 }
-                else if (player.currentFramePath != files.playerFrame1 && player.currentFramePath != files.playerFrame2) {
+                else if (abs(player.directionY) > 0 && player.directionX == 0 && (keys.left || keys.right)) {
+                    if (keys.left && !keys.right) {
+                        player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                    }
+                    else if (keys.right && !keys.left) {
+                        player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                    }
+                }
+                else if ((player.directionX > 0 && player.directionY > 0) && !(keys.up && keys.right)) {
+                    if (keys.right) {
+                        player.currentFramePath = files.player_tilt_right;
+                    }
+                    else if (keys.up) {
+                        player.currentFramePath = files.player_tilt_left;
+                    }
+                }
+                else if ((player.directionX < 0 && player.directionY < 0) && !(keys.down && keys.left)) {
+                    if (keys.left) {
+                        player.currentFramePath = files.player_tilt_right;
+                    }
+                    else if (keys.down) {
+                        player.currentFramePath = files.player_tilt_left;
+                    }
+                }
+                else if ((player.directionX > 0 && player.directionY < 0) && !(keys.down && keys.right)) {
+                    if (keys.down) {
+                        player.currentFramePath = files.player_tilt_right;
+                    }
+                    else if (keys.right) {
+                        player.currentFramePath = files.player_tilt_left;
+                    }
+                }
+                else if ((player.directionX < 0 && player.directionY > 0) && !(keys.up && keys.left)) {
+                    if (keys.up) {
+                        player.currentFramePath = files.player_tilt_right;
+                    }
+                    else if (keys.left) {
+                        player.currentFramePath = files.player_tilt_left;
+                    }
+                }
+                //else if ()
+                else {
                     player.currentFramePath = files.playerFrame1;
                 }
                 //else if (abs(player.directionY) > 0 && player.directionX == 0) {
                 //    player.currentFramePath = (keys.right - keys.left) ? files.player_tilt_right : files.player_tilt_left;
                 //}
             }
+        }
+        else if (keys.f) {
+            player.currentFramePath = files.playerFrame1;
         }
 
         if (!player.dead && !keys.f) {

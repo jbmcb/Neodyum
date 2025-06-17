@@ -155,15 +155,15 @@ C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1436,61): warnin
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1484,29): warning C4552: '-': result of expression not used
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1562,42): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
 C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1568,38): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1857,96): warning C4305: 'argument': truncation from 'double' to '_Ty'
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(1901,96): warning C4305: 'argument': truncation from 'double' to '_Ty'
           with
           [
               _Ty=float
           ]
-C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2023,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2024,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2150,71): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2421,29): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2067,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2068,38): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2194,71): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+C:\Users\My PC\source\repos\Neodyum\Neodyum\Neodyum\Neodyum.cpp(2465,29): warning C4244: 'initializing': conversion from 'const _Ty' to 'float', possible loss of data
           with
           [
               _Ty=double
