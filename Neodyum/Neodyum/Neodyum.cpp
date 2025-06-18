@@ -330,6 +330,9 @@ public:
     float boost = 100;
     std::chrono::steady_clock::time_point runoutTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
     std::chrono::steady_clock::time_point currencyAcquired = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+    LPCWSTR lastFrame = files.playerFrame1;
+    bool rolling = false;
+    std::chrono::steady_clock::time_point rollTime = std::chrono::steady_clock::now();
 
 
     Player() {
@@ -1613,7 +1616,29 @@ void UpdateGameLogic(double deltaTime) {
                     if ((keys.up || keys.down) && !(keys.up && keys.down) && !(keys.right || keys.left)) {
                         bool inverse = (player.directionX > 0) ? false : true;
                         keys.up = (inverse) ? !keys.up : keys.up;
-                        player.currentFramePath = (keys.up) ? files.player_sideways_l : files.player_sideways_r;
+                        if (keys.up) {
+                            if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
+                                player.rolling = true;
+                                player.lastFrame = player.currentFramePath;
+                                player.currentFramePath = files.player_tilt_left;
+                                player.rollTime = std::chrono::steady_clock::now();
+
+                            }
+                            else if (player.rolling) {
+                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                    player.rolling = false;
+                                    player.lastFrame = player.currentFramePath;
+                                    player.currentFramePath = files.player_sideways_l;
+                                }
+                            }
+                            else {
+                                player.lastFrame = player.currentFramePath;
+                                player.currentFramePath = files.player_sideways_l;
+                            }
+                        }
+                        else {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
                         keys.up = (inverse) ? !keys.up : keys.up;
                     }
                     else if (keys.down && !keys.up) {
