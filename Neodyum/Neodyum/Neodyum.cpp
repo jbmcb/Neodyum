@@ -1563,10 +1563,10 @@ void UpdateGameLogic(double deltaTime) {
         }
 
         // Apply Player Inputs
-        double boost = 1;
+        double boost = 1.5;
         if (keys.lShift && keys.directionPressed && !keys.f) {
             if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
-                boost = 2;
+                boost = 2.5;
                 player.boost -= 1 * deltaTime;
                 if (player.boost <= 0) {
                     player.boost = 0;
@@ -1585,6 +1585,9 @@ void UpdateGameLogic(double deltaTime) {
             }
             if (player.boost > 100) {
                 player.boost = 100;
+            }
+            if (keys.f) {
+                boost = 1;
             }
         }
         if (keys.up) {
