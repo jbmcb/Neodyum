@@ -815,12 +815,20 @@ void Render() {
                     xOff2 = 1;
                 }
                 else if (player.currentFramePath == files.player_sideways_l || player.currentFramePath == files.player_sideways_r) {
-                    bool inverse = (player.directionX > 0) ? false : true;
-                    inverse ? keys.up = !keys.up : keys.up;
-                    keys.up ? (xOff1 = -2, xOff2 = 9999999) : (xOff1 = 999999, xOff2 = 2);
-                    inverse ? keys.up = !keys.up : keys.up;
+                    bool inverse;
+                    if (player.directionX == 0) {
+                        inverse = (player.directionY > 0) ? false : true;
+                        keys.right = inverse ? !keys.right : keys.right;
+                        keys.right ? (xOff1 = 999999, xOff2 = 2) : (xOff1 = -2, xOff2 = 999999);
+                        keys.right = inverse ? !keys.right : keys.right;
+                    }
+                    else {
+                        inverse = (player.directionX > 0) ? false : true;
+                        inverse ? keys.up = !keys.up : keys.up;
+                        keys.up ? (xOff1 = -2, xOff2 = 9999999) : (xOff1 = 999999, xOff2 = 2);
+                        inverse ? keys.up = !keys.up : keys.up;
+                    }
                 }
-
                 D2D1_RECT_F displayPos1 = D2D1::RectF(
                     (screenX / 2) - (((size.width / 2) - 4 - xOff1) * scalerX),
                     (screenY / 2) - (((size.height / 2) + 2) * scalerY),
@@ -1559,7 +1567,7 @@ void UpdateGameLogic(double deltaTime) {
         if (keys.lShift && keys.directionPressed && !keys.f) {
             if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
                 boost = 2;
-                //player.boost -= 1 * deltaTime;
+                player.boost -= 1 * deltaTime;
                 if (player.boost <= 0) {
                     player.boost = 0;
                     player.runoutTime = std::chrono::steady_clock::now();
@@ -1616,14 +1624,39 @@ void UpdateGameLogic(double deltaTime) {
                     }
                 }
                 else if (abs(player.directionY) > 0 && player.directionX == 0 && (keys.left || keys.right)) {
-                    if (keys.left && !keys.right) {
-                        player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                    if (player.directionY > 0) {
+                        if (keys.left && keys.up) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                        }
+                        else if (keys.right && keys.up) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                        }
+                        else if (keys.left && !keys.up) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
+                        }
+                        else if (keys.right && !keys.up) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
                     }
-                    else if (keys.right && !keys.left) {
-                        player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                    }
-                    else {
-                        player.currentFramePath = files.playerFrame1;
+                    if (player.directionY < 0) {
+                        if (keys.left && keys.down) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                        }
+                        else if (keys.right && keys.down) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                        }
+                        else if (keys.left && !keys.down) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
+                        }
+                        else if (keys.right && !keys.down) {
+                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
                     }
                 }
                 else if (abs(player.directionX) > 0 && player.directionY > 0) {
@@ -1664,60 +1697,38 @@ void UpdateGameLogic(double deltaTime) {
                 }
                 else if (abs(player.directionX) > 0 && player.directionY < 0) {
                     if (player.directionX > 0) {
-                        if (keys.right && keys.down) {
-                            player.currentFramePath = files.player_sideways_r;
+                        if (keys.right && keys.up) {
+                            player.currentFramePath = files.player_sideways_l;
                         }
                         else if (keys.down && keys.left) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.down && !keys.right) {
-                            player.currentFramePath = files.player_tilt_left;
-                        }
-                        else if (keys.right && !keys.down) {
-                            player.currentFramePath = files.player_tilt_right;
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    else {
-                        if (keys.right && keys.down) {
                             player.currentFramePath = files.player_sideways_r;
                         }
-                        else if (keys.up && keys.left) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.up && !keys.right) {
-                            player.currentFramePath = files.player_tilt_left;
-                        }
-                        else if (keys.right && !keys.up) {
+                        else if (keys.down && !keys.right) {
                             player.currentFramePath = files.player_tilt_right;
+                        }
+                        else if (keys.right && !keys.down) {
+                            player.currentFramePath = files.player_tilt_left;
                         }
                         else {
                             player.currentFramePath = files.playerFrame1;
                         }
                     }
-                }
-                else if ((player.directionX < 0 && player.directionY < 0) && !(keys.down && keys.left)) {
-                    if (keys.left) {
-                        player.currentFramePath = files.player_tilt_right;
-                    }
-                    else if (keys.down) {
-                        player.currentFramePath = files.player_tilt_left;
-                    }
                     else {
-                        player.currentFramePath = files.playerFrame1;
-                    }
-                }
-                else if ((player.directionX > 0 && player.directionY < 0) && !(keys.down && keys.right)) {
-                    if (keys.down) {
-                        player.currentFramePath = files.player_tilt_right;
-                    }
-                    else if (keys.right) {
-                        player.currentFramePath = files.player_tilt_left;
-                    }
-                    else {
-                        player.currentFramePath = files.playerFrame1;
+                        if (keys.left && keys.up) {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.down && keys.right) {
+                            player.currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.down && !keys.left) {
+                            player.currentFramePath = files.player_tilt_left;
+                        }
+                        else if (keys.left && !keys.down) {
+                            player.currentFramePath = files.player_tilt_right;
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
                     }
                 }
                 else {
