@@ -126,6 +126,8 @@ struct {
     LPCWSTR boss_icon = L"Sprites\\Menu\\Boss_Icon.png";
     LPCWSTR player_tilt_left = L"Sprites\\Ship\\Player_Tilt_Left.png";
     LPCWSTR player_tilt_right = L"Sprites\\Ship\\Player_Tilt_Right.png";
+    LPCWSTR player_sideways_l = L"Sprites\\Ship\\Player_Sideways_L.png";
+    LPCWSTR player_sideways_r = L"Sprites\\Ship\\Player_Sideways_R.png";
 
 } files;
 
@@ -160,8 +162,8 @@ bool modulatorTicker = true;
 bool splashscreen = false;
 
 std::mt19937 generator(std::random_device{}());
-int mapSizeX = 1000000;
-int mapSizeY = 1000000;
+int mapSizeX = 5000;
+int mapSizeY = 5000;
 
 std::chrono::steady_clock::time_point mapTick = std::chrono::steady_clock::now();
 bool displayMap;
@@ -811,6 +813,12 @@ void Render() {
                 if (player.currentFramePath == files.player_tilt_left || player.currentFramePath == files.player_tilt_right) {
                     xOff1 = -1;
                     xOff2 = 1;
+                }
+                else if (player.currentFramePath == files.player_sideways_l || player.currentFramePath == files.player_sideways_r) {
+                    bool inverse = (player.directionX > 0) ? false : true;
+                    inverse ? keys.up = !keys.up : keys.up;
+                    keys.up ? (xOff1 = -2, xOff2 = 9999999) : (xOff1 = 999999, xOff2 = 2);
+                    inverse ? keys.up = !keys.up : keys.up;
                 }
 
                 D2D1_RECT_F displayPos1 = D2D1::RectF(
@@ -1548,7 +1556,7 @@ void UpdateGameLogic(double deltaTime) {
 
         // Apply Player Inputs
         double boost = 1;
-        if (keys.lShift && keys.directionPressed) {
+        if (keys.lShift && keys.directionPressed && !keys.f) {
             if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
                 boost = 2;
                 //player.boost -= 1 * deltaTime;
@@ -1591,11 +1599,17 @@ void UpdateGameLogic(double deltaTime) {
             }
             else {
                 if (abs(player.directionX) > 0 && player.directionY == 0 && !(keys.right && !keys.down && !keys.up && !keys.down)) {
-                    if (keys.up && !keys.down) {
-                        player.currentFramePath = (player.directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
+                    if ((keys.up || keys.down) && !(keys.up && keys.down) && !(keys.right || keys.left)) {
+                        bool inverse = (player.directionX > 0) ? false : true;
+                        keys.up = (inverse) ? !keys.up : keys.up;
+                        player.currentFramePath = (keys.up) ? files.player_sideways_l : files.player_sideways_r;
+                        keys.up = (inverse) ? !keys.up : keys.up;
                     }
                     else if (keys.down && !keys.up) {
                         player.currentFramePath = (player.directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
+                    }
+                    else if (keys.up && !keys.down) {
+                        player.currentFramePath = (player.directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
                     }
                     else {
                         player.currentFramePath = files.playerFrame1;
@@ -1612,15 +1626,76 @@ void UpdateGameLogic(double deltaTime) {
                         player.currentFramePath = files.playerFrame1;
                     }
                 }
-                else if ((player.directionX > 0 && player.directionY > 0) && !(keys.up && keys.right)) {
-                    if (keys.right) {
-                        player.currentFramePath = files.player_tilt_right;
-                    }
-                    else if (keys.up) {
-                        player.currentFramePath = files.player_tilt_left;
+                else if (abs(player.directionX) > 0 && player.directionY > 0) {
+                    if (player.directionX > 0) {
+                        if (keys.right && keys.down) {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.up && keys.left) {
+                            player.currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.up && !keys.right) {
+                            player.currentFramePath = files.player_tilt_left;
+                        }
+                        else if (keys.right && !keys.up) {
+                            player.currentFramePath = files.player_tilt_right;
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
                     }
                     else {
-                        player.currentFramePath = files.playerFrame1;
+                        if (keys.left && keys.down) {
+                            player.currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.up && keys.right) {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.up && !keys.left) {
+                            player.currentFramePath = files.player_tilt_right;
+                        }
+                        else if (keys.left && !keys.up) {
+                            player.currentFramePath = files.player_tilt_left;
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                    }
+                }
+                else if (abs(player.directionX) > 0 && player.directionY < 0) {
+                    if (player.directionX > 0) {
+                        if (keys.right && keys.down) {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.down && keys.left) {
+                            player.currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.down && !keys.right) {
+                            player.currentFramePath = files.player_tilt_left;
+                        }
+                        else if (keys.right && !keys.down) {
+                            player.currentFramePath = files.player_tilt_right;
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    else {
+                        if (keys.right && keys.down) {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.up && keys.left) {
+                            player.currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.up && !keys.right) {
+                            player.currentFramePath = files.player_tilt_left;
+                        }
+                        else if (keys.right && !keys.up) {
+                            player.currentFramePath = files.player_tilt_right;
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
                     }
                 }
                 else if ((player.directionX < 0 && player.directionY < 0) && !(keys.down && keys.left)) {
@@ -1645,18 +1720,6 @@ void UpdateGameLogic(double deltaTime) {
                         player.currentFramePath = files.playerFrame1;
                     }
                 }
-                else if ((player.directionX < 0 && player.directionY > 0) && !(keys.up && keys.left)) {
-                    if (keys.up) {
-                        player.currentFramePath = files.player_tilt_right;
-                    }
-                    else if (keys.left) {
-                        player.currentFramePath = files.player_tilt_left;
-                    }
-                    else {
-                        player.currentFramePath = files.playerFrame1;
-                    }
-                }
-                //else if ()
                 else {
                     player.currentFramePath = files.playerFrame1;
                 }
@@ -2407,6 +2470,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.boss_icon);
     spriteFilePaths.emplace_back(files.player_tilt_left);
     spriteFilePaths.emplace_back(files.player_tilt_right);
+    spriteFilePaths.emplace_back(files.player_sideways_l);
+    spriteFilePaths.emplace_back(files.player_sideways_r);
 
     player.power = 1;
     player.health = 100;
@@ -2527,14 +2592,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     turretOffsets[11].second = 140.5;
 
     bases.emplace_back(files.base);
-    bases.at(0).xPos = 13000;
-    bases.at(0).yPos = 16000;
+    bases.at(0).xPos = .6 * mapSizeX;
+    bases.at(0).yPos = .8 * mapSizeY;
     bases.emplace_back(files.base);
-    bases.at(1).xPos = 15000;
-    bases.at(1).yPos = 5000;
+    bases.at(1).xPos = .6 * mapSizeX;
+    bases.at(1).yPos = .2 * mapSizeY;
     bases.emplace_back(files.base);
-    bases.at(2).xPos = 18000;
-    bases.at(2).yPos = 10000;
+    bases.at(2).xPos = .85 * mapSizeX;
+    bases.at(2).yPos = .5 * mapSizeY;
     std::pair <double, double> shieldOffsets[12];
     shieldOffsets[0].first = -130.5;
     shieldOffsets[1].first = -130.5;
