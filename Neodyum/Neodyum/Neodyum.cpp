@@ -18,9 +18,11 @@
 #include <thread>
 #include <unordered_set>
 #include <mutex>
+#include <mmsystem.h>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "winmm.lib")
 
 #undef min
 #undef max
@@ -89,7 +91,8 @@ struct {
     LPCWSTR entrance = L"Sprites\\Environment\\Entrance.png";
     LPCWSTR status_Bar = L"Sprites\\Menu\\Status_Bar.png";
     LPCWSTR health_Bar = L"Sprites\\Menu\\Health_Bar.png";
-    LPCWSTR boost_Bar = L"Sprites\\Menu\\Boost_Bar.png";
+    LPCWSTR boost_Bar_top = L"Sprites\\Menu\\Boost_Bar_Top.png";
+    LPCWSTR boost_Bar_bottom = L"Sprites\\Menu\\Boost_Bar_Bottom.png";
     LPCWSTR player_Death_Animation_1 = L"Sprites\\Ship\\Player_Death_Animation_1.png";
     LPCWSTR player_Death_Animation_2 = L"Sprites\\Ship\\Player_Death_Animation_2.png";
     LPCWSTR player_Death_Animation_3 = L"Sprites\\Ship\\Player_Death_Animation_3.png";
@@ -128,6 +131,8 @@ struct {
     LPCWSTR player_tilt_right = L"Sprites\\Ship\\Player_Tilt_Right.png";
     LPCWSTR player_sideways_l = L"Sprites\\Ship\\Player_Sideways_L.png";
     LPCWSTR player_sideways_r = L"Sprites\\Ship\\Player_Sideways_R.png";
+    LPCWSTR player_upside_tilted_l = L"Sprites\\Ship\\Player_upside_tilted_L.png";
+    LPCWSTR player_upside_tilted_r = L"Sprites\\Ship\\Player_upside_tilted_R.png";
 
 } files;
 
@@ -174,7 +179,9 @@ bool isMultiCore = std::thread::hardware_concurrency() > 1;
 
 struct hash_function {
     std::size_t operator()(const std::pair<int, int>& p) const {
-        return std::hash<int>{}(p.first)* (std::hash<int>{}(p.second) << 1);
+        std::size_t h1 = std::hash<int>{}(p.first);
+        std::size_t h2 = std::hash<int>{}(p.second);
+        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
     }
 };
 
@@ -333,6 +340,7 @@ public:
     LPCWSTR lastFrame = files.playerFrame1;
     bool rolling = false;
     std::chrono::steady_clock::time_point rollTime = std::chrono::steady_clock::now();
+    bool sideMode;
 
 
     Player() {
@@ -819,7 +827,9 @@ void Render() {
                 }
                 else if (player.currentFramePath == files.player_sideways_l || player.currentFramePath == files.player_sideways_r) {
                     bool inverse;
-                    if (player.directionX == 0) {
+                    if (player.sideMode) {
+                        xOff1 = -2, xOff2 = 99999999;
+                    } else if (player.directionX == 0) {
                         inverse = (player.directionY > 0) ? false : true;
                         keys.right = inverse ? !keys.right : keys.right;
                         keys.right ? (xOff1 = 999999, xOff2 = 2) : (xOff1 = -2, xOff2 = 999999);
@@ -1013,6 +1023,7 @@ void Render() {
         //    //renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
         //}
 
+        double top_width = 0;
         for (auto object : objects) {
             if (object.name == L"Status_Bar") {
                 ID2D1Bitmap* statusBarBitmap = bitmaps[object.currentFramePath];
@@ -1042,13 +1053,31 @@ void Render() {
                     renderTarget->DrawBitmap(healthBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
                 }
             }
-            if (object.name == L"Boost_Bar") {
+            if (object.name == L"Boost_Bar_Top") {
+                ID2D1Bitmap* boostBarBitmap = bitmaps[object.currentFramePath];
+                if (boostBarBitmap) {
+                    D2D1_SIZE_F size = boostBarBitmap->GetSize();
+                    top_width = size.width;
+                    D2D1_RECT_F portion = D2D1::RectF(
+                        object.xPos, object.yPos,
+                        object.xPos + ((size.width * scalerX) * (double(player.boost) / 100.0)), object.yPos + (size.height * scalerY)
+                    );
+                    D2D1_RECT_F source = D2D1::RectF(
+                        0, 0,
+                        size.width * (double(player.health) / double(player.maxHP)),
+                        size.height
+                    );
+
+                    renderTarget->DrawBitmap(boostBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
+                }
+            }
+            if (object.name == L"Boost_Bar_Bottom") {
                 ID2D1Bitmap* boostBarBitmap = bitmaps[object.currentFramePath];
                 if (boostBarBitmap) {
                     D2D1_SIZE_F size = boostBarBitmap->GetSize();
                     D2D1_RECT_F portion = D2D1::RectF(
                         object.xPos, object.yPos,
-                        object.xPos + ((size.width * scalerX) * (double(player.boost) / 100.0)), object.yPos + (size.height * scalerY)
+                        object.xPos + ((size.width * scalerX) * std::min(1.0, double(player.boost / ((size.width/top_width) * 100.0)))), object.yPos + (size.height * scalerY)
                     );
                     D2D1_RECT_F source = D2D1::RectF(
                         0, 0,
@@ -1462,7 +1491,6 @@ void UpdateGameLogic(double deltaTime) {
                                             }
                                         }
                                     }
-
                                 }
                             }
                         }
@@ -1470,8 +1498,6 @@ void UpdateGameLogic(double deltaTime) {
                 }
             }
         }
-
-        
 
         bool spawnEnemies = true;
         bool spawnsExist = false;
@@ -1566,10 +1592,10 @@ void UpdateGameLogic(double deltaTime) {
         }
 
         // Apply Player Inputs
-        double boost = 1.5;
+        double velocity = 1.5;
         if (keys.lShift && keys.directionPressed && !keys.f) {
             if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
-                boost = 2.5;
+                velocity *= 1.66;
                 player.boost -= 1 * deltaTime;
                 if (player.boost <= 0) {
                     player.boost = 0;
@@ -1578,101 +1604,357 @@ void UpdateGameLogic(double deltaTime) {
             }
             else {
                 if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
-                    player.boost += 0.66 * deltaTime;
+                    player.boost += 0.5 * deltaTime;
                 }
             }
         }
         else {
             if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
-                player.boost += 0.66 * deltaTime;
+                player.boost += 0.5 * deltaTime;
             }
             if (player.boost > 100) {
                 player.boost = 100;
             }
             if (keys.f) {
-                boost = 1;
+                velocity = 0.66;
             }
         }
         if (keys.up) {
-            player.yPos -= (boost * deltaTime);
+            player.yPos -= (velocity * deltaTime);
         }
         if (keys.down) {
-            player.yPos += (boost * deltaTime);
+            player.yPos += (velocity * deltaTime);
         }
         if (keys.right) {
-            player.xPos += (boost * deltaTime);
+            player.xPos += (velocity * deltaTime);
         }
         if (keys.left) {
-            player.xPos -= (boost * deltaTime);
+            player.xPos -= (velocity * deltaTime);
         }
 
-        if (keys.right || keys.left || keys.up || keys.down) {
-            if (!keys.f) {
-                player.directionX = keys.right - keys.left;
-                player.directionY = keys.up - keys.down;
+        player.lastFrame = player.currentFramePath;
+        if (player.sideMode) {
+            player.directionX = 1;
+            player.directionY = 0;
+            if (keys.up) {
+                player.currentFramePath = files.player_upside_tilted_l;
+            }
+            else if (keys.down) {
+                player.currentFramePath = files.player_tilt_left;
             }
             else {
-                if (abs(player.directionX) > 0 && player.directionY == 0 && !(keys.right && !keys.down && !keys.up && !keys.down)) {
-                    if ((keys.up || keys.down) && !(keys.up && keys.down) && !(keys.right || keys.left)) {
-                        bool inverse = (player.directionX > 0) ? false : true;
-                        keys.up = (inverse) ? !keys.up : keys.up;
-                        keys.down = (inverse) ? !keys.down : keys.down;
-                        if (keys.up) {
-                            if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                player.rolling = true;
-                                player.lastFrame = player.currentFramePath;
-                                player.currentFramePath = files.player_tilt_left;
-                                player.rollTime = std::chrono::steady_clock::now();
-
+                player.currentFramePath = files.player_sideways_l;
+            }
+        }
+        else {
+            if (keys.right || keys.left || keys.up || keys.down) {
+                if (!keys.f) {
+                    player.directionX = keys.right - keys.left;
+                    player.directionY = keys.up - keys.down;
+                }
+                else {
+                    if (abs(player.directionX) > 0 && player.directionY == 0) {
+                        if (!(keys.right && !keys.down && !keys.up)) {
+                            if ((keys.up || keys.down) && !(keys.up && keys.down) && !(keys.right || keys.left)) {
+                                bool inverse = (player.directionX > 0) ? false : true;
+                                keys.up = (inverse) ? !keys.up : keys.up;
+                                keys.down = (inverse) ? !keys.down : keys.down;
+                                if (keys.up) {
+                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
+                                        player.rolling = true;
+                                        player.currentFramePath = files.player_tilt_left;
+                                        player.rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (player.rolling) {
+                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                            player.rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        player.currentFramePath = files.player_sideways_l;
+                                    }
+                                }
+                                else if (keys.down) {
+                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
+                                        player.rolling = true;
+                                        player.currentFramePath = files.player_tilt_right;
+                                        player.rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (player.rolling) {
+                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                            player.rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        player.currentFramePath = files.player_sideways_r;
+                                    }
+                                }
+                                else {
+                                    player.currentFramePath = files.player_sideways_r;
+                                }
+                                keys.up = (inverse) ? !keys.up : keys.up;
+                                keys.down = (inverse) ? !keys.down : keys.down;
                             }
-                            else if (player.rolling) {
+                            else if (keys.down && !keys.up) {
                                 if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
                                     player.rolling = false;
+                                    player.currentFramePath = (player.directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
+                                }
+                            }
+                            else if (keys.up && !keys.down) {
+                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                    player.rolling = false;
+                                    player.currentFramePath = (player.directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
+                                }
+                            }
+                            else {
+                                player.currentFramePath = files.playerFrame1;
+                            }
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    else if (abs(player.directionY) > 0 && player.directionX == 0) {
+                        //
+                        if (!(keys.up && !keys.right && !keys.left)) {                  //
+                            if ((keys.left || keys.right) && !(keys.left && keys.right) && !(keys.up || keys.down)) {
+                                bool inverse = (player.directionY > 0) ? false : true;
+                                keys.left = (inverse) ? !keys.left : keys.left;
+                                keys.right = (inverse) ? !keys.right : keys.right;
+                                if (keys.left) {
+                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
+                                        player.rolling = true;
+                                        player.currentFramePath = files.player_tilt_left;
+                                        player.rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (player.rolling) {
+                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                            player.rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        player.currentFramePath = files.player_sideways_l;
+                                    }
+                                }
+                                else if (keys.right) {
+                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
+                                        player.rolling = true;
+                                        player.currentFramePath = files.player_tilt_right;
+                                        player.rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (player.rolling) {
+                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                            player.rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        player.currentFramePath = files.player_sideways_r;
+                                    }
+                                }
+                                else {
+                                    player.currentFramePath = files.player_sideways_r;
+                                }
+                                keys.left = (inverse) ? !keys.left : keys.left;
+                                keys.right = (inverse) ? !keys.right : keys.right;
+                            }
+                            else if (keys.right && !keys.left) {
+                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                    player.rolling = false;
+                                    player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                                }
+                            }
+                            else if (keys.left && !keys.right) {
+                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                    player.rolling = false;
+                                    player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                                }
+                            }
+                            else {
+                                player.currentFramePath = files.playerFrame1;
+                            }
+                        }
+                        else {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    else if (abs(player.directionX) > 0 && player.directionY > 0) {
+                        if ((keys.left && keys.up) && player.directionX > 0) {
+                            player.currentFramePath = files.player_sideways_l;
+                        }
+                        else if ((keys.right && keys.up) && player.directionX < 0) {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
+                        else if ((keys.down && keys.left && player.directionX < 0) || (keys.down && keys.right && player.directionX > 0)) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_sideways_r;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_sideways_l;
+                            }
+                        }
+                        else if ((keys.down && keys.left && player.directionX > 0) || (keys.down && keys.right && player.directionX < 0)) {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                        else if ((keys.up && (keys.right || keys.left)))
+                        {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                        else if (keys.up && !(keys.left || keys.right)) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                        else if (((keys.left && player.directionX < 0) || (keys.right && player.directionX > 0)) && !keys.up) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                        else if (((keys.right && player.directionX < 0) || (keys.left && player.directionX > 0)) && !keys.up) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                        else if (keys.down) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                    }
+                    else if (abs(player.directionX) > 0 && player.directionY < 0) {
+                        if ((keys.left && keys.down) && player.directionX > 0) {
+                            player.currentFramePath = files.player_sideways_r;
+                        }
+                        else if ((keys.right && keys.down) && player.directionX < 0) {
+                            player.currentFramePath = files.player_sideways_l;
+                        }
+                        else if ((keys.up && keys.left && player.directionX < 0) || (keys.up && keys.right && player.directionX > 0)) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_sideways_l;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_sideways_r;
+                            }
+                        }
+                        else if ((keys.up && keys.left && player.directionX > 0) || (keys.up && keys.right && player.directionX < 0)) {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                        else if ((keys.down && (keys.right || keys.left)))
+                        {
+                            player.currentFramePath = files.playerFrame1;
+                        }
+                        else if (keys.down && !(keys.left || keys.right)) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                        else if (((keys.left && player.directionX < 0) || (keys.right && player.directionX > 0)) && !keys.up) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                        else if (((keys.right && player.directionX < 0) || (keys.left && player.directionX > 0)) && !keys.up) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                        else if (keys.up) {
+                            if (player.directionX > 0) {
+                                player.currentFramePath = files.player_tilt_left;
+                            }
+                            else if (player.directionX < 0) {
+                                player.currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                    }
+                    /*if (!((keys.up && (keys.right || keys.left)) && (!keys.right && !keys.left))) {
+                        if ((keys.left || keys.right) && !(keys.left && keys.right) && !(keys.up || keys.down)) {
+                            bool inverse = (player.directionY > 0) ? false : true;
+                            keys.left = (inverse) ? !keys.left : keys.left;
+                            keys.right = (inverse) ? !keys.right : keys.right;
+                            if (keys.left) {
+                                if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
+                                    player.rolling = true;
+                                    player.lastFrame = player.currentFramePath;
+                                    player.currentFramePath = files.player_tilt_left;
+                                    player.rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (player.rolling) {
+                                    if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                        player.rolling = false;
+                                    }
+                                }
+                                else {
                                     player.lastFrame = player.currentFramePath;
                                     player.currentFramePath = files.player_sideways_l;
                                 }
                             }
-                            else {
-                                player.lastFrame = player.currentFramePath;
-                                player.currentFramePath = files.player_sideways_l;
-                            }
-                        }
-                        else if (keys.down) {
-                            if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                player.rolling = true;
-                                player.lastFrame = player.currentFramePath;
-                                player.currentFramePath = files.player_tilt_right;
-                                player.rollTime = std::chrono::steady_clock::now();
-                            }
-                            else if (player.rolling) {
-                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                    player.rolling = false;
+                            else if (keys.right) {
+                                if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
+                                    player.rolling = true;
+                                    player.lastFrame = player.currentFramePath;
+                                    player.currentFramePath = files.player_tilt_right;
+                                    player.rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (player.rolling) {
+                                    if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                        player.rolling = false;
+                                    }
+                                }
+                                else {
                                     player.lastFrame = player.currentFramePath;
                                     player.currentFramePath = files.player_sideways_r;
                                 }
                             }
                             else {
-                                player.lastFrame = player.currentFramePath;
                                 player.currentFramePath = files.player_sideways_r;
+                            }
+                            keys.left = (inverse) ? !keys.left : keys.left;
+                            keys.right = (inverse) ? !keys.right : keys.right;
+                        }
+                        else if (keys.right && !keys.left) {
+                            if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                player.rolling = false;
+                                player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                            }
+                        }
+                        else if (keys.left && !keys.right) {
+                            if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                                player.rolling = false;
+                                player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
                             }
                         }
                         else {
-                            player.currentFramePath = files.player_sideways_r;
+                            player.currentFramePath = files.playerFrame1;
                         }
-                        keys.up = (inverse) ? !keys.up : keys.up;
-                        keys.down = (inverse) ? !keys.down : keys.down;
-                    }
-                    else if (keys.down && !keys.up) {
-                        player.currentFramePath = (player.directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
-                    }
-                    else if (keys.up && !keys.down) {
-                        player.currentFramePath = (player.directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
-                    }
+                    }*/
                     else {
+                        player.lastFrame = player.currentFramePath;
                         player.currentFramePath = files.playerFrame1;
                     }
                 }
-                else if (abs(player.directionY) > 0 && player.directionX == 0 && (keys.left || keys.right)) {
+                /*else if (abs(player.directionY) > 0 && player.directionX == 0 && (keys.left || keys.right)) {
                     if (player.directionY > 0) {
                         if (keys.left && keys.up) {
                             player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
@@ -1783,44 +2065,43 @@ void UpdateGameLogic(double deltaTime) {
                 //else if (abs(player.directionY) > 0 && player.directionX == 0) {
                 //    player.currentFramePath = (keys.right - keys.left) ? files.player_tilt_right : files.player_tilt_left;
                 //}
+                */
             }
-        }
-        else if (keys.f) {
-            bool right = (player.directionX > 0) ? true : false;
-            bool inverse(false);
-            if (!right && keys.down) {
-                inverse = false;
-            } else if (right && keys.up) {
-                inverse = true;
-            } 
-            if (player.lastFrame == files.player_sideways_l || player.lastFrame == files.player_sideways_r) {
-                player.rolling = true;
-                player.lastFrame = player.currentFramePath;
-                player.currentFramePath = (inverse) ? files.player_tilt_left : files.player_tilt_right;
-                player.rollTime = std::chrono::steady_clock::now();
-            }
-            else if (player.rolling) {
-                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                    player.rolling = false;
+            else if (keys.f) { // If pressing f with no directional input
+                if (player.lastFrame == files.player_sideways_l || player.lastFrame == files.player_sideways_r) {
+                    player.rolling = true;
+                    player.lastFrame = player.currentFramePath;
+                    if (player.lastFrame == files.player_sideways_l) {
+                        player.currentFramePath = files.player_tilt_left;
+                    }
+                    else if (player.lastFrame == files.player_sideways_r) {
+                        player.currentFramePath = files.player_tilt_right;
+                    }
+                    player.rollTime = std::chrono::steady_clock::now();
+                }
+                else if (player.rolling) {
+                    if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
+                        player.rolling = false;
+                        player.lastFrame = player.currentFramePath;
+                        player.currentFramePath = files.playerFrame1;
+                    }
+                }
+                else {
                     player.lastFrame = player.currentFramePath;
                     player.currentFramePath = files.playerFrame1;
                 }
             }
-            else {
-                player.lastFrame = player.currentFramePath;
-                player.currentFramePath = files.playerFrame1;
-            }
-        }
 
-        if (!player.dead && !keys.f) {
-            // Cycle Thruster Animation
-            if (std::chrono::steady_clock::now() - player.lastThrusterTime >= std::chrono::milliseconds(100)) {
-                player.lastThrusterTime = std::chrono::steady_clock::now();
-                if (player.currentFramePath == files.playerFrame1) {
-                    player.currentFramePath = files.playerFrame2;
-                }
-                else {
-                    player.currentFramePath = files.playerFrame1;
+            if (!player.dead && !keys.f) {
+                // Cycle Thruster Animation
+                if (std::chrono::steady_clock::now() - player.lastThrusterTime >= std::chrono::milliseconds(100)) {
+                    player.lastThrusterTime = std::chrono::steady_clock::now();
+                    if (player.currentFramePath == files.playerFrame1) {
+                        player.currentFramePath = files.playerFrame2;
+                    }
+                    else {
+                        player.currentFramePath = files.playerFrame1;
+                    }
                 }
             }
         }
@@ -2403,11 +2684,18 @@ void UpdateGameLogic(double deltaTime) {
                 if (object.name == L"Entrance") {
                     if (player.CheckCollision(object)) {
                         background = files.base_Interior;
+                        player.sideMode = true;
                         player.xPos = 128;
                         player.yPos = 112;
                         baseEntered = true;
                     }
                 }
+            }
+        }
+
+        if (background.currentFramePath == files.base_Interior) {
+            if (player.xPos <= 0) {
+                background = nullptr;
             }
         }
 
@@ -2522,7 +2810,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.jewel_Red);
     spriteFilePaths.emplace_back(files.jewel_Silver);
     spriteFilePaths.emplace_back(files.jewel_Yellow);
-    spriteFilePaths.emplace_back(files.boost_Bar);
+    spriteFilePaths.emplace_back(files.boost_Bar_top);
+    spriteFilePaths.emplace_back(files.boost_Bar_bottom);
     spriteFilePaths.emplace_back(files.font_0);
     spriteFilePaths.emplace_back(files.font_1);
     spriteFilePaths.emplace_back(files.font_2);
@@ -2552,12 +2841,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.player_tilt_right);
     spriteFilePaths.emplace_back(files.player_sideways_l);
     spriteFilePaths.emplace_back(files.player_sideways_r);
-
+    spriteFilePaths.emplace_back(files.player_upside_tilted_l);
+    spriteFilePaths.emplace_back(files.player_upside_tilted_r);
+    
     player.power = 1;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = float(mapSizeX) / 2;
-    player.yPos = float(mapSizeY) / 2;
+    player.xPos = float(mapSizeX) * 0.58;
+    player.yPos = float(mapSizeY) * 0.8;
 
 
 
@@ -2772,8 +3063,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (5 * scalerY), 0,
         files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, false, false);
 
-    objects.emplace_back(L"Boost_Bar", leftBoundary + (6 * scalerX), (11 * scalerY), 0,
-        files.boost_Bar, false, 0, nullptr, files.boost_Bar, 0, 0, false, false, false);
+    objects.emplace_back(L"Boost_Bar_Top", leftBoundary + (6 * scalerX), (11 * scalerY), 0,
+        files.boost_Bar_top, false, 0, nullptr, files.boost_Bar_top, 0, 0, false, false, false);
+
+    objects.emplace_back(L"Boost_Bar_Bottom", leftBoundary + (6 * scalerX), (12 * scalerY), 0,
+        files.boost_Bar_bottom, false, 0, nullptr, files.boost_Bar_bottom, 0, 0, false, false, false);
 
 
 
@@ -2799,6 +3093,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
             if (hWnd) {
                 LoadSpritesToMemory(hWnd, spriteFilePaths);
                 ShowWindow(hWnd, nCmdShow);
+                //PlaySound(L"Music\\Neodyum Overworld Idea.wav", NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 
                 MSG msg;
                 while (GetMessage(&msg, NULL, 0, 0)) {
