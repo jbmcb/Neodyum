@@ -895,23 +895,23 @@ void Render() {
             if (player.sideMode) {
                 float xOffset(0), yOffset(0);
                 if (player.xPos < 128) {
-                    xOffset = player.xPos - 128;
+                    xOffset = cos(player.angleRadians) * (player.xPos - 128);
                 }
                 else if (player.xPos > (bgWidth - 128)) {
-                    xOffset = player.xPos - (bgWidth - 128);
+                    xOffset = cos(player.angleRadians) * (player.xPos - (bgWidth - 128));
                 }
 
                 if (player.yPos < 112) {
-                    yOffset = player.yPos - 112;
+                    yOffset = cos(player.angleRadians) * (player.yPos - 112);
                 }
                 else if (player.yPos > (bgHeight - 112)) {
-                    yOffset = player.yPos - (bgHeight - 112);
+                    yOffset = cos(player.angleRadians) * (player.yPos - (bgHeight - 112));
                 }
                 displayPos = D2D1::RectF(
-                    screenX/2 + (xOffset * scalerX),
-                    screenY/2 + (yOffset * scalerX),
-                    screenX/2 + ((size.width + xOffset) * scalerX),
-                    screenY/2 + ((size.height + yOffset) * scalerY)
+                    screenX/2 - ((size.width / 2) * scalerX) + (xOffset * scalerX),
+                    screenY/2 - ((size.height / 2) * scalerY) + (yOffset * scalerX),
+                    screenX/2 + ((size.width/2 + xOffset) * scalerX),
+                    screenY/2 + ((size.height/2 + yOffset) * scalerY)
                 );
             }
             else {
