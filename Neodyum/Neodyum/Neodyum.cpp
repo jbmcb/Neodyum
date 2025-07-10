@@ -175,8 +175,6 @@ bool displayMap;
 
 bool isMultiCore = std::thread::hardware_concurrency() > 1;
 
-
-
 struct hash_function {
     std::size_t operator()(const std::pair<int, int>& p) const {
         std::size_t h1 = std::hash<int>{}(p.first);
@@ -893,13 +891,37 @@ void Render() {
 
         if (basicShotEffectBitmap) {
             D2D1_SIZE_F size = basicShotEffectBitmap->GetSize();
+            D2D1_RECT_F displayPos;
+            if (player.sideMode) {
+                float xOffset(0), yOffset(0);
+                if (player.xPos < 128) {
+                    xOffset = player.xPos - 128;
+                }
+                else if (player.xPos > (bgWidth - 128)) {
+                    xOffset = player.xPos - (bgWidth - 128);
+                }
 
-            D2D1_RECT_F displayPos = D2D1::RectF(
-                (screenX / 2) - ((size.width / 2) * scalerX),
-                (screenY / 2) - (((size.height / 2) + 8) * scalerY),
-                (screenX / 2) + ((size.width / 2) * scalerX),
-                (screenY / 2) + (((size.height / 2) - 8) * scalerY)
-            );
+                if (player.yPos < 112) {
+                    yOffset = player.yPos - 112;
+                }
+                else if (player.yPos > (bgHeight - 112)) {
+                    yOffset = player.yPos - (bgHeight - 112);
+                }
+                displayPos = D2D1::RectF(
+                    screenX/2 + (xOffset * scalerX),
+                    screenY/2 + (yOffset * scalerX),
+                    screenX/2 + ((size.width + xOffset) * scalerX),
+                    screenY/2 + ((size.height + yOffset) * scalerY)
+                );
+            }
+            else {
+                displayPos = D2D1::RectF(
+                    (screenX / 2) - ((size.width / 2) * scalerX),
+                    (screenY / 2) - (((size.height / 2) + 8) * scalerY),
+                    (screenX / 2) + ((size.width / 2) * scalerX),
+                    (screenY / 2) + (((size.height / 2) - 8) * scalerY)
+                );
+            }
 
             renderTarget->DrawBitmap(basicShotEffectBitmap, displayPos, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
@@ -1513,7 +1535,7 @@ void UpdateGameLogic(double deltaTime) {
                 spawnsExist = true;
             }
         }
-        if (false/*spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10))*/) {
+        if (!player.sideMode && (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10)))) {
             for (int i = 0; i < 3; i++) {
                 std::uniform_int_distribution<int> distribution(0, 1);
                 bool binary = distribution(generator);
@@ -1616,7 +1638,7 @@ void UpdateGameLogic(double deltaTime) {
                 player.boost = 100;
             }
             if (keys.f) {
-                velocity = 0.66;
+                velocity *= 0.66;
             }
         }
         if (keys.up) {
@@ -2844,10 +2866,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     spriteFilePaths.emplace_back(files.player_upside_tilted_l);
     spriteFilePaths.emplace_back(files.player_upside_tilted_r);
     
-    player.power = 1;
+    player.power = 2;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = float(mapSizeX) * 0.58;
+    player.xPos = float(mapSizeX) * 0.55;
     player.yPos = float(mapSizeY) * 0.8;
 
 
@@ -2926,11 +2948,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
             }
         }
     }
-
-    // Audio
-    // SDL_Init(SDL_INIT_AUDIO);
-    // Mix_OpenAudio(32000, MIX_DEFAULT_FORMAT, 2, 2048);
-    // Mix_Music* background_Music = Mix_LoadMUS("C:\\Users\\My PC\\source\\repos\\CSS 385 - Program 1 Hello World\\CSS 385 - Program 1 Hello World\\background_music.mp3");
 
     background.currentFramePath = files.background;
 
@@ -3097,8 +3114,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
 
                 MSG msg;
                 while (GetMessage(&msg, NULL, 0, 0)) {
-
-
                     std::chrono::duration<double> cDeltaTime = std::chrono::steady_clock::now() - lastLogicUpdate;
                     double deltaTime = cDeltaTime.count() * 50;
                     lastLogicUpdate = std::chrono::steady_clock::now();
