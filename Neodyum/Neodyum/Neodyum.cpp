@@ -437,6 +437,46 @@ public:
     }
 };
 
+class Door : public Object {
+public:
+    float destX, destY;
+    int destID;
+    bool entered = false;
+    Door(float x, float y, int dest) {
+        destX = x;
+        destY = y;
+        destID = dest;
+    }
+};
+
+class Environment : public Object {
+public:
+    int id;
+    std::string name;
+    std::vector<Door> doors;
+
+    Environment(std::string nm, int idee) {
+        name = nm;
+        id = idee;
+    }
+
+    void addDoor(float x, float y, int dest) {
+        doors.emplace_back(x, y, dest);
+    }
+
+    int CheckDoorCollision(Object object) {
+        for (auto door : doors) {
+            if (object.CheckCollision(door)) {
+                door.entered = true;
+                return door.destID;
+            }
+        }
+        return -1;
+    }
+};
+
+
+
 void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
     HRESULT hr = S_OK;
 
@@ -560,7 +600,8 @@ std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock
 std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
 std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
 std::unordered_set<std::pair<int, int>, hash_function> pendingChunks;
-std::mutex chunkInProgress;
+std::mutex chunkInProgress; \
+std::vector<Environment> rooms;
 
 void Render() {
 
@@ -691,7 +732,6 @@ void Render() {
                 if (object.visible) {
                     ID2D1Bitmap* bitmap = bitmaps[object.currentFramePath];
                     if (bitmap) {
-
                         D2D1_SIZE_F size = bitmap->GetSize();
                         D2D1_RECT_F position = D2D1::RectF(
                             ((screenX / 2) + ((object.xPos - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
@@ -755,10 +795,11 @@ void Render() {
                 }
             }
         }
+        float xOffset(0), yOffset(0);
         if (!player.dead) {
             // Pulls bitmap for player ship
             ID2D1Bitmap* playerBitmap = bitmaps[player.currentFramePath];
-            float xOffset(0), yOffset(0);
+            
 
             if (playerBitmap) {
                 D2D1_SIZE_F size = playerBitmap->GetSize();
@@ -909,9 +950,9 @@ void Render() {
                 }
                 displayPos = D2D1::RectF(
                     screenX/2 - ((size.width / 2) * scalerX) + (xOffset * scalerX),
-                    screenY/2 - ((size.height / 2) * scalerY) + (yOffset * scalerX),
+                    screenY/2 - ((8 + size.height/2 + yOffset) * scalerY),
                     screenX/2 + ((size.width/2 + xOffset) * scalerX),
-                    screenY/2 + ((size.height/2 + yOffset) * scalerY)
+                    screenY/2 + ((size.height/2 + yOffset - 8) * scalerY)
                 );
             }
             else {
@@ -926,22 +967,45 @@ void Render() {
             renderTarget->DrawBitmap(basicShotEffectBitmap, displayPos, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
 
-        // Resets the rotation transformation on renderTarget
-        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        
 
         for (auto bullet : bullets) {
 
-            ID2D1Bitmap* basicShotBitmap = bitmaps[bullet.currentFramePath];
+                ID2D1Bitmap* basicShotBitmap = bitmaps[bullet.currentFramePath];
 
             if (basicShotBitmap) {
                 D2D1_SIZE_F size = basicShotBitmap->GetSize();
 
-                D2D1_RECT_F position = D2D1::RectF(
-                    ((screenX / 2) + ((bullet.xPos - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
-                    ((screenY / 2) + ((bullet.yPos - player.yPos) * scalerY)) - ((size.height / 2) * scalerY),
-                    ((screenX / 2) + ((bullet.xPos - player.xPos) * scalerX)) + ((size.width / 2) * scalerX),
-                    ((screenY / 2) + ((bullet.yPos - player.yPos) * scalerY)) + ((size.height / 2) * scalerY)
-                );
+                D2D1_RECT_F position;
+                if (player.sideMode) {
+                    if (player.xPos < 128) {
+                        xOffset = player.xPos - 128;
+                    }
+                    else if (player.xPos > (bgWidth - 128)) {
+                        xOffset = player.xPos - (bgWidth - 128);
+                    }
+
+                    if (player.yPos < 112) {
+                        yOffset = player.yPos - 112;
+                    }
+                    else if (player.yPos > (bgHeight - 112)) {
+                        yOffset = player.yPos - (bgHeight - 112);
+                    }
+                    position = D2D1::RectF(
+                        screenX / 2 + (xOffset + bullet.xPos - player.xPos - size.width/2) * scalerX,
+                        screenY / 2 + (yOffset + bullet.yPos - player.yPos - size.height/2) * scalerY,
+                        screenX / 2 + (xOffset + bullet.xPos - player.xPos + size.width/2) * scalerX,
+                        screenY / 2 + (yOffset + bullet.yPos - player.yPos + size.height/2) * scalerY
+                    );
+                }
+                else {
+                    position = D2D1::RectF(
+                        ((screenX / 2) + ((bullet.xPos - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
+                        ((screenY / 2) + ((bullet.yPos - player.yPos) * scalerY)) - ((size.height / 2) * scalerY),
+                        ((screenX / 2) + ((bullet.xPos - player.xPos) * scalerX)) + ((size.width / 2) * scalerX),
+                        ((screenY / 2) + ((bullet.yPos - player.yPos) * scalerY)) + ((size.height / 2) * scalerY)
+                    );
+                }
 
                 double angleDegrees = bullet.angleRadians * (180.0 / 3.14159265359);
                 D2D1_POINT_2F center = D2D1::Point2F((position.right + position.left) / 2, (position.top + position.bottom) / 2);
@@ -2718,6 +2782,7 @@ void UpdateGameLogic(double deltaTime) {
         if (background.currentFramePath == files.base_Interior) {
             if (player.xPos <= 0) {
                 background = nullptr;
+                player.sideMode = false;
             }
         }
 
@@ -2872,7 +2937,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
     player.xPos = float(mapSizeX) * 0.55;
     player.yPos = float(mapSizeY) * 0.8;
 
-
+    rooms.emplace_back("Overworld", 0);
 
     std::uniform_int_distribution<int> range(1, 100000);
     int minY = std::max(int(player.yPos / 224) - 1, 0);
@@ -3056,22 +3121,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
             true,
             false
         );
-        objects.emplace_back(
-            L"Entrance",
-            bases.at(i).xPos - 181.5,
-            bases.at(i).yPos - 0.5,
-            -1,
-            files.entrance,
-            false,
-            0,
-            nullptr,
-            files.entrance,
-            0,
-            0,
-            false,
-            false,
-            false
-        );
+        rooms.back().addDoor(bases.at(i).xPos - 181.5, bases.at(i).yPos - 0.5, i + 1);
+        rooms.emplace_back("Base Interior" + std::to_string(i + 1), i + 1);
     }
 
     objects.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
