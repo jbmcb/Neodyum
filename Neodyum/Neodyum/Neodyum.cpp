@@ -600,8 +600,9 @@ std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock
 std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
 std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
 std::unordered_set<std::pair<int, int>, hash_function> pendingChunks;
-std::mutex chunkInProgress; \
+std::mutex chunkInProgress; 
 std::vector<Environment> rooms;
+int currRoom(0);
 
 void Render() {
 
@@ -2766,14 +2767,16 @@ void UpdateGameLogic(double deltaTime) {
 
         bool baseEntered = false;
         if (!baseDoorFound) {
-            for (auto object : objects) {
-                if (object.name == L"Entrance") {
-                    if (player.CheckCollision(object)) {
-                        background = files.base_Interior;
-                        player.sideMode = true;
-                        player.xPos = 128;
-                        player.yPos = 112;
-                        baseEntered = true;
+            for (auto room : rooms) {
+                if (room.id == currRoom) {
+                    for (auto door : room.doors) {
+                        if (player.CheckCollision(door)) {
+                            background = files.base_Interior;
+                            player.sideMode = true;
+                            player.xPos = 128;
+                            player.yPos = 112;
+                            baseEntered = true;
+                        }
                     }
                 }
             }
@@ -3080,12 +3083,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 true,
                 true
             );
-            objects[j + (i * 18)].turnRadius = pi / 4;
-            objects[j + (i * 18)].shotSpeed = std::chrono::milliseconds(1250);
-            objects[j + (i * 18)].shotVelocity = 5;
-            objects[j + (i * 18)].shotType = files.basicShotBlue;
-            objects[j + (i * 18)].defaultShotEffect = files.basicShotEffectBlue1;
-            objects[j + (i * 18)].power = 10;
+            objects[j + (i * 17)].turnRadius = pi / 4;
+            objects[j + (i * 17)].shotSpeed = std::chrono::milliseconds(1250);
+            objects[j + (i * 17)].shotVelocity = 5;
+            objects[j + (i * 17)].shotType = files.basicShotBlue;
+            objects[j + (i * 17)].defaultShotEffect = files.basicShotEffectBlue1;
+            objects[j + (i * 17)].power = 10;
         }
         for (int j = 0; j <= 3; j++) {
             objects.emplace_back(
@@ -3121,7 +3124,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
             true,
             false
         );
-        rooms.back().addDoor(bases.at(i).xPos - 181.5, bases.at(i).yPos - 0.5, i + 1);
+        rooms.at(0).addDoor(bases.at(i).xPos - 181.5, bases.at(i).yPos - 0.5, 0);
         rooms.emplace_back("Base Interior" + std::to_string(i + 1), i + 1);
     }
 
