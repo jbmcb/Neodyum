@@ -439,12 +439,15 @@ public:
 
 class Door : public Object {
 public:
-    float destX, destY;
+    float positionX, positionY, destinationX, destinationY;
     int destID;
     bool entered = false;
-    Door(float x, float y, int dest) {
-        destX = x;
-        destY = y;
+
+    Door(float x, float y, float dX, float dY, int dest) {
+        positionX = x;
+        positionY = y;
+        destinationX = dX;
+        destinationY = dY;
         destID = dest;
     }
 };
@@ -460,18 +463,25 @@ public:
         id = idee;
     }
 
-    void addDoor(float x, float y, int dest) {
-        doors.emplace_back(x, y, dest);
+    void addDoor(float x, float y, float dX, float dY, int dest) {
+        doors.emplace_back(x, y, dX, dY, dest);
     }
 
-    int CheckDoorCollision(Object object) {
+    int CheckDoorCollision(Player player) {
         for (auto door : doors) {
-            if (object.CheckCollision(door)) {
+            if (player.CheckCollision(door)) {
                 door.entered = true;
                 return door.destID;
             }
         }
         return -1;
+    }
+
+    void EnterDoor(Player player, int envID) {
+        if (envID == -1) {
+            return;
+        }
+        player.xPos;
     }
 };
 
@@ -3124,7 +3134,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
             true,
             false
         );
-        rooms.at(0).addDoor(bases.at(i).xPos - 181.5, bases.at(i).yPos - 0.5, 0);
+        rooms.at(0).addDoor(bases.at(i).xPos - 181.5, bases.at(i).yPos - 0.5, 128, 112, 0);
         rooms.emplace_back("Base Interior" + std::to_string(i + 1), i + 1);
     }
 
