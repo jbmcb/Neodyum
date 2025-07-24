@@ -31,6 +31,11 @@
 #define VK_S 0x53
 #define pi 3.141592653589793238462643383279502884197
 
+
+//---------
+// Globals
+//---------
+
 // Filenames
 // Contains all filenames necessary for the game to run. Condensed into variables to improve readability in later code.
 // Made a struct just so I can collapse when I have more files later
@@ -207,7 +212,10 @@ void GetDirectionalInput(int& xDir, int& yDir, bool right, bool left, bool down,
 }
 
 
-// Represents any visible entity
+//---------
+// Classes
+//---------
+
 class Object
 {
 public:
@@ -320,6 +328,7 @@ public:
 class Player : public Object {
 public:
     int directionX, directionY;
+    std::vector<Object> bullets;
     LPCWSTR redLightFrame = files.playerRedLightffect1;
     LPCWSTR basicShotFrame = nullptr;
     std::chrono::steady_clock::time_point lastFrameChange = std::chrono::steady_clock::now();
@@ -356,33 +365,746 @@ public:
         hitbox.down = yPos + (size.height / 2) - 4;
     }
 
-    //void PlayerIdle()
-    //{
-    //    // cycle through a basic animation
-    //    if ((std::chrono::steady_clock::now() - lastFrameChange) >= frameInterval)
-    //    {
-    //        lastFrameChange = std::chrono::steady_clock::now();
-    //        if (currentFramePath == files.playerFrame1)
-    //        {
-    //            currentFramePath = files.playerFrame2;
-    //        }
-    //        else
-    //        {
-    //            currentFramePath = files.playerFrame1;
-    //        }
-    //    }
-    //}
+    void ApplyDirectionalInput(double deltaTime) {
+        // Apply Player Inputs
+        double velocity = 1.5;
+        if (keys.lShift && keys.directionPressed && !keys.f) {
+            if (boost > 0 && ((std::chrono::steady_clock::now() - runoutTime) >= std::chrono::seconds(2))) {
+                velocity *= 1.66;
+                boost -= 1 * deltaTime;
+                if (boost <= 0) {
+                    boost = 0;
+                    runoutTime = std::chrono::steady_clock::now();
+                }
+            }
+            else {
+                if ((std::chrono::steady_clock::now() - runoutTime) >= std::chrono::seconds(1)) {
+                    boost += 0.5 * deltaTime;
+                }
+            }
+        }
+        else {
+            if ((std::chrono::steady_clock::now() - runoutTime) >= std::chrono::seconds(1)) {
+                boost += 0.5 * deltaTime;
+            }
+            if (boost > 100) {
+                boost = 100;
+            }
+            if (keys.f) {
+                velocity *= 0.66;
+            }
+        }
+        if (keys.up) {
+            yPos -= (velocity * deltaTime);
+        }
+        if (keys.down) {
+            yPos += (velocity * deltaTime);
+        }
+        if (keys.right) {
+            xPos += (velocity * deltaTime);
+        }
+        if (keys.left) {
+            xPos -= (velocity * deltaTime);
+        }
 
-    //void MovePlayer(double xDir, double yDir) {
-    //    xPos += xDir;
-    //    yPos += yDir;
-    //    angle = -1 * atan2(xDir, xDir);
-    //}
+        lastFrame = currentFramePath;
+        if (sideMode) {
+            directionX = 1;
+            directionY = 0;
+            if (keys.up) {
+                currentFramePath = files.player_upside_tilted_l;
+            }
+            else if (keys.down) {
+                currentFramePath = files.player_tilt_left;
+            }
+            else {
+                currentFramePath = files.player_sideways_l;
+            }
+        }
+        else {
+            if (keys.right || keys.left || keys.up || keys.down) {
+                if (!keys.f) {
+                    directionX = keys.right - keys.left;
+                    directionY = keys.up - keys.down;
+                }
+                else {
+                    if (abs(directionX) > 0 && directionY == 0) {
+                        if (!(keys.right && !keys.down && !keys.up)) {
+                            if ((keys.up || keys.down) && !(keys.up && keys.down) && !(keys.right || keys.left)) {
+                                bool inverse = (directionX > 0) ? false : true;
+                                keys.up = (inverse) ? !keys.up : keys.up;
+                                keys.down = (inverse) ? !keys.down : keys.down;
+                                if (keys.up) {
+                                    if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                        rolling = true;
+                                        currentFramePath = files.player_tilt_left;
+                                        rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (rolling) {
+                                        if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                            rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        currentFramePath = files.player_sideways_l;
+                                    }
+                                }
+                                else if (keys.down) {
+                                    if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                        rolling = true;
+                                        currentFramePath = files.player_tilt_right;
+                                        rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (rolling) {
+                                        if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                            rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        currentFramePath = files.player_sideways_r;
+                                    }
+                                }
+                                else {
+                                    currentFramePath = files.player_sideways_r;
+                                }
+                                keys.up = (inverse) ? !keys.up : keys.up;
+                                keys.down = (inverse) ? !keys.down : keys.down;
+                            }
+                            else if (keys.down && !keys.up) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                    currentFramePath = (directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
+                                }
+                            }
+                            else if (keys.up && !keys.down) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                    currentFramePath = (directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
+                                }
+                            }
+                            else {
+                                currentFramePath = files.playerFrame1;
+                            }
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    else if (abs(directionY) > 0 && directionX == 0) {
+                        //
+                        if (!(keys.up && !keys.right && !keys.left)) {                  //
+                            if ((keys.left || keys.right) && !(keys.left && keys.right) && !(keys.up || keys.down)) {
+                                bool inverse = (directionY > 0) ? false : true;
+                                keys.left = (inverse) ? !keys.left : keys.left;
+                                keys.right = (inverse) ? !keys.right : keys.right;
+                                if (keys.left) {
+                                    if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                        rolling = true;
+                                        currentFramePath = files.player_tilt_left;
+                                        rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (rolling) {
+                                        if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                            rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        currentFramePath = files.player_sideways_l;
+                                    }
+                                }
+                                else if (keys.right) {
+                                    if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                        rolling = true;
+                                        currentFramePath = files.player_tilt_right;
+                                        rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (rolling) {
+                                        if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                            rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        currentFramePath = files.player_sideways_r;
+                                    }
+                                }
+                                else {
+                                    currentFramePath = files.player_sideways_r;
+                                }
+                                keys.left = (inverse) ? !keys.left : keys.left;
+                                keys.right = (inverse) ? !keys.right : keys.right;
+                            }
+                            else if (keys.right && !keys.left) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                    currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                                }
+                            }
+                            else if (keys.left && !keys.right) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                    currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                                }
+                            }
+                            else {
+                                currentFramePath = files.playerFrame1;
+                            }
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    else if (abs(directionX) > 0 && directionY > 0) {
+                        if ((keys.left && keys.up) && directionX > 0) {
+                            currentFramePath = files.player_sideways_l;
+                        }
+                        else if ((keys.right && keys.up) && directionX < 0) {
+                            currentFramePath = files.player_sideways_r;
+                        }
+                        else if ((keys.down && keys.left && directionX < 0) || (keys.down && keys.right && directionX > 0)) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_sideways_r;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_sideways_l;
+                            }
+                        }
+                        else if ((keys.down && keys.left && directionX > 0) || (keys.down && keys.right && directionX < 0)) {
+                            currentFramePath = files.playerFrame1;
+                        }
+                        else if ((keys.up && (keys.right || keys.left)))
+                        {
+                            currentFramePath = files.playerFrame1;
+                        }
+                        else if (keys.up && !(keys.left || keys.right)) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                        else if (((keys.left && directionX < 0) || (keys.right && directionX > 0)) && !keys.up) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                        else if (((keys.right && directionX < 0) || (keys.left && directionX > 0)) && !keys.up) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                        else if (keys.down) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                    }
+                    else if (abs(directionX) > 0 && directionY < 0) {
+                        if ((keys.left && keys.down) && directionX > 0) {
+                            currentFramePath = files.player_sideways_r;
+                        }
+                        else if ((keys.right && keys.down) && directionX < 0) {
+                            currentFramePath = files.player_sideways_l;
+                        }
+                        else if ((keys.up && keys.left && directionX < 0) || (keys.up && keys.right && directionX > 0)) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_sideways_l;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_sideways_r;
+                            }
+                        }
+                        else if ((keys.up && keys.left && directionX > 0) || (keys.up && keys.right && directionX < 0)) {
+                            currentFramePath = files.playerFrame1;
+                        }
+                        else if ((keys.down && (keys.right || keys.left)))
+                        {
+                            currentFramePath = files.playerFrame1;
+                        }
+                        else if (keys.down && !(keys.left || keys.right)) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                        else if (((keys.left && directionX < 0) || (keys.right && directionX > 0)) && !keys.up) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                        else if (((keys.right && directionX < 0) || (keys.left && directionX > 0)) && !keys.up) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                        }
+                        else if (keys.up) {
+                            if (directionX > 0) {
+                                currentFramePath = files.player_tilt_left;
+                            }
+                            else if (directionX < 0) {
+                                currentFramePath = files.player_tilt_right;
+                            }
+                        }
+                    }
+                    /*if (!((keys.up && (keys.right || keys.left)) && (!keys.right && !keys.left))) {
+                        if ((keys.left || keys.right) && !(keys.left && keys.right) && !(keys.up || keys.down)) {
+                            bool inverse = (directionY > 0) ? false : true;
+                            keys.left = (inverse) ? !keys.left : keys.left;
+                            keys.right = (inverse) ? !keys.right : keys.right;
+                            if (keys.left) {
+                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                    rolling = true;
+                                    lastFrame = currentFramePath;
+                                    currentFramePath = files.player_tilt_left;
+                                    rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (rolling) {
+                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                        rolling = false;
+                                    }
+                                }
+                                else {
+                                    lastFrame = currentFramePath;
+                                    currentFramePath = files.player_sideways_l;
+                                }
+                            }
+                            else if (keys.right) {
+                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                    rolling = true;
+                                    lastFrame = currentFramePath;
+                                    currentFramePath = files.player_tilt_right;
+                                    rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (rolling) {
+                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                        rolling = false;
+                                    }
+                                }
+                                else {
+                                    lastFrame = currentFramePath;
+                                    currentFramePath = files.player_sideways_r;
+                                }
+                            }
+                            else {
+                                currentFramePath = files.player_sideways_r;
+                            }
+                            keys.left = (inverse) ? !keys.left : keys.left;
+                            keys.right = (inverse) ? !keys.right : keys.right;
+                        }
+                        else if (keys.right && !keys.left) {
+                            if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                rolling = false;
+                                currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                            }
+                        }
+                        else if (keys.left && !keys.right) {
+                            if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                rolling = false;
+                                currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                            }
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }*/
+                    else {
+                        lastFrame = currentFramePath;
+                        currentFramePath = files.playerFrame1;
+                    }
+                }
+                /*else if (abs(directionY) > 0 && directionX == 0 && (keys.left || keys.right)) {
+                    if (directionY > 0) {
+                        if (keys.left && keys.up) {
+                            currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                        }
+                        else if (keys.right && keys.up) {
+                            currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                        }
+                        else if (keys.left && !keys.up) {
+                            currentFramePath = (directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
+                        }
+                        else if (keys.right && !keys.up) {
+                            currentFramePath = (directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    if (directionY < 0) {
+                        if (keys.left && keys.down) {
+                            currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                        }
+                        else if (keys.right && keys.down) {
+                            currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                        }
+                        else if (keys.left && !keys.down) {
+                            currentFramePath = (directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
+                        }
+                        else if (keys.right && !keys.down) {
+                            currentFramePath = (directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                }
+                else if (abs(directionX) > 0 && directionY > 0) {
+                    if (directionX > 0) {
+                        if (keys.right && keys.down) {
+                            currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.up && keys.left) {
+                            currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.up && !keys.right) {
+                            currentFramePath = files.player_tilt_left;
+                        }
+                        else if (keys.right && !keys.up) {
+                            currentFramePath = files.player_tilt_right;
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    else {
+                        if (keys.left && keys.down) {
+                            currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.up && keys.right) {
+                            currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.up && !keys.left) {
+                            currentFramePath = files.player_tilt_right;
+                        }
+                        else if (keys.left && !keys.up) {
+                            currentFramePath = files.player_tilt_left;
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                }
+                else if (abs(directionX) > 0 && directionY < 0) {
+                    if (directionX > 0) {
+                        if (keys.right && keys.up) {
+                            currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.down && keys.left) {
+                            currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.down && !keys.right) {
+                            currentFramePath = files.player_tilt_right;
+                        }
+                        else if (keys.right && !keys.down) {
+                            currentFramePath = files.player_tilt_left;
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                    else {
+                        if (keys.left && keys.up) {
+                            currentFramePath = files.player_sideways_r;
+                        }
+                        else if (keys.down && keys.right) {
+                            currentFramePath = files.player_sideways_l;
+                        }
+                        else if (keys.down && !keys.left) {
+                            currentFramePath = files.player_tilt_left;
+                        }
+                        else if (keys.left && !keys.down) {
+                            currentFramePath = files.player_tilt_right;
+                        }
+                        else {
+                            currentFramePath = files.playerFrame1;
+                        }
+                    }
+                }
+                //else if (abs(directionY) > 0 && directionX == 0) {
+                //    currentFramePath = (keys.right - keys.left) ? files.player_tilt_right : files.player_tilt_left;
+                //}
+                */
+            }
+            else if (keys.f) { // If pressing f with no directional input
+                if (lastFrame == files.player_sideways_l || lastFrame == files.player_sideways_r) {
+                    rolling = true;
+                    lastFrame = currentFramePath;
+                    if (lastFrame == files.player_sideways_l) {
+                        currentFramePath = files.player_tilt_left;
+                    }
+                    else if (lastFrame == files.player_sideways_r) {
+                        currentFramePath = files.player_tilt_right;
+                    }
+                    rollTime = std::chrono::steady_clock::now();
+                }
+                else if (rolling) {
+                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                        rolling = false;
+                        lastFrame = currentFramePath;
+                        currentFramePath = files.playerFrame1;
+                    }
+                }
+                else {
+                    lastFrame = currentFramePath;
+                    currentFramePath = files.playerFrame1;
+                }
+            }
+
+            if (!dead && !keys.f) {
+                // Cycle Thruster Animation
+                if (std::chrono::steady_clock::now() - lastThrusterTime >= std::chrono::milliseconds(100)) {
+                    lastThrusterTime = std::chrono::steady_clock::now();
+                    if (currentFramePath == files.playerFrame1) {
+                        currentFramePath = files.playerFrame2;
+                    }
+                    else {
+                        currentFramePath = files.playerFrame1;
+                    }
+                }
+            }
+        }
+    }
+
+    void UpdateRedLightEffect(double deltaTime) {
+        // Cycle Ship's Red Lights effects
+        if ((std::chrono::steady_clock::now() - lastRedLightTime) >= std::chrono::milliseconds(100)) {
+            lastRedLightTime = std::chrono::steady_clock::now();
+            if (redLightFrame == files.playerRedLightffect1) {
+                redLightFrame = files.playerRedLightffect2;
+            }
+            else if (redLightFrame == files.playerRedLightffect2) {
+                redLightFrame = files.playerRedLightffect3;
+            }
+            else if (redLightFrame == files.playerRedLightffect3) {
+                redLightFrame = files.playerRedLightffect4;
+            }
+            else if (redLightFrame == files.playerRedLightffect4) {
+                redLightFrame = files.playerRedLightffect5;
+            }
+            else if (redLightFrame == files.playerRedLightffect5) {
+                redLightFrame = files.playerRedLightffect6;
+            }
+            else if (redLightFrame == files.playerRedLightffect6) {
+                redLightFrame = files.playerRedLightffect7;
+                fullBrightStart = std::chrono::steady_clock::now();
+            }
+            else if (std::chrono::steady_clock::now() - fullBrightStart >= std::chrono::milliseconds(500)) {
+                redLightFrame = files.playerRedLightffect1;
+            }
+        }
+    }
+
+    void ApplyShootingLogic(double deltaTime) {
+        // Apply Ship's Shooting Logic
+        if (keys.space && !basicShotFrame && (std::chrono::steady_clock::now() - lastShotEffectTime >= std::chrono::milliseconds(250))) {
+
+            lastShotEffectTime = std::chrono::steady_clock::now();
+            double xPosition, yPosition;
+
+            if (doubleShot) {
+                double xOffset(0), yOffset(0);
+                xOffset = (-1.8 * sin(angleRadians * 2)) - 4;
+                yOffset = 4 - ((4 / sin(pi / 4)) * sin(angleRadians));
+                if (angleRadians > -pi / 6 && angleRadians < pi / 6) {
+                    xOffset = -4;
+                    yOffset = 4;
+                }
+                else if (angleRadians > (pi / 6) && angleRadians < (pi / 3)) {
+                    xOffset = -5.6568542494923801952067548968388;
+                    yOffset = 0;
+                }
+                else if (angleRadians > (pi / 3) && angleRadians < (2 * pi / 3)) {
+                    xOffset = -4;
+                    yOffset = 4;
+                }
+                else if (angleRadians > (2 * pi / 3) && angleRadians < (5 * pi / 6)) {
+                    xOffset = 0;
+                    yOffset = -5.6568542494923801952067548968388;
+                }
+                else if (angleRadians > (5 * pi / 6) && angleRadians < (7 * pi / 6)) {
+                    xOffset = 4;
+                    yOffset = -4;
+                }
+                else if (angleRadians > (-5 * pi / 6) && angleRadians < (-2 * pi / 3)) {
+                    xOffset = 5.6568542494923801952067548968388;
+                    yOffset = 0;
+                }
+                else if (angleRadians > (-2 * pi / 3) && angleRadians < (-pi / 3)) {
+                    xOffset = 4;
+                    yOffset = 4;
+                }
+                else if (angleRadians > (-pi / 3) && angleRadians < 0) {
+                    xOffset = 0;
+                    yOffset = 5.6568542494923801952067548968388;
+                }
+                bullets.emplace_back(files.basicShotDefault);
+                bullets.back().xPos = xPos + xOffset + (11 * sin(angleRadians));
+                bullets.back().yPos = yPos + yOffset - (11 * cos(angleRadians));
+                bullets.back().power = power;
+                bullets.back().UpdateHitBox();
+                bullets.back().angleRadians = angleRadians;
+                bullets.back().yVel = round(-cos(angleRadians) * 100) / 100;
+                if (abs(bullets.back().yVel) < 0.0001) {
+                    bullets.back().yVel = 0;
+                }
+                bullets.back().xVel = round(sin(angleRadians) * 100) / 100;
+                if (abs(bullets.back().xVel) < 0.0001) {
+                    bullets.back().xVel = 0;
+                }
+
+
+                if (angleRadians > -pi / 6 && angleRadians < pi / 6) {
+                    xOffset = 4;
+                    yOffset = 4;
+                }
+                else if (angleRadians > (pi / 6) && angleRadians < (pi / 3)) {
+                    xOffset = 0;
+                    yOffset = 5.6568542494923801952067548968388;
+                }
+                else if (angleRadians > (pi / 3) && angleRadians < (2 * pi / 3)) {
+                    xOffset = -4;
+                    yOffset = -4;
+                }
+                else if (angleRadians > (2 * pi / 3) && angleRadians < (5 * pi / 6)) {
+                    xOffset = -5.6568542494923801952067548968388;
+                    yOffset = 0;
+                }
+                else if (angleRadians > (5 * pi / 6) && angleRadians < (7 * pi / 6)) {
+                    xOffset = -4;
+                    yOffset = -4;
+                }
+                else if (angleRadians > (-5 * pi / 6) && angleRadians < (-2 * pi / 3)) {
+                    xOffset = 0;
+                    yOffset = -5.6568542494923801952067548968388;
+                }
+                else if (angleRadians > (-2 * pi / 3) && angleRadians < (-pi / 3)) {
+                    xOffset = 4;
+                    yOffset = -4;
+                }
+                else if (angleRadians > (-pi / 3) && angleRadians < 0) {
+                    xOffset = 5.6568542494923801952067548968388;
+                    yOffset = 0;
+                }
+                xPosition = xPos + xOffset + (11 * sin(angleRadians));
+                yPosition = yPos + yOffset - (11 * cos(angleRadians));
+            }
+            else {
+                xPosition = xPos + (11 * sin(angleRadians));
+                yPosition = yPos - (11 * cos(angleRadians));
+            }
+
+
+            // Create new bullet, position it with player, give it its velocities
+            bullets.emplace_back(files.basicShotDefault);
+            bullets.back().xPos = xPosition;
+            bullets.back().yPos = yPosition;
+            bullets.back().UpdateHitBox();
+            bullets.back().power = power;
+            bullets.back().angleRadians = angleRadians;
+            bullets.back().yVel = round(-cos(angleRadians) * 100) / 100;
+            bullets.back().modulator = double((rand() % 628)) / 100;
+            bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
+            int result = (rand() % 2);
+            if (modulatorTicker == true) {
+                modulatorTicker = false;
+                bullets.back().modulatorPositiveDelta = false;
+            }
+            else {
+                modulatorTicker = true;
+                bullets.back().modulatorPositiveDelta = true;
+            }
+            if (abs(bullets.back().yVel) < 0.0001) {
+                bullets.back().yVel = 0;
+            }
+            bullets.back().xVel = round(sin(angleRadians) * 100) / 100;
+            if (abs(bullets.back().xVel) < 0.0001) {
+                bullets.back().xVel = 0;
+            }
+
+            basicShotFrame = files.basicShotEffect1;
+        }
+        else if (basicShotFrame == files.basicShotEffect1 &&
+            (std::chrono::steady_clock::now() - lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
+            lastShotEffectTime = std::chrono::steady_clock::now();
+            basicShotFrame = files.basicShotEffect2;
+        }
+        else if (basicShotFrame == files.basicShotEffect2 &&
+            (std::chrono::steady_clock::now() - lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
+            lastShotEffectTime = std::chrono::steady_clock::now();
+            basicShotFrame = files.basicShotEffect3;
+        }
+        else if (basicShotFrame == files.basicShotEffect3 &&
+            (std::chrono::steady_clock::now() - lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
+            lastShotEffectTime = std::chrono::steady_clock::now();
+            basicShotFrame = files.basicShotEffect4;
+        }
+        else if (basicShotFrame == files.basicShotEffect4 &&
+            (std::chrono::steady_clock::now() - lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
+            lastShotEffectTime = std::chrono::steady_clock::now();
+            basicShotFrame = files.basicShotEffect5;
+        }
+        else if ((basicShotFrame == files.basicShotEffect5) &&
+            (std::chrono::steady_clock::now() - lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
+            basicShotFrame = nullptr;
+        }
+    }
+
+    void UpdateBullets(double deltaTime, std::vector<Object> &objects) {
+        // Bullet logic
+        if (!bullets.empty()) {
+            for (auto it = bullets.begin(); it != bullets.end(); ) {
+                if (it->collided && std::chrono::steady_clock::now() - it->explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
+                    it = bullets.erase(it);
+                }
+                else if (!it->collided) {
+
+                    for (auto& object : objects) {
+                        if (object.destructible && !object.dead) {
+                            if (it->CheckCollision(object)) {
+                                object.damaged = true;
+                                object.damageBegins = std::chrono::steady_clock::now();
+                                object.currentFramePath = object.damagedFrame;
+                                object.health -= it->power;
+                                it->currentFramePath = files.explosion1;
+                                it->collided = true;
+                                it->explosionBegin = std::chrono::steady_clock::now();
+                            }
+                        }
+                    }
+
+                    if (!it->collided) {
+                        it->xPos += 7 * (deltaTime * it->xVel);
+                        it->yPos += 7 * (deltaTime * it->yVel);
+                    }
+                    it->UpdateHitBox();
+                }
+                if (it != bullets.end()) {
+                    ++it;
+                }
+            }
+        }
+    }
 };
 
 class Enemy : public Object {
 public:
-
 };
 
 class Turret : public Object {
@@ -439,53 +1161,62 @@ public:
 
 class Door : public Object {
 public:
-    float positionX, positionY, destinationX, destinationY;
-    int destID;
-    bool entered = false;
+    float destX, destY;
+    unsigned __int8 destID;
 
-    Door(float x, float y, float dX, float dY, int dest) {
-        positionX = x;
-        positionY = y;
-        destinationX = dX;
-        destinationY = dY;
-        destID = dest;
+    // LIterally only doing this so it's easier to debug
+    struct {
+        double left;
+        double right;
+        double up;
+        double down;
+    } hbox;
+
+    Door(float l, float r, float u, float d, float toX, float toY, unsigned __int8 toID, LPCWSTR file) {
+        hbox.left = l;
+        hbox.right = r;
+        hbox.up = u;
+        hbox.down = d;
+        destX = toX;
+        destY = toY;
+        destID = toID;
+        currentFramePath = file;
+    }
+
+    void UpdateHitBox() {
+        ID2D1Bitmap* object = bitmaps[currentFramePath];
+
+        D2D1_SIZE_F size = object->GetSize();
+
+        hbox.left = xPos - (size.width / 2);
+        hbox.right = xPos + (size.width / 2);
+        hbox.up = yPos - (size.height / 2);
+        hbox.down = yPos + (size.height / 2);
     }
 };
 
-class Environment : public Object {
+class Environment {
 public:
-    int id;
-    std::string name;
+    unsigned __int8 id;
+    LPCWSTR frame;
     std::vector<Door> doors;
+    bool overworld = false;
 
-    Environment(std::string nm, int idee) {
-        name = nm;
-        id = idee;
+    Environment(LPCWSTR file, unsigned __int8 ident, bool ow) {
+        frame = file;
+        id = ident;
+        overworld = ow;
     }
 
-    void addDoor(float x, float y, float dX, float dY, int dest) {
-        doors.emplace_back(x, y, dX, dY, dest);
-    }
-
-    int CheckDoorCollision(Player player) {
-        for (auto door : doors) {
-            if (player.CheckCollision(door)) {
-                door.entered = true;
-                return door.destID;
-            }
-        }
-        return -1;
-    }
-
-    void EnterDoor(Player player, int envID) {
-        if (envID == -1) {
-            return;
-        }
-        player.xPos;
+    void AddDoor(float l, float r, float u, float d, float toX, float toY, unsigned __int8 toID, LPCWSTR file) {
+        doors.emplace_back(l, r, u, d, toX, toY, toID, file);
     }
 };
 
 
+//-------------------------------
+// Resource Management Functions
+//-------------------------------
 
 void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
     HRESULT hr = S_OK;
@@ -594,11 +1325,12 @@ void ReleaseD2DResourcesFromMemory()
     bitmaps.clear();
 }
 
-LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+//--------------
 // Declarations
+//--------------
+
 std::vector<LPCWSTR> spriteFilePaths;
-std::vector<Object> bullets;
 std::vector<Object> enemyBullets;
 Player player;
 Object pickup;
@@ -611,8 +1343,1070 @@ std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGr
 std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
 std::unordered_set<std::pair<int, int>, hash_function> pendingChunks;
 std::mutex chunkInProgress; 
-std::vector<Environment> rooms;
-int currRoom(0);
+std::vector<Environment> environments;
+unsigned __int8 currEnvID(1);
+
+
+//-------------------------
+// Consolidatory Functions 
+//-------------------------
+
+void InitializeAssets() {
+    // Filenames vector
+    spriteFilePaths.emplace_back(files.background);
+    spriteFilePaths.emplace_back(files.playerFrame1);
+    spriteFilePaths.emplace_back(files.playerFrame2);
+    spriteFilePaths.emplace_back(files.playerRedLightffect1);
+    spriteFilePaths.emplace_back(files.playerRedLightffect2);
+    spriteFilePaths.emplace_back(files.playerRedLightffect3);
+    spriteFilePaths.emplace_back(files.playerRedLightffect4);
+    spriteFilePaths.emplace_back(files.playerRedLightffect5);
+    spriteFilePaths.emplace_back(files.playerRedLightffect6);
+    spriteFilePaths.emplace_back(files.playerRedLightffect7);
+    spriteFilePaths.emplace_back(files.playerRedLightffect8);
+    spriteFilePaths.emplace_back(files.playerRedLightffect9);
+    spriteFilePaths.emplace_back(files.asteroid1);
+    spriteFilePaths.emplace_back(files.pause);
+    spriteFilePaths.emplace_back(files.pauseBackground);
+    spriteFilePaths.emplace_back(files.basicShotEffect1);
+    spriteFilePaths.emplace_back(files.basicShotEffect2);
+    spriteFilePaths.emplace_back(files.basicShotEffect3);
+    spriteFilePaths.emplace_back(files.basicShotEffect4);
+    spriteFilePaths.emplace_back(files.basicShotEffect5);
+    spriteFilePaths.emplace_back(files.basicShotDefault);
+    spriteFilePaths.emplace_back(files.basicShotPurple);
+    spriteFilePaths.emplace_back(files.basicShotBlue);
+    spriteFilePaths.emplace_back(files.hitBox);
+    spriteFilePaths.emplace_back(files.hurtBox);
+    spriteFilePaths.emplace_back(files.enemyShip1);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue1);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue2);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue3);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue4);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue5);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple1);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple2);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple3);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple4);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple5);
+    spriteFilePaths.emplace_back(files.enemyShip1Damaged);
+    spriteFilePaths.emplace_back(files.explosion1);
+    spriteFilePaths.emplace_back(files.explosion2);
+    spriteFilePaths.emplace_back(files.explosion3);
+    spriteFilePaths.emplace_back(files.explosion4);
+    spriteFilePaths.emplace_back(files.doubleShotPickup);
+    spriteFilePaths.emplace_back(files.base);
+    spriteFilePaths.emplace_back(files.brody_the_toad);
+    /*spriteFilePaths.emplace_back(files.brody_the_toad_pain);*/
+    spriteFilePaths.emplace_back(files.turret);
+    spriteFilePaths.emplace_back(files.turret_Shader);
+    spriteFilePaths.emplace_back(files.turret_Damaged);
+    spriteFilePaths.emplace_back(L"Sprites\\Menu\\How_To_Play_Screen.png");
+    spriteFilePaths.emplace_back(files.shield_Generator);
+    spriteFilePaths.emplace_back(files.shield_Generator_Damaged);
+    spriteFilePaths.emplace_back(files.base_Door);
+    spriteFilePaths.emplace_back(files.base_Interior);
+    spriteFilePaths.emplace_back(files.entrance);
+    spriteFilePaths.emplace_back(files.status_Bar);
+    spriteFilePaths.emplace_back(files.health_Bar);
+    spriteFilePaths.emplace_back(files.player_Death_Animation_1);
+    spriteFilePaths.emplace_back(files.player_Death_Animation_2);
+    spriteFilePaths.emplace_back(files.player_Death_Animation_3);
+    spriteFilePaths.emplace_back(files.jewel_Blue);
+    spriteFilePaths.emplace_back(files.jewel_Green);
+    spriteFilePaths.emplace_back(files.jewel_Purple);
+    spriteFilePaths.emplace_back(files.jewel_Red);
+    spriteFilePaths.emplace_back(files.jewel_Silver);
+    spriteFilePaths.emplace_back(files.jewel_Yellow);
+    spriteFilePaths.emplace_back(files.boost_Bar_top);
+    spriteFilePaths.emplace_back(files.boost_Bar_bottom);
+    spriteFilePaths.emplace_back(files.font_0);
+    spriteFilePaths.emplace_back(files.font_1);
+    spriteFilePaths.emplace_back(files.font_2);
+    spriteFilePaths.emplace_back(files.font_3);
+    spriteFilePaths.emplace_back(files.font_4);
+    spriteFilePaths.emplace_back(files.font_5);
+    spriteFilePaths.emplace_back(files.font_6);
+    spriteFilePaths.emplace_back(files.font_7);
+    spriteFilePaths.emplace_back(files.font_8);
+    spriteFilePaths.emplace_back(files.font_9);
+    spriteFilePaths.emplace_back(files.hp_pickup_1);
+    spriteFilePaths.emplace_back(files.hp_pickup_2);
+    spriteFilePaths.emplace_back(files.hp_pickup_3);
+    spriteFilePaths.emplace_back(files.bomber_drone);
+    spriteFilePaths.emplace_back(files.drone_Shot_1);
+    spriteFilePaths.emplace_back(files.drone_Shot_2);
+    spriteFilePaths.emplace_back(files.drone_Shot_3);
+    spriteFilePaths.emplace_back(files.drone_Shot_4);
+    spriteFilePaths.emplace_back(files.drone_Shot_5);
+    spriteFilePaths.emplace_back(files.drone_Shot_6);
+    spriteFilePaths.emplace_back(files.drone_Shot_7);
+    spriteFilePaths.emplace_back(files.asteroid_2);
+    spriteFilePaths.emplace_back(files.map_frame);
+    spriteFilePaths.emplace_back(files.base_icon);
+    spriteFilePaths.emplace_back(files.boss_icon);
+    spriteFilePaths.emplace_back(files.player_tilt_left);
+    spriteFilePaths.emplace_back(files.player_tilt_right);
+    spriteFilePaths.emplace_back(files.player_sideways_l);
+    spriteFilePaths.emplace_back(files.player_sideways_r);
+    spriteFilePaths.emplace_back(files.player_upside_tilted_l);
+    spriteFilePaths.emplace_back(files.player_upside_tilted_r);
+
+    player.power = 2;
+    player.health = 100;
+    player.maxHP = 100;
+    player.xPos = float(mapSizeX) * 0.55;
+    player.yPos = float(mapSizeY) * 0.8;
+
+    environments.emplace_back(nullptr, 1, true);
+
+    std::uniform_int_distribution<int> range(1, 100000);
+    int minY = std::max(int(player.yPos / 224) - 1, 0);
+    int minX = std::max(int(player.xPos / 256) - 1, 0);
+    int maxY = std::min(int(player.yPos / 224) + 1, int(mapSizeY / 224));
+    int maxX = std::min(int(player.xPos / 256) + 2, int(mapSizeY / 256));
+
+    for (int y = minY; y <= maxY; y++) {
+        bool updated = false;
+        for (int x = minX; x <= maxX; x++) {
+            int roll = range(generator);
+            if (roll <= 250) {
+                updated = true;
+                std::pair<int, int> cell = { x / 256, y / 224 };
+                std::vector<std::pair<int, int>> chunks = { cell };
+                if (x == 0) {
+                    chunks.emplace_back((x - 1) / 256, y / 224);
+                }
+                else if (x == 256) {
+                    chunks.emplace_back((x + 1) / 256, y / 224);
+                }
+                if (y == 0) {
+                    chunks.emplace_back(x / 256, (y - 1) / 224);
+                }
+                else if (y == 224) {
+                    chunks.emplace_back(x / 256, (y + 1) / 224);
+                }
+
+                bool starFound = false;
+                for (const auto chunk : chunks) {
+                    auto it = starGrid.find(chunk);
+                    if (it != starGrid.end()) {
+                        for (const auto& star : it->second) {
+                            if (std::abs(star.xPos - x) <= 1 || std::abs(star.yPos - y) <= 1) {
+                                starFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (starFound) {
+                        break;
+                    }
+                }
+
+                int r, g, b;
+                roll = range(generator);
+                if (roll <= 92000) {
+                    r = g = b = 200;
+                }
+                else if (roll <= 94660) {
+                    r = 102;
+                    g = 138;
+                    b = 200;
+                }
+                else if (roll <= 97320) {
+                    r = 200;
+                    g = 200;
+                    b = 200;
+                }
+                else {
+                    r = 200;
+                    g = 53;
+                    b = 46;
+                }
+                roll = range(generator);
+                float alpha = std::max(float(roll) / 100000.0, 0.01);
+                starGrid[cell].emplace_back(x, y, r, g, b, alpha);
+            }
+            roll = range(generator);
+            if (roll <= 5) {
+                std::pair<int, int> cell = { x / 256, y / 224 };
+                asteroids[cell].emplace_back(x, y);
+            }
+        }
+    }
+
+    background.currentFramePath = files.background;
+
+    // Initializations
+    std::pair <double, double> turretOffsets[12];
+    turretOffsets[0].first = -130.5;
+    turretOffsets[1].first = -151.5;
+    turretOffsets[2].first = -109.5;
+    turretOffsets[3].first = 128.5;
+    turretOffsets[4].first = 149.5;
+    turretOffsets[5].first = 107.5;
+    turretOffsets[6].first = -130.5;
+    turretOffsets[7].first = -151.5;
+    turretOffsets[8].first = -109.5;
+    turretOffsets[9].first = 128.5;
+    turretOffsets[10].first = 149.5;
+    turretOffsets[11].first = 107.5;
+
+    turretOffsets[0].second = -153.5;
+    turretOffsets[1].second = -111.5;
+    turretOffsets[2].second = -111.5;
+    turretOffsets[3].second = -153.5;
+    turretOffsets[4].second = -111.5;
+    turretOffsets[5].second = -111.5;
+    turretOffsets[6].second = 100.5;
+    turretOffsets[7].second = 142.5;
+    turretOffsets[8].second = 142.5;
+    turretOffsets[9].second = 98.5;
+    turretOffsets[10].second = 140.5;
+    turretOffsets[11].second = 140.5;
+
+    bases.emplace_back(files.base);
+    bases.at(0).xPos = .6 * mapSizeX;
+    bases.at(0).yPos = .8 * mapSizeY;
+    bases.emplace_back(files.base);
+    bases.at(1).xPos = .6 * mapSizeX;
+    bases.at(1).yPos = .2 * mapSizeY;
+    bases.emplace_back(files.base);
+    bases.at(2).xPos = .85 * mapSizeX;
+    bases.at(2).yPos = .5 * mapSizeY;
+    std::pair <double, double> shieldOffsets[12];
+    shieldOffsets[0].first = -130.5;
+    shieldOffsets[1].first = -130.5;
+    shieldOffsets[2].first = 128.5;
+    shieldOffsets[3].first = 128.5;
+    shieldOffsets[0].second = -127.5;
+    shieldOffsets[1].second = 126.5;
+    shieldOffsets[2].second = -127.5;
+    shieldOffsets[3].second = 124.5;
+    for (int i = 0; i < bases.size(); i++) {
+        for (int j = 0; j <= 11; j++) {
+            objects.emplace_back(
+                L"Turret",
+                bases.at(i).xPos + turretOffsets[j].first,
+                bases.at(i).yPos + turretOffsets[j].second,
+                3,
+                files.turret,
+                true,
+                0,
+                files.turret_Damaged,
+                files.turret,
+                0,
+                0,
+                true,
+                true,
+                true
+            );
+            objects[j + (i * 17)].turnRadius = pi / 4;
+            objects[j + (i * 17)].shotSpeed = std::chrono::milliseconds(1250);
+            objects[j + (i * 17)].shotVelocity = 5;
+            objects[j + (i * 17)].shotType = files.basicShotBlue;
+            objects[j + (i * 17)].defaultShotEffect = files.basicShotEffectBlue1;
+            objects[j + (i * 17)].power = 10;
+        }
+        for (int j = 0; j <= 3; j++) {
+            objects.emplace_back(
+                L"Shield Generator",
+                bases.at(i).xPos + shieldOffsets[j].first,
+                bases.at(i).yPos + shieldOffsets[j].second,
+                5,
+                files.shield_Generator,
+                true,
+                0,
+                files.shield_Generator_Damaged,
+                files.shield_Generator,
+                0,
+                0,
+                false,
+                true,
+                false
+            );
+        }
+        objects.emplace_back(
+            L"Base Door",
+            bases.at(i).xPos - 181.5,
+            bases.at(i).yPos - 0.5,
+            -1,
+            files.base_Door,
+            false,
+            0,
+            nullptr,
+            files.base_Door,
+            0,
+            0,
+            false,
+            true,
+            false
+        );
+        float hboxL = bases.at(i).xPos - 181.5;
+        float hboxU = bases.at(i).yPos - 0.5;
+        environments.at(0).AddDoor(hboxL, hboxL + 20, hboxU, hboxU + 20, 0, 128, 1, files.base_Door);
+        environments.emplace_back(files.base_Interior, i + 2, false);
+        environments.at(i + 1).AddDoor(0, 2, 100, 200, hboxL - 20, hboxU, 1, nullptr);
+    }
+
+    objects.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
+        files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, false, false);
+
+    objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (5 * scalerY), 0,
+        files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, false, false);
+
+    objects.emplace_back(L"Boost_Bar_Top", leftBoundary + (6 * scalerX), (11 * scalerY), 0,
+        files.boost_Bar_top, false, 0, nullptr, files.boost_Bar_top, 0, 0, false, false, false);
+
+    objects.emplace_back(L"Boost_Bar_Bottom", leftBoundary + (6 * scalerX), (12 * scalerY), 0,
+        files.boost_Bar_bottom, false, 0, nullptr, files.boost_Bar_bottom, 0, 0, false, false, false);
+}
+
+void CycleShotEffect(Object& object) {
+    if (object.defaultShotEffect == files.basicShotEffectBlue1) {
+        if (object.shotFrame == files.basicShotEffectBlue1 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectBlue2;
+        }
+        else if (object.shotFrame == files.basicShotEffectBlue2 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectBlue3;
+        }
+        else if (object.shotFrame == files.basicShotEffectBlue3 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectBlue4;
+        }
+        else if (object.shotFrame == files.basicShotEffectBlue4 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectBlue5;
+        }
+        else if ((object.shotFrame == files.basicShotEffectBlue5) &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.shotFrame = nullptr;
+        }
+    }
+    else if (object.defaultShotEffect == files.basicShotEffectPurple1) {
+        if (object.shotFrame == files.basicShotEffectPurple1 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectPurple2;
+        }
+        else if (object.shotFrame == files.basicShotEffectPurple2 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectPurple3;
+        }
+        else if (object.shotFrame == files.basicShotEffectPurple3 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectPurple4;
+        }
+        else if (object.shotFrame == files.basicShotEffectPurple4 &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.lastShotTime = std::chrono::steady_clock::now();
+            object.shotFrame = files.basicShotEffectPurple5;
+        }
+        else if ((object.shotFrame == files.basicShotEffectPurple5) &&
+            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
+            object.shotFrame = nullptr;
+        }
+    }
+}
+
+void UpdateBackgroundElements(double deltaTime) {
+    int rightBound = (int(player.xPos + 128) / 256) + 1;
+    int lowBound = (int(player.yPos + 112) / 224) + 1;
+
+    int leftBound = ((int(player.xPos) - 128) / 256);
+    int upBound = ((int(player.yPos) - 112) / 224);
+
+    for (int y = upBound; y <= lowBound; ++y) {
+        for (int x = leftBound; x <= rightBound; ++x) {
+            auto it = starGrid.find({ x, y });
+            if (it != starGrid.end()) {
+                for (Star& star : it->second) {
+                    star.Pulsate(deltaTime);
+                }
+            }
+            else {
+                std::pair<int, int> cell = { x, y };
+
+                std::lock_guard<std::mutex> lock(chunkInProgress);
+                if (pendingChunks.count(cell)) {
+                    continue;
+                }
+                else {
+                    pendingChunks.insert(cell);
+                }
+
+                if (isMultiCore) {
+                    std::thread([cell, x, y]() mutable {
+                        std::vector<std::pair<int, int>> chunks = { cell };
+                    std::uniform_int_distribution<int> range(1, 100000);
+
+                    for (int i = y * 224; i <= ((y * 224) + 224); i++) {
+                        for (int j = x * 256; j <= ((x * 256) + 256); j++) {
+                            int roll = range(generator);
+                            if (roll <= 250) {
+                                bool starFound = false;
+                                auto it = starGrid.find(cell);
+                                if (it != starGrid.end()) {
+                                    for (const auto& star : it->second) {
+                                        if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
+                                            starFound = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!starFound) {
+                                    int r, g, b;
+                                    roll = range(generator);
+                                    if (roll <= 92000) {
+                                        r = g = b = 200;
+                                    }
+                                    else if (roll <= 94660) {
+                                        r = 102;
+                                        g = 138;
+                                        b = 200;
+                                    }
+                                    else if (roll <= 97320) {
+                                        r = 200;
+                                        g = 200;
+                                        b = 200;
+                                    }
+                                    else {
+                                        r = 200;
+                                        g = 53;
+                                        b = 46;
+                                    }
+                                    roll = range(generator);
+                                    float alpha = std::max(float(roll) / 100000.0, 0.01);
+
+                                    std::lock_guard<std::mutex> lock(chunkInProgress);
+                                    starGrid[cell].emplace_back(j, i, r, g, b, alpha);
+                                }
+                            }
+                            roll = range(generator);
+                            if (roll <= 5) {
+                                std::lock_guard<std::mutex> lock(chunkInProgress);
+                                asteroids[cell].emplace_back(j, i);
+                            }
+                        }
+                    }
+
+                    std::lock_guard<std::mutex> lock(chunkInProgress);
+                    pendingChunks.erase(cell);
+                        }).detach();
+
+                }
+                else {
+                    int rightBound = (int(player.xPos + 128) / 256) + 1;
+                    int lowBound = (int(player.yPos + 112) / 224) + 1;
+
+                    int leftBound = ((int(player.xPos) - 128) / 256);
+                    int upBound = ((int(player.yPos) - 112) / 224);
+
+                    for (int y = upBound; y <= lowBound; ++y) {
+                        for (int x = leftBound; x <= rightBound; ++x) {
+                            auto it = starGrid.find({ x, y });
+                            if (it != starGrid.end()) {
+                                for (Star& star : it->second) {
+                                    star.Pulsate(deltaTime);
+                                }
+                            }
+                            else {
+                                std::pair<int, int> cell = { x, y };
+                                std::vector<std::pair<int, int>> chunks = { cell };
+                                std::uniform_int_distribution<int> range(1, 100000);
+                                bool updated = false;
+                                for (int i = y * 224; i <= ((y * 224) + 224); i++) {
+                                    for (int j = x * 256; j <= ((x * 256) + 256); j++) {
+                                        int roll = range(generator);
+                                        if (roll <= 250) {
+                                            updated = true;
+                                            std::pair<int, int> cell = { x , y };
+                                            std::vector<std::pair<int, int>> chunks = { cell };
+
+                                            bool starFound = false;
+                                            for (const auto chunk : chunks) {
+                                                auto it = starGrid.find(chunk);
+                                                if (it != starGrid.end()) {
+                                                    for (const auto& star : it->second) {
+                                                        if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
+                                                            starFound = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                if (starFound) {
+                                                    break;
+                                                }
+                                            }
+
+                                            int r, g, b;
+                                            roll = range(generator);
+                                            if (roll <= 92000) {
+                                                r = g = b = 200;
+                                            }
+                                            else if (roll <= 94660) {
+                                                r = 102;
+                                                g = 138;
+                                                b = 200;
+                                            }
+                                            else if (roll <= 97320) {
+                                                r = 200;
+                                                g = 200;
+                                                b = 200;
+                                            }
+                                            else {
+                                                r = 200;
+                                                g = 53;
+                                                b = 46;
+                                            }
+                                            roll = range(generator);
+                                            float alpha = std::max(float(roll) / 100000.0, 0.01);
+                                            starGrid[cell].emplace_back(j, i, r, g, b, alpha);
+                                        }
+                                        roll = range(generator);
+                                        if (roll <= 5) {
+                                            std::pair<int, int> cell = { x, y };
+                                            asteroids[cell].emplace_back(j, i);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void HandleEnemySpawns(double deltaTime, bool spawnEnemies, bool spawnsExist) {
+    for (int i = 0; i < objects.size(); i++) {
+        if (objects.at(i).randomSpawner) {
+            if ((abs(objects.at(i).xPos - player.xPos) > 256) || (abs(objects.at(i).yPos - player.yPos) > 224)) {
+                objects.erase(objects.begin() + i);
+                i--;
+                timeSinceSpawn = std::chrono::steady_clock::now();
+                continue;
+            }
+            spawnEnemies = false;
+            spawnsExist = true;
+        }
+    }
+    if (!player.sideMode && (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10)))) {
+        for (int i = 0; i < 3; i++) {
+            std::uniform_int_distribution<int> distribution(0, 1);
+            bool binary = distribution(generator);
+            std::uniform_int_distribution<int> fdistribution(0, 960);
+            int placement = fdistribution(generator);
+            int xOffset = 0;
+            int yOffset = 0;
+            if (placement <= 256) {
+                xOffset = placement / 2;
+                yOffset = -124;
+            }
+            else if (placement >= 480 && placement <= 736) {
+                xOffset - (placement - 480) / 2;
+                yOffset = 124;
+            }
+            else if (placement > 256 && placement < 480) {
+                yOffset = (placement - 256) / 2;
+                xOffset = 140;
+            }
+            else {
+                yOffset = (placement - 736) / 2;
+                xOffset = -140;
+            }
+            if (binary) {
+                objects.emplace_back(L"Bomber Drone",
+                    player.xPos + xOffset,
+                    player.yPos + yOffset,
+                    2,
+                    files.bomber_drone,
+                    true,
+                    0,
+                    files.bomber_drone,
+                    files.bomber_drone,
+                    0.25,
+                    0.25,
+                    true,
+                    true,
+                    true
+                );
+                objects.back().turnRadius = pi / 4;
+                objects.back().shotSpeed = std::chrono::milliseconds(6000);
+                objects.back().shotVelocity = 2;
+                objects.back().shotType = files.drone_Shot_1;
+                objects.back().defaultShotEffect = files.basicShotEffectPurple1;
+                objects.back().power = 10;
+                objects.back().randomSpawner = true;
+                objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos) + pi;
+            }
+            else {
+                objects.emplace_back(L"Enemy Ship 1",
+                    player.xPos + xOffset,
+                    player.yPos + yOffset,
+                    2,
+                    files.enemyShip1,
+                    true,
+                    0,
+                    files.enemyShip1,
+                    files.enemyShip1,
+                    0.75,
+                    0.75,
+                    true,
+                    true,
+                    true
+                );
+                objects.back().turnRadius = pi / 2;
+                objects.back().shotSpeed = std::chrono::milliseconds(50);
+                objects.back().shotVelocity = 4;
+                objects.back().shotType = files.basicShotPurple;
+                objects.back().defaultShotEffect = files.basicShotEffectPurple1;
+                objects.back().power = 10;
+                objects.back().randomSpawner = true;
+                objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos) + pi;
+                objects.back().burstFire = true;
+            }
+        }
+    }
+}
+
+void UpdateMasterObjectLogic(double deltaTime, int &spawnerCounter) {
+    // Master Object logic
+    if (!objects.empty()) {
+        for (int i = 0; i < objects.size(); i++) {
+            if (objects[i].currentFramePath != nullptr) {
+                if (objects[i].destructible) {
+                    if (objects[i].health <= 0) {
+                        if (objects[i].dead == false) {
+                            std::uniform_int_distribution<int> distribution(3, 5);
+                            int qty = distribution(generator);
+                            float percentage = player.health / player.maxHP;
+                            for (int j = 0; j < qty; j++) {
+                                std::uniform_int_distribution<int> distribution(1, 100);
+                                int rng = distribution(generator);
+                                bool rollHP = false;
+                                std::uniform_real_distribution<float> fdistribution(-pi, pi);
+                                float angle = fdistribution(generator);
+                                float xOffset = 8 * sin(angle);
+                                angle = fdistribution(generator);
+                                float yOffset = 8 * sin(angle);
+                                if (((percentage <= 0.75) && rng >= 90) || ((percentage <= 0.5) && rng >= 80) || ((percentage <= 0.33) && rng >= 50)) {
+                                    rollHP = true;
+                                }
+                                if (rollHP) {
+                                    objects.emplace_back(L"Health Pickup", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.hp_pickup_2, false, 0, nullptr, files.hp_pickup_2, 0, 0, false, true, false);
+                                    objects.back().genericFrameMarker = std::chrono::steady_clock::now();
+                                    objects.back().pickup = true;
+                                }
+                                else {
+                                    rng = distribution(generator);
+                                    if (rng <= 85) {
+                                        objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
+                                    }
+                                    else if (rng <= 94) {
+                                        objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
+                                    }
+                                    else if (rng <= 98) {
+                                        objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
+                                    }
+                                    else {
+                                        objects.emplace_back(L"Yellow Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
+                                    }
+                                    objects.back().UpdateHitBox();
+                                    objects.back().pickup = true;
+                                }
+                            }
+                            objects[i].dead = true;
+                            objects[i].currentFramePath = files.explosion1;
+                            objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                        }
+                        bool updated(false);
+                        std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - objects[i].lastDeathFrameUpdate;
+                        if (objects[i].currentFramePath == files.explosion1 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            objects[i].currentFramePath = files.explosion2;
+                            updated = true;
+                        }
+                        else if (objects[i].currentFramePath == files.explosion2 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            objects[i].currentFramePath = files.explosion3;
+                            updated = true;
+                        }
+                        else if (objects[i].currentFramePath == files.explosion3 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            objects[i].currentFramePath = files.explosion4;
+                            updated = true;
+                        }
+                        else if (objects[i].currentFramePath == files.explosion4 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            objects[i].currentFramePath = files.explosion3;
+                            updated = true;
+                            objects[i].reverseDeathAnimation = true;
+                        }
+                        else if (objects[i].currentFramePath == files.explosion3 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            objects[i].currentFramePath = files.explosion2;
+                            updated = true;
+                        }
+                        else if (objects[i].currentFramePath == files.explosion2 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                            objects[i].currentFramePath = files.explosion1;
+                            updated = true;
+                        }
+                        else if (objects[i].currentFramePath == files.explosion1 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
+                            objects.erase(objects.begin() + i);
+                            i--;
+                            continue;
+                        }
+                        if (updated) {
+                            objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                        }
+                    }
+                    if (!objects[i].dead) {
+                        if (std::chrono::steady_clock::now() - objects[i].damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
+                            objects[i].damaged = false;
+                        }
+                        if (objects[i].damaged) {
+                            objects[i].currentFramePath = objects[i].damagedFrame;
+                        }
+                        else {
+                            objects[i].currentFramePath = objects[i].defaultFrame;
+                        }
+                    }
+                }
+                if (!objects[i].dead) {
+                    if (objects[i].rotatable) {
+                        double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
+                        double angleDelta = newAngle - objects[i].angleRadians;
+                        if (angleDelta > pi) {
+                            angleDelta -= (2 * pi);
+                        }
+                        else if (angleDelta < -pi) {
+                            angleDelta += (2 * pi);
+                        }
+                        if (angleDelta > 0) {
+                            objects[i].angleRadians += objects[i].turnRadius * ((deltaTime / 50) / 1);
+                        }
+                        else {
+                            objects[i].angleRadians -= objects[i].turnRadius * ((deltaTime / 50) / 1);
+                        }
+
+                        objects[i].xPos += objects[i].xVel * deltaTime * cos(objects[i].angleRadians);
+                        objects[i].yPos += objects[i].yVel * deltaTime * sin(objects[i].angleRadians);
+                    }
+                    if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 192 && abs(objects[i].yPos - player.yPos) < 168) {
+                        double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
+                        double angleDelta = newAngle - objects[i].angleRadians;
+                        if (angleDelta > pi) {
+                            angleDelta -= (2 * pi);
+                        }
+                        else if (angleDelta < -pi) {
+                            angleDelta += (2 * pi);
+                        }
+                        if (objects[i].burstFire && !objects[i].burstAvailable && (std::chrono::steady_clock::now() - objects[i].timeSinceBurst >= std::chrono::seconds(2))) {
+                            objects[i].burstAvailable = true;
+                            objects[i].shotsInBurst = 0;
+                        }
+                        if (abs(angleDelta) <= pi / 12 && !objects[i].shotFrame && std::chrono::steady_clock::now() - objects[i].lastShotTime >= objects[i].shotSpeed
+                            && ((objects[i].burstFire && objects[i].burstAvailable) || !objects[i].burstFire)) {
+                            // Create new bullet, position it with player, give it its velocities
+                            if (objects[i].burstFire) {
+                                objects[i].shotsInBurst++;
+                                if (objects[i].shotsInBurst >= 3) {
+                                    objects[i].burstAvailable = false;
+                                }
+                                else if (objects[i].shotsInBurst == 1) {
+                                    objects[i].timeSinceBurst = std::chrono::steady_clock::now();
+                                }
+                            }
+                            enemyBullets.emplace_back(objects[i].shotType);
+                            enemyBullets.back().xPos = objects[i].xPos;
+                            enemyBullets.back().yPos = objects[i].yPos;
+                            enemyBullets.back().shotVelocity = objects[i].shotVelocity;
+                            enemyBullets.back().power = objects[i].power;
+                            enemyBullets.back().defaultFrame = objects.at(i).shotType;
+                            enemyBullets.back().UpdateHitBox();
+                            enemyBullets.back().angleRadians = objects[i].angleRadians + pi / 2;
+                            enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
+                            if (abs(enemyBullets.back().yVel) < 0.0001) {
+                                enemyBullets.back().yVel = 0;
+                            }
+                            enemyBullets.back().xVel = round(sin(enemyBullets.back().angleRadians) * 100) / 100;
+                            if (abs(enemyBullets.back().xVel) < 0.0001) {
+                                enemyBullets.back().xVel = 0;
+                            }
+
+                            //enemyBullets.back().modulator = double((rand() % 628)) / 100;
+                            //bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
+                            //int result = (rand() % 2);
+                            //if (modulatorTicker == true) {
+                            //    modulatorTicker = false;
+                            //    bullets.back().modulatorPositiveDelta = false;
+                            //}
+                            //else {
+                            //    modulatorTicker = true;
+                            //    bullets.back().modulatorPositiveDelta = true;
+                            //}
+                            objects[i].shotFrame = objects[i].defaultShotEffect;
+                        }
+                        else {
+                            CycleShotEffect(objects[i]);
+                        }
+                    }
+                    objects[i].UpdateHitBox();
+                }
+                if (objects.at(i).pickup) {
+                    if (std::chrono::steady_clock::now() - objects.at(i).timesinceInception >= std::chrono::milliseconds(750)) {
+                        float dx = (player.xPos - objects.at(i).xPos) / 35;
+                        float dy = (player.yPos - objects.at(i).yPos) / 35;
+                        double length = sqrt(dx * dx + dy * dy);
+                        objects.at(i).xVel = (dx / length) * 5;
+                        objects.at(i).yVel = (dy / length) * 5;
+                        objects.at(i).xPos += objects.at(i).xVel * deltaTime;
+                        objects.at(i).yPos += objects.at(i).yVel * deltaTime;
+                    }
+                    if (objects.at(i).name == L"Health Pickup") {
+                        if (player.CheckCollision(objects.at(i))) {
+                            player.health = std::min(player.health + 10, player.maxHP);
+                            objects.erase(objects.begin() + i);
+                            i--;
+                            continue;
+                        }
+                        if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::seconds(2)) {
+                            objects.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                            objects.at(i).currentFramePath = files.hp_pickup_2;
+                        }
+                        else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(700)) {
+                            objects.at(i).currentFramePath = files.hp_pickup_3;
+                        }
+                        else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(500)) {
+                            objects.at(i).currentFramePath = files.hp_pickup_2;
+                        }
+                        else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(250)) {
+                            objects.at(i).currentFramePath = files.hp_pickup_1;
+                        }
+                    }
+                }
+                if (objects.at(i).randomSpawner) {
+                    spawnerCounter++;
+                }
+            }
+        }
+    }
+}
+
+void UpdateEnemyShootingLogic(double deltaTime) {
+    // Enemy Bullet Logic
+    if (!enemyBullets.empty()) {
+        for (int i = 0; i < enemyBullets.size(); i++) {
+
+            if (enemyBullets.at(i).collided && std::chrono::steady_clock::now() - enemyBullets.at(i).explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
+                if (enemyBullets.at(i).defaultFrame != files.drone_Shot_1) {
+                    enemyBullets.erase(enemyBullets.begin() + i);
+                    i--;
+                    continue;
+                }
+            }
+            else if (!enemyBullets.at(i).collided) {
+                if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1) {
+                    if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(6)) {
+                        enemyBullets.erase(enemyBullets.begin() + i);
+                        i--;
+                        continue;
+                    }
+                    Player playerWithRadius = player;
+                    int buffer = 20;
+                    playerWithRadius.hitbox.right += buffer;
+                    playerWithRadius.hitbox.left -= buffer;
+                    playerWithRadius.hitbox.up -= buffer;
+                    playerWithRadius.hitbox.down += buffer;
+                    if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(2) || enemyBullets.at(i).CheckCollision(playerWithRadius) || enemyBullets.at(i).exploding) {
+                        enemyBullets.at(i).xVel = 0;
+                        enemyBullets.at(i).yVel = 0;
+                        if (!enemyBullets.at(i).exploding) {
+                            enemyBullets.at(i).exploding = true;
+                            enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                        }
+                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(550) || enemyBullets.at(i).pulsating) {
+                            if (!enemyBullets.at(i).pulsating) {
+                                enemyBullets.at(i).pulsating = true;
+                                enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                            }
+                            if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(333)) {
+                                if (enemyBullets.at(i).currentFramePath == files.drone_Shot_6) {
+                                    enemyBullets.at(i).currentFramePath = files.drone_Shot_7;
+                                    enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                                }
+                                else {
+                                    enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
+                                    enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                                }
+                            }
+                        }
+                        else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(300)) {
+                            enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
+                        }
+                        else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(150)) {
+                            enemyBullets.at(i).currentFramePath = files.drone_Shot_5;
+                        }
+                        else {
+                            enemyBullets.at(i).currentFramePath = files.drone_Shot_4;
+                        }
+                    }
+                    else {
+                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(800)) {
+                            enemyBullets.at(i).currentFramePath = files.drone_Shot_1;
+                            enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                        }
+                        else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(600)) {
+                            enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
+                        }
+                        else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(400)) {
+                            enemyBullets.at(i).currentFramePath = files.drone_Shot_3;
+                        }
+                        else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(300)) {
+                            enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
+                        }
+                    }
+
+                }
+                if (!player.dead) {
+                    if (enemyBullets.at(i).CheckCollision(player)) {
+                        if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1 && (enemyBullets.at(i).exploding || enemyBullets.at(i).pulsating)) {
+                            enemyBullets.at(i).power = 1;
+                        }
+                        else {
+                            //object.damageBegins = std::chrono::steady_clock::now();
+                            //object.currentFramePath = object.damagedFrame;
+                            enemyBullets.at(i).currentFramePath = files.explosion1;
+                            enemyBullets.at(i).collided = true;
+                            enemyBullets.at(i).explosionBegin = std::chrono::steady_clock::now();
+                        }
+                        player.damaged = true;
+                        player.health -= enemyBullets.at(i).power * deltaTime;
+                        if (player.health <= 0) {
+                            player.dead = true;
+                            player.currentFramePath = files.player_Death_Animation_1;
+                            player.lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                        }
+                    }
+                }
+                if (!enemyBullets.at(i).collided) {
+                    enemyBullets.at(i).xPos += enemyBullets.at(i).shotVelocity * (deltaTime * enemyBullets.at(i).xVel);
+                    enemyBullets.at(i).yPos += enemyBullets.at(i).shotVelocity * (deltaTime * enemyBullets.at(i).yVel);
+                }
+                enemyBullets.at(i).UpdateHitBox();
+            }
+        }
+    }
+}
+
+void UpdateOverworldAssets() {
+    if (environments.at(currEnvID - 1).overworld) {
+        bool shieldGeneratorFound = false;
+        for (auto object : objects) {
+            if (object.name == L"Shield Generator") {
+                shieldGeneratorFound = true;
+                break;
+            }
+        }
+
+        if (!shieldGeneratorFound) {
+            for (auto object = objects.begin(); object != objects.end(); ) {
+                if (object->name == L"Base Door") {
+                    object = objects.erase(object);
+                    break;
+                }
+                if (object != objects.end()) {
+                    ++object;
+                }
+            }
+        }
+
+        bool baseDoorFound = false;
+        for (auto object : objects) {
+            if (object.name == L"Base Door") {
+                //baseDoorFound = true;
+                break;
+            }
+        }
+
+        bool baseEntered = false;
+        if (!baseDoorFound) {
+            for (auto environment : environments) {
+                if (environment.id == currEnvID) {
+                    for (auto door : environment.doors) {
+                        if (player.CheckCollision(door)) {
+                            background = files.base_Interior;
+                            player.sideMode = true;
+                            player.xPos = 128;
+                            player.yPos = 112;
+                            baseEntered = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void CheckPickupCollision() {
+    if (pickup.currentFramePath) {
+        if (player.CheckCollision(pickup)) {
+            player.doubleShot = true;
+            pickup.xPos = 0;
+            pickup.yPos = 0;
+            pickup.currentFramePath = nullptr;
+        }
+    }
+    for (int i = 0; i < objects.size(); i++) {
+        if (objects.at(i).pickup) {
+            if (player.CheckCollision(objects.at(i))) {
+                if (objects.at(i).name == L"Health Pickup") {
+                    player.health = std::min(player.health + 10, player.maxHP);
+                }
+                player.currencyAcquired = std::chrono::steady_clock::now();
+                if (objects.at(i).name == L"Red Jewel") {
+                    player.currency += 1;
+                }
+                else if (objects.at(i).name == L"Purple Jewel") {
+                    player.currency += 5;
+                }
+                else if (objects.at(i).name == L"Yellow Jewel") {
+                    player.currency += 10;
+                }
+                else if (objects.at(i).name == L"Blue Jewel") {
+                    player.currency += 2;
+                }
+                objects.erase(objects.begin() + i);
+                i--;
+                continue;
+            }
+        }
+    }
+}
+
+void CheckDoorCollisions(std::vector<Environment> envs) {
+    for (auto door : envs.at(currEnvID - 1).doors) {
+        if (player.CheckCollision(door)) {
+            currEnvID = door.destID;
+            player.xPos = door.destX;
+            player.yPos = door.destY;
+            background = envs.at(currEnvID - 1).frame;
+            return;
+        }
+    }
+}
+
+
+
+
+//---------------------
+// Game Loop Functions 
+//---------------------
 
 void Render() {
 
@@ -810,7 +2604,7 @@ void Render() {
         if (!player.dead) {
             // Pulls bitmap for player ship
             ID2D1Bitmap* playerBitmap = bitmaps[player.currentFramePath];
-            
+
 
             if (playerBitmap) {
                 D2D1_SIZE_F size = playerBitmap->GetSize();
@@ -879,7 +2673,8 @@ void Render() {
                     bool inverse;
                     if (player.sideMode) {
                         xOff1 = -2, xOff2 = 99999999;
-                    } else if (player.directionX == 0) {
+                    }
+                    else if (player.directionX == 0) {
                         inverse = (player.directionY > 0) ? false : true;
                         keys.right = inverse ? !keys.right : keys.right;
                         keys.right ? (xOff1 = 999999, xOff2 = 2) : (xOff1 = -2, xOff2 = 999999);
@@ -960,10 +2755,10 @@ void Render() {
                     yOffset = cos(player.angleRadians) * (player.yPos - (bgHeight - 112));
                 }
                 displayPos = D2D1::RectF(
-                    screenX/2 - ((size.width / 2) * scalerX) + (xOffset * scalerX),
-                    screenY/2 - ((8 + size.height/2 + yOffset) * scalerY),
-                    screenX/2 + ((size.width/2 + xOffset) * scalerX),
-                    screenY/2 + ((size.height/2 + yOffset - 8) * scalerY)
+                    screenX / 2 - ((size.width / 2) * scalerX) + (xOffset * scalerX),
+                    screenY / 2 - ((8 + size.height / 2 + yOffset) * scalerY),
+                    screenX / 2 + ((size.width / 2 + xOffset) * scalerX),
+                    screenY / 2 + ((size.height / 2 + yOffset - 8) * scalerY)
                 );
             }
             else {
@@ -978,11 +2773,11 @@ void Render() {
             renderTarget->DrawBitmap(basicShotEffectBitmap, displayPos, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
 
-        
 
-        for (auto bullet : bullets) {
 
-                ID2D1Bitmap* basicShotBitmap = bitmaps[bullet.currentFramePath];
+        for (auto bullet : player.bullets) {
+
+            ID2D1Bitmap* basicShotBitmap = bitmaps[bullet.currentFramePath];
 
             if (basicShotBitmap) {
                 D2D1_SIZE_F size = basicShotBitmap->GetSize();
@@ -1003,10 +2798,10 @@ void Render() {
                         yOffset = player.yPos - (bgHeight - 112);
                     }
                     position = D2D1::RectF(
-                        screenX / 2 + (xOffset + bullet.xPos - player.xPos - size.width/2) * scalerX,
-                        screenY / 2 + (yOffset + bullet.yPos - player.yPos - size.height/2) * scalerY,
-                        screenX / 2 + (xOffset + bullet.xPos - player.xPos + size.width/2) * scalerX,
-                        screenY / 2 + (yOffset + bullet.yPos - player.yPos + size.height/2) * scalerY
+                        screenX / 2 + (xOffset + bullet.xPos - player.xPos - size.width / 2) * scalerX,
+                        screenY / 2 + (yOffset + bullet.yPos - player.yPos - size.height / 2) * scalerY,
+                        screenX / 2 + (xOffset + bullet.xPos - player.xPos + size.width / 2) * scalerX,
+                        screenY / 2 + (yOffset + bullet.yPos - player.yPos + size.height / 2) * scalerY
                     );
                 }
                 else {
@@ -1174,7 +2969,7 @@ void Render() {
                     D2D1_SIZE_F size = boostBarBitmap->GetSize();
                     D2D1_RECT_F portion = D2D1::RectF(
                         object.xPos, object.yPos,
-                        object.xPos + ((size.width * scalerX) * std::min(1.0, double(player.boost / ((size.width/top_width) * 100.0)))), object.yPos + (size.height * scalerY)
+                        object.xPos + ((size.width * scalerX) * std::min(1.0, double(player.boost / ((size.width / top_width) * 100.0)))), object.yPos + (size.height * scalerY)
                     );
                     D2D1_RECT_F source = D2D1::RectF(
                         0, 0,
@@ -1249,6 +3044,8 @@ void Render() {
             }
         }
 
+
+
         /*if (std::chrono::steady_clock::now() - mapTick >= std::chrono::nanoseconds(16666666)) {
             if (displayMap == true) {
                 displayMap = false;
@@ -1303,7 +3100,7 @@ void Render() {
                 }
             }
         }
-        
+
 
         //ID2D1Bitmap* asteroid = bitmaps[files.asteroid1];
         //if (asteroid) {
@@ -1366,1431 +3163,34 @@ void Render() {
     }
 }
 
-void CycleShotEffect(Object& object) {
-    if (object.defaultShotEffect == files.basicShotEffectBlue1) {
-        if (object.shotFrame == files.basicShotEffectBlue1 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectBlue2;
-        }
-        else if (object.shotFrame == files.basicShotEffectBlue2 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectBlue3;
-        }
-        else if (object.shotFrame == files.basicShotEffectBlue3 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectBlue4;
-        }
-        else if (object.shotFrame == files.basicShotEffectBlue4 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectBlue5;
-        }
-        else if ((object.shotFrame == files.basicShotEffectBlue5) &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.shotFrame = nullptr;
-        }
-    }
-    else if (object.defaultShotEffect == files.basicShotEffectPurple1) {
-        if (object.shotFrame == files.basicShotEffectPurple1 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectPurple2;
-        }
-        else if (object.shotFrame == files.basicShotEffectPurple2 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectPurple3;
-        }
-        else if (object.shotFrame == files.basicShotEffectPurple3 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectPurple4;
-        }
-        else if (object.shotFrame == files.basicShotEffectPurple4 &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.lastShotTime = std::chrono::steady_clock::now();
-            object.shotFrame = files.basicShotEffectPurple5;
-        }
-        else if ((object.shotFrame == files.basicShotEffectPurple5) &&
-            (std::chrono::steady_clock::now() - object.lastShotTime >= std::chrono::nanoseconds(16666666 * 2))) {
-            object.shotFrame = nullptr;
-        }
-    }
-}
-
 void UpdateGameLogic(double deltaTime) {
 
     if (!paused && !splashscreen) {
+        player.UpdateHitBox();
         for (auto& object : objects) {
             object.UpdateHitBox();
         }
+        UpdateBackgroundElements(deltaTime);
 
-        int rightBound = (int(player.xPos + 128) / 256) + 1;
-        int lowBound = (int(player.yPos + 112) / 224) + 1;
-
-        int leftBound = ((int(player.xPos) - 128) / 256);
-        int upBound = ((int(player.yPos) - 112) / 224);
-
-        for (int y = upBound; y <= lowBound; ++y) {
-            for (int x = leftBound; x <= rightBound; ++x) {
-                auto it = starGrid.find({ x, y });
-                if (it != starGrid.end()) {
-                    for (Star& star : it->second) {
-                        star.Pulsate(deltaTime);
-                    }
-                }
-                else {
-                    std::pair<int, int> cell = { x, y };
-
-                    std::lock_guard<std::mutex> lock(chunkInProgress);
-                    if (pendingChunks.count(cell)) {
-                        continue;
-                    }
-                    else {
-                        pendingChunks.insert(cell);
-                    }
-
-                    if (isMultiCore) {
-                        std::thread([cell, x, y]() mutable {
-                            std::vector<std::pair<int, int>> chunks = { cell };
-                            std::uniform_int_distribution<int> range(1, 100000);
-
-                            for (int i = y * 224; i <= ((y * 224) + 224); i++) {
-                                for (int j = x * 256; j <= ((x * 256) + 256); j++) {
-                                    int roll = range(generator);
-                                    if (roll <= 250) {
-                                        bool starFound = false;
-                                        auto it = starGrid.find(cell);
-                                        if (it != starGrid.end()) {
-                                            for (const auto& star : it->second) {
-                                                if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
-                                                    starFound = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (!starFound) {
-                                            int r, g, b;
-                                            roll = range(generator);
-                                            if (roll <= 92000) {
-                                                r = g = b = 200;
-                                            }
-                                            else if (roll <= 94660) {
-                                                r = 102;
-                                                g = 138;
-                                                b = 200;
-                                            }
-                                            else if (roll <= 97320) {
-                                                r = 200;
-                                                g = 200;
-                                                b = 200;
-                                            }
-                                            else {
-                                                r = 200;
-                                                g = 53;
-                                                b = 46;
-                                            }
-                                            roll = range(generator);
-                                            float alpha = std::max(float(roll) / 100000.0, 0.01);
-
-                                            std::lock_guard<std::mutex> lock(chunkInProgress);
-                                            starGrid[cell].emplace_back(j, i, r, g, b, alpha);
-                                        }
-                                    }
-                                    roll = range(generator);
-                                    if (roll <= 5) {
-                                        std::lock_guard<std::mutex> lock(chunkInProgress);
-                                        asteroids[cell].emplace_back(j, i);
-                                    }
-                                }
-                            }
-
-                            std::lock_guard<std::mutex> lock(chunkInProgress);
-                            pendingChunks.erase(cell);
-                        }).detach();
-
-                    }
-                    else {
-                        int rightBound = (int(player.xPos + 128) / 256) + 1;
-                        int lowBound = (int(player.yPos + 112) / 224) + 1;
-
-                        int leftBound = ((int(player.xPos) - 128) / 256);
-                        int upBound = ((int(player.yPos) - 112) / 224);
-
-                        for (int y = upBound; y <= lowBound; ++y) {
-                            for (int x = leftBound; x <= rightBound; ++x) {
-                                auto it = starGrid.find({ x, y });
-                                if (it != starGrid.end()) {
-                                    for (Star& star : it->second) {
-                                        star.Pulsate(deltaTime);
-                                    }
-                                }
-                                else {
-                                    std::pair<int, int> cell = { x, y };
-                                    std::vector<std::pair<int, int>> chunks = { cell };
-                                    std::uniform_int_distribution<int> range(1, 100000);
-                                    bool updated = false;
-                                    for (int i = y * 224; i <= ((y * 224) + 224); i++) {
-                                        for (int j = x * 256; j <= ((x * 256) + 256); j++) {
-                                            int roll = range(generator);
-                                            if (roll <= 250) {
-                                                updated = true;
-                                                std::pair<int, int> cell = { x , y };
-                                                std::vector<std::pair<int, int>> chunks = { cell };
-
-                                                bool starFound = false;
-                                                for (const auto chunk : chunks) {
-                                                    auto it = starGrid.find(chunk);
-                                                    if (it != starGrid.end()) {
-                                                        for (const auto& star : it->second) {
-                                                            if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
-                                                                starFound = true;
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                    if (starFound) {
-                                                        break;
-                                                    }
-                                                }
-
-                                                int r, g, b;
-                                                roll = range(generator);
-                                                if (roll <= 92000) {
-                                                    r = g = b = 200;
-                                                }
-                                                else if (roll <= 94660) {
-                                                    r = 102;
-                                                    g = 138;
-                                                    b = 200;
-                                                }
-                                                else if (roll <= 97320) {
-                                                    r = 200;
-                                                    g = 200;
-                                                    b = 200;
-                                                }
-                                                else {
-                                                    r = 200;
-                                                    g = 53;
-                                                    b = 46;
-                                                }
-                                                roll = range(generator);
-                                                float alpha = std::max(float(roll) / 100000.0, 0.01);
-                                                starGrid[cell].emplace_back(j, i, r, g, b, alpha);
-                                            }
-                                            roll = range(generator);
-                                            if (roll <= 5) {
-                                                std::pair<int, int> cell = { x, y };
-                                                asteroids[cell].emplace_back(j, i);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        player.ApplyDirectionalInput(deltaTime);
+        player.UpdateRedLightEffect(deltaTime);
+        player.ApplyShootingLogic(deltaTime);
+        player.UpdateBullets(deltaTime, objects);
+        CheckDoorCollisions(environments);
 
         bool spawnEnemies = true;
         bool spawnsExist = false;
-        for (int i = 0; i < objects.size(); i++) {
-            if (objects.at(i).randomSpawner) {
-                if ((abs(objects.at(i).xPos - player.xPos) > 256) || (abs(objects.at(i).yPos - player.yPos) > 224)) {
-                    objects.erase(objects.begin() + i);
-                    i--;
-                    timeSinceSpawn = std::chrono::steady_clock::now();
-                    continue;
-                }
-                spawnEnemies = false;
-                spawnsExist = true;
-            }
-        }
-        if (!player.sideMode && (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10)))) {
-            for (int i = 0; i < 3; i++) {
-                std::uniform_int_distribution<int> distribution(0, 1);
-                bool binary = distribution(generator);
-                std::uniform_int_distribution<int> fdistribution(0, 960);
-                int placement = fdistribution(generator);
-                int xOffset = 0;
-                int yOffset = 0;
-                if (placement <= 256) {
-                    xOffset = placement / 2;
-                    yOffset = -124;
-                }
-                else if (placement >= 480 && placement <= 736) {
-                    xOffset - (placement - 480) / 2;
-                    yOffset = 124;
-                }
-                else if (placement > 256 && placement < 480) {
-                    yOffset = (placement - 256) / 2;
-                    xOffset = 140;
-                }
-                else {
-                    yOffset = (placement - 736) / 2;
-                    xOffset = -140;
-                }
-                if (binary) {
-                    objects.emplace_back(L"Bomber Drone",
-                        player.xPos + xOffset,
-                        player.yPos + yOffset,
-                        2,
-                        files.bomber_drone,
-                        true,
-                        0,
-                        files.bomber_drone,
-                        files.bomber_drone,
-                        0.25,
-                        0.25,
-                        true,
-                        true,
-                        true
-                    );
-                    objects.back().turnRadius = pi / 4;
-                    objects.back().shotSpeed = std::chrono::milliseconds(6000);
-                    objects.back().shotVelocity = 2;
-                    objects.back().shotType = files.drone_Shot_1;
-                    objects.back().defaultShotEffect = files.basicShotEffectPurple1;
-                    objects.back().power = 10;
-                    objects.back().randomSpawner = true;
-                    objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos) + pi;
-                }
-                else {
-                    objects.emplace_back(L"Enemy Ship 1",
-                        player.xPos + xOffset,
-                        player.yPos + yOffset,
-                        2,
-                        files.enemyShip1,
-                        true,
-                        0,
-                        files.enemyShip1,
-                        files.enemyShip1,
-                        0.75,
-                        0.75,
-                        true,
-                        true,
-                        true
-                    );
-                    objects.back().turnRadius = pi / 2;
-                    objects.back().shotSpeed = std::chrono::milliseconds(50);
-                    objects.back().shotVelocity = 4;
-                    objects.back().shotType = files.basicShotPurple;
-                    objects.back().defaultShotEffect = files.basicShotEffectPurple1;
-                    objects.back().power = 10;
-                    objects.back().randomSpawner = true;
-                    objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos) + pi;
-                    objects.back().burstFire = true;
-                }
-            }
-        }
-
-        // Apply Player Inputs
-        double velocity = 1.5;
-        if (keys.lShift && keys.directionPressed && !keys.f) {
-            if (player.boost > 0 && ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(2))) {
-                velocity *= 1.66;
-                player.boost -= 1 * deltaTime;
-                if (player.boost <= 0) {
-                    player.boost = 0;
-                    player.runoutTime = std::chrono::steady_clock::now();
-                }
-            }
-            else {
-                if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
-                    player.boost += 0.5 * deltaTime;
-                }
-            }
-        }
-        else {
-            if ((std::chrono::steady_clock::now() - player.runoutTime) >= std::chrono::seconds(1)) {
-                player.boost += 0.5 * deltaTime;
-            }
-            if (player.boost > 100) {
-                player.boost = 100;
-            }
-            if (keys.f) {
-                velocity *= 0.66;
-            }
-        }
-        if (keys.up) {
-            player.yPos -= (velocity * deltaTime);
-        }
-        if (keys.down) {
-            player.yPos += (velocity * deltaTime);
-        }
-        if (keys.right) {
-            player.xPos += (velocity * deltaTime);
-        }
-        if (keys.left) {
-            player.xPos -= (velocity * deltaTime);
-        }
-
-        player.lastFrame = player.currentFramePath;
-        if (player.sideMode) {
-            player.directionX = 1;
-            player.directionY = 0;
-            if (keys.up) {
-                player.currentFramePath = files.player_upside_tilted_l;
-            }
-            else if (keys.down) {
-                player.currentFramePath = files.player_tilt_left;
-            }
-            else {
-                player.currentFramePath = files.player_sideways_l;
-            }
-        }
-        else {
-            if (keys.right || keys.left || keys.up || keys.down) {
-                if (!keys.f) {
-                    player.directionX = keys.right - keys.left;
-                    player.directionY = keys.up - keys.down;
-                }
-                else {
-                    if (abs(player.directionX) > 0 && player.directionY == 0) {
-                        if (!(keys.right && !keys.down && !keys.up)) {
-                            if ((keys.up || keys.down) && !(keys.up && keys.down) && !(keys.right || keys.left)) {
-                                bool inverse = (player.directionX > 0) ? false : true;
-                                keys.up = (inverse) ? !keys.up : keys.up;
-                                keys.down = (inverse) ? !keys.down : keys.down;
-                                if (keys.up) {
-                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                        player.rolling = true;
-                                        player.currentFramePath = files.player_tilt_left;
-                                        player.rollTime = std::chrono::steady_clock::now();
-                                    }
-                                    else if (player.rolling) {
-                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                            player.rolling = false;
-                                        }
-                                    }
-                                    else {
-                                        player.currentFramePath = files.player_sideways_l;
-                                    }
-                                }
-                                else if (keys.down) {
-                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                        player.rolling = true;
-                                        player.currentFramePath = files.player_tilt_right;
-                                        player.rollTime = std::chrono::steady_clock::now();
-                                    }
-                                    else if (player.rolling) {
-                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                            player.rolling = false;
-                                        }
-                                    }
-                                    else {
-                                        player.currentFramePath = files.player_sideways_r;
-                                    }
-                                }
-                                else {
-                                    player.currentFramePath = files.player_sideways_r;
-                                }
-                                keys.up = (inverse) ? !keys.up : keys.up;
-                                keys.down = (inverse) ? !keys.down : keys.down;
-                            }
-                            else if (keys.down && !keys.up) {
-                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                    player.rolling = false;
-                                    player.currentFramePath = (player.directionX > 0) ? files.player_tilt_right : files.player_tilt_left;
-                                }
-                            }
-                            else if (keys.up && !keys.down) {
-                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                    player.rolling = false;
-                                    player.currentFramePath = (player.directionX > 0) ? files.player_tilt_left : files.player_tilt_right;
-                                }
-                            }
-                            else {
-                                player.currentFramePath = files.playerFrame1;
-                            }
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    else if (abs(player.directionY) > 0 && player.directionX == 0) {
-                        //
-                        if (!(keys.up && !keys.right && !keys.left)) {                  //
-                            if ((keys.left || keys.right) && !(keys.left && keys.right) && !(keys.up || keys.down)) {
-                                bool inverse = (player.directionY > 0) ? false : true;
-                                keys.left = (inverse) ? !keys.left : keys.left;
-                                keys.right = (inverse) ? !keys.right : keys.right;
-                                if (keys.left) {
-                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                        player.rolling = true;
-                                        player.currentFramePath = files.player_tilt_left;
-                                        player.rollTime = std::chrono::steady_clock::now();
-                                    }
-                                    else if (player.rolling) {
-                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                            player.rolling = false;
-                                        }
-                                    }
-                                    else {
-                                        player.currentFramePath = files.player_sideways_l;
-                                    }
-                                }
-                                else if (keys.right) {
-                                    if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                        player.rolling = true;
-                                        player.currentFramePath = files.player_tilt_right;
-                                        player.rollTime = std::chrono::steady_clock::now();
-                                    }
-                                    else if (player.rolling) {
-                                        if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                            player.rolling = false;
-                                        }
-                                    }
-                                    else {
-                                        player.currentFramePath = files.player_sideways_r;
-                                    }
-                                }
-                                else {
-                                    player.currentFramePath = files.player_sideways_r;
-                                }
-                                keys.left = (inverse) ? !keys.left : keys.left;
-                                keys.right = (inverse) ? !keys.right : keys.right;
-                            }
-                            else if (keys.right && !keys.left) {
-                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                    player.rolling = false;
-                                    player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                                }
-                            }
-                            else if (keys.left && !keys.right) {
-                                if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                    player.rolling = false;
-                                    player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
-                                }
-                            }
-                            else {
-                                player.currentFramePath = files.playerFrame1;
-                            }
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    else if (abs(player.directionX) > 0 && player.directionY > 0) {
-                        if ((keys.left && keys.up) && player.directionX > 0) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if ((keys.right && keys.up) && player.directionX < 0) {
-                            player.currentFramePath = files.player_sideways_r;
-                        }
-                        else if ((keys.down && keys.left && player.directionX < 0) || (keys.down && keys.right && player.directionX > 0)) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_sideways_r;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_sideways_l;
-                            }
-                        }
-                        else if ((keys.down && keys.left && player.directionX > 0) || (keys.down && keys.right && player.directionX < 0)) {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                        else if ((keys.up && (keys.right || keys.left)))
-                        {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                        else if (keys.up && !(keys.left || keys.right)) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                        }
-                        else if (((keys.left && player.directionX < 0) || (keys.right && player.directionX > 0)) && !keys.up) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                        }
-                        else if (((keys.right && player.directionX < 0) || (keys.left && player.directionX > 0)) && !keys.up) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                        }
-                        else if (keys.down) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                        }
-                    }
-                    else if (abs(player.directionX) > 0 && player.directionY < 0) {
-                        if ((keys.left && keys.down) && player.directionX > 0) {
-                            player.currentFramePath = files.player_sideways_r;
-                        }
-                        else if ((keys.right && keys.down) && player.directionX < 0) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if ((keys.up && keys.left && player.directionX < 0) || (keys.up && keys.right && player.directionX > 0)) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_sideways_l;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_sideways_r;
-                            }
-                        }
-                        else if ((keys.up && keys.left && player.directionX > 0) || (keys.up && keys.right && player.directionX < 0)) {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                        else if ((keys.down && (keys.right || keys.left)))
-                        {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                        else if (keys.down && !(keys.left || keys.right)) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                        }
-                        else if (((keys.left && player.directionX < 0) || (keys.right && player.directionX > 0)) && !keys.up) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                        }
-                        else if (((keys.right && player.directionX < 0) || (keys.left && player.directionX > 0)) && !keys.up) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                        }
-                        else if (keys.up) {
-                            if (player.directionX > 0) {
-                                player.currentFramePath = files.player_tilt_left;
-                            }
-                            else if (player.directionX < 0) {
-                                player.currentFramePath = files.player_tilt_right;
-                            }
-                        }
-                    }
-                    /*if (!((keys.up && (keys.right || keys.left)) && (!keys.right && !keys.left))) {
-                        if ((keys.left || keys.right) && !(keys.left && keys.right) && !(keys.up || keys.down)) {
-                            bool inverse = (player.directionY > 0) ? false : true;
-                            keys.left = (inverse) ? !keys.left : keys.left;
-                            keys.right = (inverse) ? !keys.right : keys.right;
-                            if (keys.left) {
-                                if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                    player.rolling = true;
-                                    player.lastFrame = player.currentFramePath;
-                                    player.currentFramePath = files.player_tilt_left;
-                                    player.rollTime = std::chrono::steady_clock::now();
-                                }
-                                else if (player.rolling) {
-                                    if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                        player.rolling = false;
-                                    }
-                                }
-                                else {
-                                    player.lastFrame = player.currentFramePath;
-                                    player.currentFramePath = files.player_sideways_l;
-                                }
-                            }
-                            else if (keys.right) {
-                                if (player.lastFrame == files.playerFrame1 || player.lastFrame == files.playerFrame2) {
-                                    player.rolling = true;
-                                    player.lastFrame = player.currentFramePath;
-                                    player.currentFramePath = files.player_tilt_right;
-                                    player.rollTime = std::chrono::steady_clock::now();
-                                }
-                                else if (player.rolling) {
-                                    if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                        player.rolling = false;
-                                    }
-                                }
-                                else {
-                                    player.lastFrame = player.currentFramePath;
-                                    player.currentFramePath = files.player_sideways_r;
-                                }
-                            }
-                            else {
-                                player.currentFramePath = files.player_sideways_r;
-                            }
-                            keys.left = (inverse) ? !keys.left : keys.left;
-                            keys.right = (inverse) ? !keys.right : keys.right;
-                        }
-                        else if (keys.right && !keys.left) {
-                            if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                player.rolling = false;
-                                player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                            }
-                        }
-                        else if (keys.left && !keys.right) {
-                            if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                                player.rolling = false;
-                                player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
-                            }
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }*/
-                    else {
-                        player.lastFrame = player.currentFramePath;
-                        player.currentFramePath = files.playerFrame1;
-                    }
-                }
-                /*else if (abs(player.directionY) > 0 && player.directionX == 0 && (keys.left || keys.right)) {
-                    if (player.directionY > 0) {
-                        if (keys.left && keys.up) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
-                        }
-                        else if (keys.right && keys.up) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                        }
-                        else if (keys.left && !keys.up) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
-                        }
-                        else if (keys.right && !keys.up) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    if (player.directionY < 0) {
-                        if (keys.left && keys.down) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
-                        }
-                        else if (keys.right && keys.down) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                        }
-                        else if (keys.left && !keys.down) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
-                        }
-                        else if (keys.right && !keys.down) {
-                            player.currentFramePath = (player.directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                }
-                else if (abs(player.directionX) > 0 && player.directionY > 0) {
-                    if (player.directionX > 0) {
-                        if (keys.right && keys.down) {
-                            player.currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.up && keys.left) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.up && !keys.right) {
-                            player.currentFramePath = files.player_tilt_left;
-                        }
-                        else if (keys.right && !keys.up) {
-                            player.currentFramePath = files.player_tilt_right;
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    else {
-                        if (keys.left && keys.down) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.up && keys.right) {
-                            player.currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.up && !keys.left) {
-                            player.currentFramePath = files.player_tilt_right;
-                        }
-                        else if (keys.left && !keys.up) {
-                            player.currentFramePath = files.player_tilt_left;
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                }
-                else if (abs(player.directionX) > 0 && player.directionY < 0) {
-                    if (player.directionX > 0) {
-                        if (keys.right && keys.up) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.down && keys.left) {
-                            player.currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.down && !keys.right) {
-                            player.currentFramePath = files.player_tilt_right;
-                        }
-                        else if (keys.right && !keys.down) {
-                            player.currentFramePath = files.player_tilt_left;
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    else {
-                        if (keys.left && keys.up) {
-                            player.currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.down && keys.right) {
-                            player.currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.down && !keys.left) {
-                            player.currentFramePath = files.player_tilt_left;
-                        }
-                        else if (keys.left && !keys.down) {
-                            player.currentFramePath = files.player_tilt_right;
-                        }
-                        else {
-                            player.currentFramePath = files.playerFrame1;
-                        }
-                    }
-                }
-                //else if (abs(player.directionY) > 0 && player.directionX == 0) {
-                //    player.currentFramePath = (keys.right - keys.left) ? files.player_tilt_right : files.player_tilt_left;
-                //}
-                */
-            }
-            else if (keys.f) { // If pressing f with no directional input
-                if (player.lastFrame == files.player_sideways_l || player.lastFrame == files.player_sideways_r) {
-                    player.rolling = true;
-                    player.lastFrame = player.currentFramePath;
-                    if (player.lastFrame == files.player_sideways_l) {
-                        player.currentFramePath = files.player_tilt_left;
-                    }
-                    else if (player.lastFrame == files.player_sideways_r) {
-                        player.currentFramePath = files.player_tilt_right;
-                    }
-                    player.rollTime = std::chrono::steady_clock::now();
-                }
-                else if (player.rolling) {
-                    if (std::chrono::steady_clock::now() - player.rollTime >= std::chrono::milliseconds(100)) {
-                        player.rolling = false;
-                        player.lastFrame = player.currentFramePath;
-                        player.currentFramePath = files.playerFrame1;
-                    }
-                }
-                else {
-                    player.lastFrame = player.currentFramePath;
-                    player.currentFramePath = files.playerFrame1;
-                }
-            }
-
-            if (!player.dead && !keys.f) {
-                // Cycle Thruster Animation
-                if (std::chrono::steady_clock::now() - player.lastThrusterTime >= std::chrono::milliseconds(100)) {
-                    player.lastThrusterTime = std::chrono::steady_clock::now();
-                    if (player.currentFramePath == files.playerFrame1) {
-                        player.currentFramePath = files.playerFrame2;
-                    }
-                    else {
-                        player.currentFramePath = files.playerFrame1;
-                    }
-                }
-            }
-        }
-
-        // Cycle Ship's Red Lights effects
-        if ((std::chrono::steady_clock::now() - player.lastRedLightTime) >= std::chrono::milliseconds(100)) {
-            player.lastRedLightTime = std::chrono::steady_clock::now();
-            if (player.redLightFrame == files.playerRedLightffect1) {
-                player.redLightFrame = files.playerRedLightffect2;
-            }
-            else if (player.redLightFrame == files.playerRedLightffect2) {
-                player.redLightFrame = files.playerRedLightffect3;
-            }
-            else if (player.redLightFrame == files.playerRedLightffect3) {
-                player.redLightFrame = files.playerRedLightffect4;
-            }
-            else if (player.redLightFrame == files.playerRedLightffect4) {
-                player.redLightFrame = files.playerRedLightffect5;
-            }
-            else if (player.redLightFrame == files.playerRedLightffect5) {
-                player.redLightFrame = files.playerRedLightffect6;
-            }
-            else if (player.redLightFrame == files.playerRedLightffect6) {
-                player.redLightFrame = files.playerRedLightffect7;
-                player.fullBrightStart = std::chrono::steady_clock::now();
-            }
-            else if (std::chrono::steady_clock::now() - player.fullBrightStart >= std::chrono::milliseconds(500)) {
-                player.redLightFrame = files.playerRedLightffect1;
-            }
-        }
-
-        // Apply Ship's Shooting Logic
-        if (keys.space && !player.basicShotFrame && (std::chrono::steady_clock::now() - player.lastShotEffectTime >= std::chrono::milliseconds(250))) {
-
-            player.lastShotEffectTime = std::chrono::steady_clock::now();
-            double xPosition, yPosition;
-
-            if (player.doubleShot) {
-                double xOffset(0), yOffset(0);
-                xOffset = (-1.8 * sin(player.angleRadians * 2)) - 4;
-                yOffset = 4 - ((4 / sin(pi / 4)) * sin(player.angleRadians));
-                if (player.angleRadians > -pi / 6 && player.angleRadians < pi / 6) {
-                    xOffset = -4;
-                    yOffset = 4;
-                }
-                else if (player.angleRadians > (pi / 6) && player.angleRadians < (pi / 3)) {
-                    xOffset = -5.6568542494923801952067548968388;
-                    yOffset = 0;
-                }
-                else if (player.angleRadians > (pi / 3) && player.angleRadians < (2 * pi / 3)) {
-                    xOffset = -4;
-                    yOffset = 4;
-                }
-                else if (player.angleRadians > (2 * pi / 3) && player.angleRadians < (5 * pi / 6)) {
-                    xOffset = 0;
-                    yOffset = -5.6568542494923801952067548968388;
-                }
-                else if (player.angleRadians > (5 * pi / 6) && player.angleRadians < (7 * pi / 6)) {
-                    xOffset = 4;
-                    yOffset = -4;
-                }
-                else if (player.angleRadians > (-5 * pi / 6) && player.angleRadians < (-2 * pi / 3)) {
-                    xOffset = 5.6568542494923801952067548968388;
-                    yOffset = 0;
-                }
-                else if (player.angleRadians > (-2 * pi / 3) && player.angleRadians < (-pi / 3)) {
-                    xOffset = 4;
-                    yOffset = 4;
-                }
-                else if (player.angleRadians > (-pi / 3) && player.angleRadians < 0) {
-                    xOffset = 0;
-                    yOffset = 5.6568542494923801952067548968388;
-                }
-                bullets.emplace_back(files.basicShotDefault);
-                bullets.back().xPos = player.xPos + xOffset + (11 * sin(player.angleRadians));
-                bullets.back().yPos = player.yPos + yOffset - (11 * cos(player.angleRadians));
-                bullets.back().power = player.power;
-                bullets.back().UpdateHitBox();
-                bullets.back().angleRadians = player.angleRadians;
-                bullets.back().yVel = round(-cos(player.angleRadians) * 100) / 100;
-                if (abs(bullets.back().yVel) < 0.0001) {
-                    bullets.back().yVel = 0;
-                }
-                bullets.back().xVel = round(sin(player.angleRadians) * 100) / 100;
-                if (abs(bullets.back().xVel) < 0.0001) {
-                    bullets.back().xVel = 0;
-                }
-
-
-                if (player.angleRadians > -pi / 6 && player.angleRadians < pi / 6) {
-                    xOffset = 4;
-                    yOffset = 4;
-                }
-                else if (player.angleRadians > (pi / 6) && player.angleRadians < (pi / 3)) {
-                    xOffset = 0;
-                    yOffset = 5.6568542494923801952067548968388;
-                }
-                else if (player.angleRadians > (pi / 3) && player.angleRadians < (2 * pi / 3)) {
-                    xOffset = -4;
-                    yOffset = -4;
-                }
-                else if (player.angleRadians > (2 * pi / 3) && player.angleRadians < (5 * pi / 6)) {
-                    xOffset = -5.6568542494923801952067548968388;
-                    yOffset = 0;
-                }
-                else if (player.angleRadians > (5 * pi / 6) && player.angleRadians < (7 * pi / 6)) {
-                    xOffset = -4;
-                    yOffset = -4;
-                }
-                else if (player.angleRadians > (-5 * pi / 6) && player.angleRadians < (-2 * pi / 3)) {
-                    xOffset = 0;
-                    yOffset = -5.6568542494923801952067548968388;
-                }
-                else if (player.angleRadians > (-2 * pi / 3) && player.angleRadians < (-pi / 3)) {
-                    xOffset = 4;
-                    yOffset = -4;
-                }
-                else if (player.angleRadians > (-pi / 3) && player.angleRadians < 0) {
-                    xOffset = 5.6568542494923801952067548968388;
-                    yOffset = 0;
-                }
-                xPosition = player.xPos + xOffset + (11 * sin(player.angleRadians));
-                yPosition = player.yPos + yOffset - (11 * cos(player.angleRadians));
-            }
-            else {
-                xPosition = player.xPos + (11 * sin(player.angleRadians));
-                yPosition = player.yPos - (11 * cos(player.angleRadians));
-            }
-
-
-            // Create new bullet, position it with player, give it its velocities
-            bullets.emplace_back(files.basicShotDefault);
-            bullets.back().xPos = xPosition;
-            bullets.back().yPos = yPosition;
-            bullets.back().UpdateHitBox();
-            bullets.back().power = player.power;
-            bullets.back().angleRadians = player.angleRadians;
-            bullets.back().yVel = round(-cos(player.angleRadians) * 100) / 100;
-            bullets.back().modulator = double((rand() % 628)) / 100;
-            bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
-            int result = (rand() % 2);
-            if (modulatorTicker == true) {
-                modulatorTicker = false;
-                bullets.back().modulatorPositiveDelta = false;
-            }
-            else {
-                modulatorTicker = true;
-                bullets.back().modulatorPositiveDelta = true;
-            }
-            if (abs(bullets.back().yVel) < 0.0001) {
-                bullets.back().yVel = 0;
-            }
-            bullets.back().xVel = round(sin(player.angleRadians) * 100) / 100;
-            if (abs(bullets.back().xVel) < 0.0001) {
-                bullets.back().xVel = 0;
-            }
-
-            player.basicShotFrame = files.basicShotEffect1;
-        }
-        else if (player.basicShotFrame == files.basicShotEffect1 &&
-            (std::chrono::steady_clock::now() - player.lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
-            player.lastShotEffectTime = std::chrono::steady_clock::now();
-            player.basicShotFrame = files.basicShotEffect2;
-        }
-        else if (player.basicShotFrame == files.basicShotEffect2 &&
-            (std::chrono::steady_clock::now() - player.lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
-            player.lastShotEffectTime = std::chrono::steady_clock::now();
-            player.basicShotFrame = files.basicShotEffect3;
-        }
-        else if (player.basicShotFrame == files.basicShotEffect3 &&
-            (std::chrono::steady_clock::now() - player.lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
-            player.lastShotEffectTime = std::chrono::steady_clock::now();
-            player.basicShotFrame = files.basicShotEffect4;
-        }
-        else if (player.basicShotFrame == files.basicShotEffect4 &&
-            (std::chrono::steady_clock::now() - player.lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
-            player.lastShotEffectTime = std::chrono::steady_clock::now();
-            player.basicShotFrame = files.basicShotEffect5;
-        }
-        else if ((player.basicShotFrame == files.basicShotEffect5) &&
-            (std::chrono::steady_clock::now() - player.lastShotEffectTime >= std::chrono::nanoseconds(16666666))) {
-            player.basicShotFrame = nullptr;
-        }
-
-        int i = 0;
-        if (bullets.size() >= 100) {
-            i++;
-        }
-
-        // Bullet logic
-        if (!bullets.empty()) {
-            for (auto it = bullets.begin(); it != bullets.end(); ) {
-                if (it->collided && std::chrono::steady_clock::now() - it->explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
-                    it = bullets.erase(it);
-                }
-                else if (!it->collided) {
-
-                    for (auto& object : objects) {
-                        if (object.destructible && !object.dead) {
-                            if (it->CheckCollision(object)) {
-                                object.damaged = true;
-                                object.damageBegins = std::chrono::steady_clock::now();
-                                object.currentFramePath = object.damagedFrame;
-                                object.health -= it->power;
-                                it->currentFramePath = files.explosion1;
-                                it->collided = true;
-                                it->explosionBegin = std::chrono::steady_clock::now();
-                            }
-                        }
-                    }
-
-                    if (!it->collided) {
-                        it->xPos += 7 * (deltaTime * it->xVel);
-                        it->yPos += 7 * (deltaTime * it->yVel);
-                    }
-                    it->UpdateHitBox();
-                }
-                if (it != bullets.end()) {
-                    ++it;
-                }
-            }
-        }
+        HandleEnemySpawns(deltaTime, spawnEnemies, spawnsExist);
 
         int spawnerCounter = 0;
-        // Master Object logic
-        if (!objects.empty()) {
-            for (int i = 0; i < objects.size(); i++) {
-                if (objects[i].currentFramePath != nullptr) {
-                    if (objects[i].destructible) {
-                        if (objects[i].health <= 0) {
-                            if (objects[i].dead == false) {
-                                std::uniform_int_distribution<int> distribution(3, 5);
-                                int qty = distribution(generator);
-                                float percentage = player.health / player.maxHP;
-                                for (int j = 0; j < qty; j++) {
-                                    std::uniform_int_distribution<int> distribution(1, 100);
-                                    int rng = distribution(generator);
-                                    bool rollHP = false;
-                                    std::uniform_real_distribution<float> fdistribution(-pi, pi);
-                                    float angle = fdistribution(generator);
-                                    float xOffset = 8 * sin(angle);
-                                    angle = fdistribution(generator);
-                                    float yOffset = 8 * sin(angle);
-                                    if (((percentage <= 0.75) && rng >= 90) || ((percentage <= 0.5) && rng >= 80) || ((percentage <= 0.33) && rng >= 50)) {
-                                        rollHP = true;
-                                    }
-                                    if (rollHP) {
-                                        objects.emplace_back(L"Health Pickup", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.hp_pickup_2, false, 0, nullptr, files.hp_pickup_2, 0, 0, false, true, false);
-                                        objects.back().genericFrameMarker = std::chrono::steady_clock::now();
-                                        objects.back().pickup = true;
-                                    }
-                                    else {
-                                        rng = distribution(generator);
-                                        if (rng <= 85) {
-                                            objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
-                                        }
-                                        else if (rng <= 94) {
-                                            objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
-                                        }
-                                        else if (rng <= 98) {
-                                            objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
-                                        }
-                                        else {
-                                            objects.emplace_back(L"Yellow Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
-                                        }
-                                        objects.back().UpdateHitBox();
-                                        objects.back().pickup = true;
-                                    }
-                                }
-                                objects[i].dead = true;
-                                objects[i].currentFramePath = files.explosion1;
-                                objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
-                            }
-                            bool updated(false);
-                            std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - objects[i].lastDeathFrameUpdate;
-                            if (objects[i].currentFramePath == files.explosion1 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                objects[i].currentFramePath = files.explosion2;
-                                updated = true;
-                            }
-                            else if (objects[i].currentFramePath == files.explosion2 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                objects[i].currentFramePath = files.explosion3;
-                                updated = true;
-                            }
-                            else if (objects[i].currentFramePath == files.explosion3 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                objects[i].currentFramePath = files.explosion4;
-                                updated = true;
-                            }
-                            else if (objects[i].currentFramePath == files.explosion4 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                objects[i].currentFramePath = files.explosion3;
-                                updated = true;
-                                objects[i].reverseDeathAnimation = true;
-                            }
-                            else if (objects[i].currentFramePath == files.explosion3 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                objects[i].currentFramePath = files.explosion2;
-                                updated = true;
-                            }
-                            else if (objects[i].currentFramePath == files.explosion2 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                                objects[i].currentFramePath = files.explosion1;
-                                updated = true;
-                            }
-                            else if (objects[i].currentFramePath == files.explosion1 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
-                                objects.erase(objects.begin() + i);
-                                i--;
-                                continue;
-                            }
-                            if (updated) {
-                                objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
-                            }
-                        }
-                        if (!objects[i].dead) {
-                            if (std::chrono::steady_clock::now() - objects[i].damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
-                                objects[i].damaged = false;
-                            }
-                            if (objects[i].damaged) {
-                                objects[i].currentFramePath = objects[i].damagedFrame;
-                            }
-                            else {
-                                objects[i].currentFramePath = objects[i].defaultFrame;
-                            }
-                        }
-                    }
-                    if (!objects[i].dead) {
-                        if (objects[i].rotatable) {
-                            double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
-                            double angleDelta = newAngle - objects[i].angleRadians;
-                            if (angleDelta > pi) {
-                                angleDelta -= (2 * pi);
-                            }
-                            else if (angleDelta < -pi) {
-                                angleDelta += (2 * pi);
-                            }
-                            if (angleDelta > 0) {
-                                objects[i].angleRadians += objects[i].turnRadius * ((deltaTime / 50) / 1);
-                            }
-                            else {
-                                objects[i].angleRadians -= objects[i].turnRadius * ((deltaTime / 50) / 1);
-                            }
-
-                            objects[i].xPos += objects[i].xVel * deltaTime * cos(objects[i].angleRadians);
-                            objects[i].yPos += objects[i].yVel * deltaTime * sin(objects[i].angleRadians);
-                        }
-                        if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 192 && abs(objects[i].yPos - player.yPos) < 168) {
-                            double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
-                            double angleDelta = newAngle - objects[i].angleRadians;
-                            if (angleDelta > pi) {
-                                angleDelta -= (2 * pi);
-                            }
-                            else if (angleDelta < -pi) {
-                                angleDelta += (2 * pi);
-                            }
-                            if (objects[i].burstFire && !objects[i].burstAvailable && (std::chrono::steady_clock::now() - objects[i].timeSinceBurst >= std::chrono::seconds(2))) {
-                                objects[i].burstAvailable = true;
-                                objects[i].shotsInBurst = 0;
-                            }
-                            if (abs(angleDelta) <= pi / 12 && !objects[i].shotFrame && std::chrono::steady_clock::now() - objects[i].lastShotTime >= objects[i].shotSpeed
-                                && ((objects[i].burstFire && objects[i].burstAvailable) || !objects[i].burstFire)) {
-                                // Create new bullet, position it with player, give it its velocities
-                                if (objects[i].burstFire) {
-                                    objects[i].shotsInBurst++;
-                                    if (objects[i].shotsInBurst >= 3) {
-                                        objects[i].burstAvailable = false;
-                                    }
-                                    else if (objects[i].shotsInBurst == 1) {
-                                        objects[i].timeSinceBurst = std::chrono::steady_clock::now();
-                                    }
-                                }
-                                enemyBullets.emplace_back(objects[i].shotType);
-                                enemyBullets.back().xPos = objects[i].xPos;
-                                enemyBullets.back().yPos = objects[i].yPos;
-                                enemyBullets.back().shotVelocity = objects[i].shotVelocity;
-                                enemyBullets.back().power = objects[i].power;
-                                enemyBullets.back().defaultFrame = objects.at(i).shotType;
-                                enemyBullets.back().UpdateHitBox();
-                                enemyBullets.back().angleRadians = objects[i].angleRadians + pi / 2;
-                                enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
-                                if (abs(enemyBullets.back().yVel) < 0.0001) {
-                                    enemyBullets.back().yVel = 0;
-                                }
-                                enemyBullets.back().xVel = round(sin(enemyBullets.back().angleRadians) * 100) / 100;
-                                if (abs(enemyBullets.back().xVel) < 0.0001) {
-                                    enemyBullets.back().xVel = 0;
-                                }
-
-                                //enemyBullets.back().modulator = double((rand() % 628)) / 100;
-                                //bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
-                                //int result = (rand() % 2);
-                                //if (modulatorTicker == true) {
-                                //    modulatorTicker = false;
-                                //    bullets.back().modulatorPositiveDelta = false;
-                                //}
-                                //else {
-                                //    modulatorTicker = true;
-                                //    bullets.back().modulatorPositiveDelta = true;
-                                //}
-                                objects[i].shotFrame = objects[i].defaultShotEffect;
-                            }
-                            else {
-                                CycleShotEffect(objects[i]);
-                            }
-                        }
-                        objects[i].UpdateHitBox();
-                    }
-                    if (objects.at(i).pickup) {
-                        if (std::chrono::steady_clock::now() - objects.at(i).timesinceInception >= std::chrono::milliseconds(750)) {
-                            float dx = (player.xPos - objects.at(i).xPos) / 35;
-                            float dy = (player.yPos - objects.at(i).yPos) / 35;
-                            double length = sqrt(dx * dx + dy * dy);
-                            objects.at(i).xVel = (dx / length) * 5;
-                            objects.at(i).yVel = (dy / length) * 5;
-                            objects.at(i).xPos += objects.at(i).xVel * deltaTime;
-                            objects.at(i).yPos += objects.at(i).yVel * deltaTime;
-                        }
-                        if (objects.at(i).name == L"Health Pickup") {
-                            if (player.CheckCollision(objects.at(i))) {
-                                player.health = std::min(player.health + 10, player.maxHP);
-                                objects.erase(objects.begin() + i);
-                                i--;
-                                continue;
-                            }
-                            if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::seconds(2)) {
-                                objects.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                                objects.at(i).currentFramePath = files.hp_pickup_2;
-                            }
-                            else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(700)) {
-                                objects.at(i).currentFramePath = files.hp_pickup_3;
-                            }
-                            else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(500)) {
-                                objects.at(i).currentFramePath = files.hp_pickup_2;
-                            }
-                            else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(250)) {
-                                objects.at(i).currentFramePath = files.hp_pickup_1;
-                            }
-                        }
-                    }
-                    if (objects.at(i).randomSpawner) {
-                        spawnerCounter++;
-                    }
-                }
-            }
-        }
+        UpdateMasterObjectLogic(deltaTime, spawnerCounter);
         if ((spawnerCounter == 0) && spawnsExist) {
             timeSinceSpawn = std::chrono::steady_clock::now();
         }
 
-        // Enemy Bullet Logic
-        if (!enemyBullets.empty()) {
-            for (int i = 0; i < enemyBullets.size(); i++) {
-
-                if (enemyBullets.at(i).collided && std::chrono::steady_clock::now() - enemyBullets.at(i).explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
-                    if (enemyBullets.at(i).defaultFrame != files.drone_Shot_1) {
-                        enemyBullets.erase(enemyBullets.begin() + i);
-                        i--;
-                        continue;
-                    }
-                }
-                else if (!enemyBullets.at(i).collided) {
-                    if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1) {
-                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(6)) {
-                            enemyBullets.erase(enemyBullets.begin() + i);
-                            i--;
-                            continue;
-                        }
-                        Player playerWithRadius = player;
-                        int buffer = 20;
-                        playerWithRadius.hitbox.right += buffer;
-                        playerWithRadius.hitbox.left -= buffer;
-                        playerWithRadius.hitbox.up -= buffer;
-                        playerWithRadius.hitbox.down += buffer;
-                        if (std::chrono::steady_clock::now() - enemyBullets.at(i).timesinceInception >= std::chrono::seconds(2) || enemyBullets.at(i).CheckCollision(playerWithRadius) || enemyBullets.at(i).exploding) {
-                            enemyBullets.at(i).xVel = 0;
-                            enemyBullets.at(i).yVel = 0;
-                            if (!enemyBullets.at(i).exploding) {
-                                enemyBullets.at(i).exploding = true;
-                                enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                            }
-                            if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(550) || enemyBullets.at(i).pulsating) {
-                                if (!enemyBullets.at(i).pulsating) {
-                                    enemyBullets.at(i).pulsating = true;
-                                    enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                                }
-                                if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(333)) {
-                                    if (enemyBullets.at(i).currentFramePath == files.drone_Shot_6) {
-                                        enemyBullets.at(i).currentFramePath = files.drone_Shot_7;
-                                        enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                                    }
-                                    else {
-                                        enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
-                                        enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                                    }
-                                }
-                            }
-                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(300)) {
-                                enemyBullets.at(i).currentFramePath = files.drone_Shot_6;
-                            }
-                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(150)) {
-                                enemyBullets.at(i).currentFramePath = files.drone_Shot_5;
-                            }
-                            else {
-                                enemyBullets.at(i).currentFramePath = files.drone_Shot_4;
-                            }
-                        }
-                        else {
-                            if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(800)) {
-                                enemyBullets.at(i).currentFramePath = files.drone_Shot_1;
-                                enemyBullets.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                            }
-                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(600)) {
-                                enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
-                            }
-                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(400)) {
-                                enemyBullets.at(i).currentFramePath = files.drone_Shot_3;
-                            }
-                            else if (std::chrono::steady_clock::now() - enemyBullets.at(i).genericFrameMarker >= std::chrono::milliseconds(300)) {
-                                enemyBullets.at(i).currentFramePath = files.drone_Shot_2;
-                            }
-                        }
-
-                    }
-                    if (!player.dead) {
-                        if (enemyBullets.at(i).CheckCollision(player)) {
-                            if (enemyBullets.at(i).defaultFrame == files.drone_Shot_1 && (enemyBullets.at(i).exploding || enemyBullets.at(i).pulsating)) {
-                                enemyBullets.at(i).power = 1;
-                            }
-                            else {
-                                //object.damageBegins = std::chrono::steady_clock::now();
-                                //object.currentFramePath = object.damagedFrame;
-                                enemyBullets.at(i).currentFramePath = files.explosion1;
-                                enemyBullets.at(i).collided = true;
-                                enemyBullets.at(i).explosionBegin = std::chrono::steady_clock::now();
-                            }
-                            player.damaged = true;
-                            player.health -= enemyBullets.at(i).power * deltaTime;
-                            if (player.health <= 0) {
-                                player.dead = true;
-                                player.currentFramePath = files.player_Death_Animation_1;
-                                player.lastDeathFrameUpdate = std::chrono::steady_clock::now();
-                            }
-                        }
-                    }
-                    if (!enemyBullets.at(i).collided) {
-                        enemyBullets.at(i).xPos += enemyBullets.at(i).shotVelocity * (deltaTime * enemyBullets.at(i).xVel);
-                        enemyBullets.at(i).yPos += enemyBullets.at(i).shotVelocity * (deltaTime * enemyBullets.at(i).yVel);
-                    }
-                    enemyBullets.at(i).UpdateHitBox();
-                }
-            }
-        }
-
-        bool shieldGeneratorFound = false;
-        for (auto object : objects) {
-            if (object.name == L"Shield Generator") {
-                shieldGeneratorFound = true;
-                break;
-            }
-        }
-
-        if (!shieldGeneratorFound) {
-            for (auto object = objects.begin(); object != objects.end(); ) {
-                if (object->name == L"Base Door") {
-                    object = objects.erase(object);
-                    break;
-                }
-                if (object != objects.end()) {
-                    ++object;
-                }
-            }
-        }
-
-        bool baseDoorFound = false;
-        for (auto object : objects) {
-            if (object.name == L"Base Door") {
-                //baseDoorFound = true;
-                break;
-            }
-        }
-
-        bool baseEntered = false;
-        if (!baseDoorFound) {
-            for (auto room : rooms) {
-                if (room.id == currRoom) {
-                    for (auto door : room.doors) {
-                        if (player.CheckCollision(door)) {
-                            background = files.base_Interior;
-                            player.sideMode = true;
-                            player.xPos = 128;
-                            player.yPos = 112;
-                            baseEntered = true;
-                        }
-                    }
-                }
-            }
-        }
+        UpdateEnemyShootingLogic(deltaTime);
+        CheckPickupCollision();
+        UpdateOverworldAssets();
 
         if (background.currentFramePath == files.base_Interior) {
             if (player.xPos <= 0) {
@@ -2798,359 +3198,19 @@ void UpdateGameLogic(double deltaTime) {
                 player.sideMode = false;
             }
         }
-
-        player.UpdateHitBox();
-        if (pickup.currentFramePath) {
-            pickup.UpdateHitBox();
-            if (player.CheckCollision(pickup)) {
-                player.doubleShot = true;
-                pickup.xPos = 0;
-                pickup.yPos = 0;
-                pickup.currentFramePath = nullptr;
+        else {
+            if (keys.space) {
+                splashscreen = false;
             }
-        }
-        for (int i = 0; i < objects.size(); i++) {
-            if (objects.at(i).pickup) {
-                if (player.CheckCollision(objects.at(i))) {
-                    if (objects.at(i).name == L"Health Pickup") {
-                        player.health = std::min(player.health + 10, player.maxHP);
-                    }
-                    player.currencyAcquired = std::chrono::steady_clock::now();
-                    if (objects.at(i).name == L"Red Jewel") {
-                        player.currency += 1;
-                    }
-                    else if (objects.at(i).name == L"Purple Jewel") {
-                        player.currency += 5;
-                    }
-                    else if (objects.at(i).name == L"Yellow Jewel") {
-                        player.currency += 10;
-                    }
-                    else if (objects.at(i).name == L"Blue Jewel") {
-                        player.currency += 2;
-                    }
-                    objects.erase(objects.begin() + i);
-                    i--;
-                    continue;
-                }
-            }
-        }
-    }
-    else {
-        if (keys.space) {
-            splashscreen = false;
         }
     }
 }
 
+LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
 
-    // Filenames vector
-    spriteFilePaths.emplace_back(files.background);
-    spriteFilePaths.emplace_back(files.playerFrame1);
-    spriteFilePaths.emplace_back(files.playerFrame2);
-    spriteFilePaths.emplace_back(files.playerRedLightffect1);
-    spriteFilePaths.emplace_back(files.playerRedLightffect2);
-    spriteFilePaths.emplace_back(files.playerRedLightffect3);
-    spriteFilePaths.emplace_back(files.playerRedLightffect4);
-    spriteFilePaths.emplace_back(files.playerRedLightffect5);
-    spriteFilePaths.emplace_back(files.playerRedLightffect6);
-    spriteFilePaths.emplace_back(files.playerRedLightffect7);
-    spriteFilePaths.emplace_back(files.playerRedLightffect8);
-    spriteFilePaths.emplace_back(files.playerRedLightffect9);
-    spriteFilePaths.emplace_back(files.asteroid1);
-    spriteFilePaths.emplace_back(files.pause);
-    spriteFilePaths.emplace_back(files.pauseBackground);
-    spriteFilePaths.emplace_back(files.basicShotEffect1);
-    spriteFilePaths.emplace_back(files.basicShotEffect2);
-    spriteFilePaths.emplace_back(files.basicShotEffect3);
-    spriteFilePaths.emplace_back(files.basicShotEffect4);
-    spriteFilePaths.emplace_back(files.basicShotEffect5);
-    spriteFilePaths.emplace_back(files.basicShotDefault);
-    spriteFilePaths.emplace_back(files.basicShotPurple);
-    spriteFilePaths.emplace_back(files.basicShotBlue);
-    spriteFilePaths.emplace_back(files.hitBox);
-    spriteFilePaths.emplace_back(files.hurtBox);
-    spriteFilePaths.emplace_back(files.enemyShip1);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue1);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue2);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue3);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue4);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue5);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple1);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple2);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple3);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple4);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple5);
-    spriteFilePaths.emplace_back(files.enemyShip1Damaged);
-    spriteFilePaths.emplace_back(files.explosion1);
-    spriteFilePaths.emplace_back(files.explosion2);
-    spriteFilePaths.emplace_back(files.explosion3);
-    spriteFilePaths.emplace_back(files.explosion4);
-    spriteFilePaths.emplace_back(files.doubleShotPickup);
-    spriteFilePaths.emplace_back(files.base);
-    spriteFilePaths.emplace_back(files.brody_the_toad);
-    /*spriteFilePaths.emplace_back(files.brody_the_toad_pain);*/
-    spriteFilePaths.emplace_back(files.turret);
-    spriteFilePaths.emplace_back(files.turret_Shader);
-    spriteFilePaths.emplace_back(files.turret_Damaged);
-    spriteFilePaths.emplace_back(L"Sprites\\Menu\\How_To_Play_Screen.png");
-    spriteFilePaths.emplace_back(files.shield_Generator);
-    spriteFilePaths.emplace_back(files.shield_Generator_Damaged);
-    spriteFilePaths.emplace_back(files.base_Door);
-    spriteFilePaths.emplace_back(files.base_Interior);
-    spriteFilePaths.emplace_back(files.entrance);
-    spriteFilePaths.emplace_back(files.status_Bar);
-    spriteFilePaths.emplace_back(files.health_Bar);
-    spriteFilePaths.emplace_back(files.player_Death_Animation_1);
-    spriteFilePaths.emplace_back(files.player_Death_Animation_2);
-    spriteFilePaths.emplace_back(files.player_Death_Animation_3);
-    spriteFilePaths.emplace_back(files.jewel_Blue);
-    spriteFilePaths.emplace_back(files.jewel_Green);
-    spriteFilePaths.emplace_back(files.jewel_Purple);
-    spriteFilePaths.emplace_back(files.jewel_Red);
-    spriteFilePaths.emplace_back(files.jewel_Silver);
-    spriteFilePaths.emplace_back(files.jewel_Yellow);
-    spriteFilePaths.emplace_back(files.boost_Bar_top);
-    spriteFilePaths.emplace_back(files.boost_Bar_bottom);
-    spriteFilePaths.emplace_back(files.font_0);
-    spriteFilePaths.emplace_back(files.font_1);
-    spriteFilePaths.emplace_back(files.font_2);
-    spriteFilePaths.emplace_back(files.font_3);
-    spriteFilePaths.emplace_back(files.font_4);
-    spriteFilePaths.emplace_back(files.font_5);
-    spriteFilePaths.emplace_back(files.font_6);
-    spriteFilePaths.emplace_back(files.font_7);
-    spriteFilePaths.emplace_back(files.font_8);
-    spriteFilePaths.emplace_back(files.font_9);
-    spriteFilePaths.emplace_back(files.hp_pickup_1);
-    spriteFilePaths.emplace_back(files.hp_pickup_2);
-    spriteFilePaths.emplace_back(files.hp_pickup_3);
-    spriteFilePaths.emplace_back(files.bomber_drone);
-    spriteFilePaths.emplace_back(files.drone_Shot_1);
-    spriteFilePaths.emplace_back(files.drone_Shot_2);
-    spriteFilePaths.emplace_back(files.drone_Shot_3);
-    spriteFilePaths.emplace_back(files.drone_Shot_4);
-    spriteFilePaths.emplace_back(files.drone_Shot_5);
-    spriteFilePaths.emplace_back(files.drone_Shot_6);
-    spriteFilePaths.emplace_back(files.drone_Shot_7);
-    spriteFilePaths.emplace_back(files.asteroid_2);
-    spriteFilePaths.emplace_back(files.map_frame);
-    spriteFilePaths.emplace_back(files.base_icon);
-    spriteFilePaths.emplace_back(files.boss_icon);
-    spriteFilePaths.emplace_back(files.player_tilt_left);
-    spriteFilePaths.emplace_back(files.player_tilt_right);
-    spriteFilePaths.emplace_back(files.player_sideways_l);
-    spriteFilePaths.emplace_back(files.player_sideways_r);
-    spriteFilePaths.emplace_back(files.player_upside_tilted_l);
-    spriteFilePaths.emplace_back(files.player_upside_tilted_r);
-    
-    player.power = 2;
-    player.health = 100;
-    player.maxHP = 100;
-    player.xPos = float(mapSizeX) * 0.55;
-    player.yPos = float(mapSizeY) * 0.8;
-
-    rooms.emplace_back("Overworld", 0);
-
-    std::uniform_int_distribution<int> range(1, 100000);
-    int minY = std::max(int(player.yPos / 224) - 1, 0);
-    int minX = std::max(int(player.xPos / 256) - 1, 0);
-    int maxY = std::min(int(player.yPos / 224) + 1, int(mapSizeY / 224));
-    int maxX = std::min(int(player.xPos / 256) + 2, int(mapSizeY / 256));
-
-    for (int y = minY; y <= maxY; y++) {
-        bool updated = false;
-        for (int x = minX; x <= maxX; x++) {
-            int roll = range(generator);
-            if (roll <= 250) {
-                updated = true;
-                std::pair<int, int> cell = { x / 256, y / 224 };
-                std::vector<std::pair<int, int>> chunks = { cell };
-                if (x == 0) {
-                    chunks.emplace_back( (x - 1) / 256, y / 224 );
-                }
-                else if (x == 256) {
-                    chunks.emplace_back((x + 1) / 256, y / 224);
-                }
-                if (y == 0) {
-                    chunks.emplace_back( x / 256, (y - 1) / 224);
-                }
-                else if (y == 224) {
-                    chunks.emplace_back(x / 256, (y + 1) / 224);
-                }
-
-                bool starFound = false;
-                for (const auto chunk : chunks) {
-                    auto it = starGrid.find(chunk);
-                    if (it != starGrid.end()) {
-                        for (const auto& star : it->second) {
-                            if (std::abs(star.xPos - x) <= 1 || std::abs(star.yPos - y) <= 1) {
-                                starFound = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (starFound) {
-                        break;
-                    }
-                }
-
-                int r, g, b;
-                roll = range(generator);
-                if (roll <= 92000) {
-                    r = g = b = 200;
-                }
-                else if (roll <= 94660) {
-                    r = 102;
-                    g = 138;
-                    b = 200;
-                }
-                else if (roll <= 97320) {
-                    r = 200;
-                    g = 200;
-                    b = 200;
-                }
-                else {
-                    r = 200;
-                    g = 53;
-                    b = 46;
-                }
-                roll = range(generator);
-                float alpha = std::max(float(roll) / 100000.0, 0.01);
-                starGrid[cell].emplace_back(x, y, r, g, b, alpha);
-            }
-            roll = range(generator);
-            if (roll <= 5) {
-                std::pair<int, int> cell = { x / 256, y / 224 };
-                asteroids[cell].emplace_back(x, y);
-            }
-        }
-    }
-
-    background.currentFramePath = files.background;
-
-    // Initializations
-    std::pair <double, double> turretOffsets[12];
-    turretOffsets[0].first = -130.5;
-    turretOffsets[1].first = -151.5;
-    turretOffsets[2].first = -109.5;
-    turretOffsets[3].first = 128.5;
-    turretOffsets[4].first = 149.5;
-    turretOffsets[5].first = 107.5;
-    turretOffsets[6].first = -130.5;
-    turretOffsets[7].first = -151.5;
-    turretOffsets[8].first = -109.5;
-    turretOffsets[9].first = 128.5;
-    turretOffsets[10].first = 149.5;
-    turretOffsets[11].first = 107.5;
-
-    turretOffsets[0].second = -153.5;
-    turretOffsets[1].second = -111.5;
-    turretOffsets[2].second = -111.5;
-    turretOffsets[3].second = -153.5;
-    turretOffsets[4].second = -111.5;
-    turretOffsets[5].second = -111.5;
-    turretOffsets[6].second = 100.5;
-    turretOffsets[7].second = 142.5;
-    turretOffsets[8].second = 142.5;
-    turretOffsets[9].second = 98.5;
-    turretOffsets[10].second = 140.5;
-    turretOffsets[11].second = 140.5;
-
-    bases.emplace_back(files.base);
-    bases.at(0).xPos = .6 * mapSizeX;
-    bases.at(0).yPos = .8 * mapSizeY;
-    bases.emplace_back(files.base);
-    bases.at(1).xPos = .6 * mapSizeX;
-    bases.at(1).yPos = .2 * mapSizeY;
-    bases.emplace_back(files.base);
-    bases.at(2).xPos = .85 * mapSizeX;
-    bases.at(2).yPos = .5 * mapSizeY;
-    std::pair <double, double> shieldOffsets[12];
-    shieldOffsets[0].first = -130.5;
-    shieldOffsets[1].first = -130.5;
-    shieldOffsets[2].first = 128.5;
-    shieldOffsets[3].first = 128.5;
-    shieldOffsets[0].second = -127.5;
-    shieldOffsets[1].second = 126.5;
-    shieldOffsets[2].second = -127.5;
-    shieldOffsets[3].second = 124.5;
-    for (int i = 0; i < bases.size(); i++) {
-        for (int j = 0; j <= 11; j++) {
-            objects.emplace_back(
-                L"Turret",
-                bases.at(i).xPos + turretOffsets[j].first,
-                bases.at(i).yPos + turretOffsets[j].second,
-                3,
-                files.turret,
-                true,
-                0,
-                files.turret_Damaged,
-                files.turret,
-                0,
-                0,
-                true,
-                true,
-                true
-            );
-            objects[j + (i * 17)].turnRadius = pi / 4;
-            objects[j + (i * 17)].shotSpeed = std::chrono::milliseconds(1250);
-            objects[j + (i * 17)].shotVelocity = 5;
-            objects[j + (i * 17)].shotType = files.basicShotBlue;
-            objects[j + (i * 17)].defaultShotEffect = files.basicShotEffectBlue1;
-            objects[j + (i * 17)].power = 10;
-        }
-        for (int j = 0; j <= 3; j++) {
-            objects.emplace_back(
-                L"Shield Generator",
-                bases.at(i).xPos + shieldOffsets[j].first,
-                bases.at(i).yPos + shieldOffsets[j].second,
-                5,
-                files.shield_Generator,
-                true,
-                0,
-                files.shield_Generator_Damaged,
-                files.shield_Generator,
-                0,
-                0,
-                false,
-                true,
-                false
-            );
-        }
-        objects.emplace_back(
-            L"Base Door",
-            bases.at(i).xPos - 181.5,
-            bases.at(i).yPos - 0.5,
-            -1,
-            files.base_Door,
-            false,
-            0,
-            nullptr,
-            files.base_Door,
-            0,
-            0,
-            false,
-            true,
-            false
-        );
-        rooms.at(0).addDoor(bases.at(i).xPos - 181.5, bases.at(i).yPos - 0.5, 128, 112, 0);
-        rooms.emplace_back("Base Interior" + std::to_string(i + 1), i + 1);
-    }
-
-    objects.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
-        files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, false, false);
-
-    objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (5 * scalerY), 0,
-        files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, false, false);
-
-    objects.emplace_back(L"Boost_Bar_Top", leftBoundary + (6 * scalerX), (11 * scalerY), 0,
-        files.boost_Bar_top, false, 0, nullptr, files.boost_Bar_top, 0, 0, false, false, false);
-
-    objects.emplace_back(L"Boost_Bar_Bottom", leftBoundary + (6 * scalerX), (12 * scalerY), 0,
-        files.boost_Bar_bottom, false, 0, nullptr, files.boost_Bar_bottom, 0, 0, false, false, false);
-
-
+    InitializeAssets();
 
     HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &D2DFactory);
     if (SUCCEEDED(hr)) {
@@ -3402,7 +3462,7 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                 player.doubleShot = std::stoi(line);
             }
 
-            bullets.clear();
+            player.bullets.clear();
             inFile.close();
             paused = false;
         }
