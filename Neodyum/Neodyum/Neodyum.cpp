@@ -32,6 +32,7 @@
 #define pi 3.141592653589793238462643383279502884197
 
 
+
 //---------
 // Globals
 //---------
@@ -95,7 +96,8 @@ struct {
     LPCWSTR base_Core = L"Sprites\\Environment\\Base_Core.png";
     LPCWSTR entrance = L"Sprites\\Environment\\Entrance.png";
     LPCWSTR status_Bar = L"Sprites\\Menu\\Status_Bar.png";
-    LPCWSTR health_Bar = L"Sprites\\Menu\\Health_Bar.png";
+    LPCWSTR health_Bar_Top = L"Sprites\\Menu\\Health_Bar_Top.png";
+    LPCWSTR health_Bar_Bottom = L"Sprites\\Menu\\Health_Bar_Bottom.png";
     LPCWSTR boost_Bar_top = L"Sprites\\Menu\\Boost_Bar_Top.png";
     LPCWSTR boost_Bar_bottom = L"Sprites\\Menu\\Boost_Bar_Bottom.png";
     LPCWSTR player_Death_Animation_1 = L"Sprites\\Ship\\Player_Death_Animation_1.png";
@@ -210,6 +212,7 @@ void GetDirectionalInput(int& xDir, int& yDir, bool right, bool left, bool down,
     xDir = (right ? 1 : 0) - (left ? 1 : 0);
     yDir = (down ? 1 : 0) - (up ? 1 : 0);
 }
+
 
 
 //---------
@@ -1164,19 +1167,11 @@ public:
     float destX, destY;
     unsigned __int8 destID;
 
-    // LIterally only doing this so it's easier to debug
-    struct {
-        double left;
-        double right;
-        double up;
-        double down;
-    } hbox;
-
     Door(float l, float r, float u, float d, float toX, float toY, unsigned __int8 toID, LPCWSTR file) {
-        hbox.left = l;
-        hbox.right = r;
-        hbox.up = u;
-        hbox.down = d;
+        hitbox.left = l;
+        hitbox.right = r;
+        hitbox.up = u;
+        hitbox.down = d;
         destX = toX;
         destY = toY;
         destID = toID;
@@ -1188,10 +1183,10 @@ public:
 
         D2D1_SIZE_F size = object->GetSize();
 
-        hbox.left = xPos - (size.width / 2);
-        hbox.right = xPos + (size.width / 2);
-        hbox.up = yPos - (size.height / 2);
-        hbox.down = yPos + (size.height / 2);
+        hitbox.left = xPos - (size.width / 2);
+        hitbox.right = xPos + (size.width / 2);
+        hitbox.up = yPos - (size.height / 2);
+        hitbox.down = yPos + (size.height / 2);
     }
 };
 
@@ -1201,11 +1196,15 @@ public:
     LPCWSTR frame;
     std::vector<Door> doors;
     bool overworld = false;
+    bool idSideMap[4] = { false, true, true, true };
+    bool side;
+
 
     Environment(LPCWSTR file, unsigned __int8 ident, bool ow) {
         frame = file;
         id = ident;
         overworld = ow;
+        side = idSideMap[id];
     }
 
     void AddDoor(float l, float r, float u, float d, float toX, float toY, unsigned __int8 toID, LPCWSTR file) {
@@ -1214,9 +1213,29 @@ public:
 };
 
 
+
 //-------------------------------
 // Resource Management Functions
 //-------------------------------
+void ReleaseD2DResourcesFromMemory()
+{
+    // cleanup
+    if (renderTarget)
+    {
+        renderTarget->Release();
+        renderTarget = NULL;
+    }
+
+    for (auto& pair : bitmaps)
+    {
+        ID2D1Bitmap* bitmap = pair.second;
+        if (bitmap)
+        {
+            bitmap->Release();
+        }
+    }
+    bitmaps.clear();
+}
 
 void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
     HRESULT hr = S_OK;
@@ -1252,7 +1271,17 @@ void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
             hr = bitmapFactory->CreateDecoderFromFilename(filePath, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &decoder);
 
             if (FAILED(hr)) {
+                if (D2DFactory) D2DFactory->Release();
                 bitmapFactory->Release();
+                ReleaseD2DResourcesFromMemory();
+                // Display a top-most, foreground error message box
+                MessageBox(
+                    NULL, // parent: NULL for desktop-level, or hWnd if you want relative to your window
+                    (std::wstring(L"Sprite Missing: ") + filePath).c_str(),
+                    L"Error",
+                    MB_ICONERROR | MB_OK | MB_TOPMOST | MB_SETFOREGROUND | MB_SERVICE_NOTIFICATION
+                );
+                exit(EXIT_FAILURE);  // or use abort(); or return 1;
                 return;
             }
 
@@ -1305,55 +1334,8 @@ void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
     bitmapFactory->Release();
 }
 
-void ReleaseD2DResourcesFromMemory()
-{
-    // cleanup
-    if (renderTarget)
-    {
-        renderTarget->Release();
-        renderTarget = NULL;
-    }
-
-    for (auto& pair : bitmaps) 
-    {
-        ID2D1Bitmap* bitmap = pair.second;
-        if (bitmap) 
-        {
-            bitmap->Release();
-        }
-    }
-    bitmaps.clear();
-}
-
-
-//--------------
-// Declarations
-//--------------
-
-std::vector<LPCWSTR> spriteFilePaths;
-std::vector<Object> enemyBullets;
-Player player;
-Object pickup;
-std::vector<Object> bases;
-std::vector<Object> objects;
-std::vector<Object> pickups;
-Object background;
-std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
-std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
-std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
-std::unordered_set<std::pair<int, int>, hash_function> pendingChunks;
-std::mutex chunkInProgress; 
-std::vector<Environment> environments;
-unsigned __int8 currEnvID(1);
-
-
-//-------------------------
-// Consolidatory Functions 
-//-------------------------
-
-void InitializeAssets() {
+void LoadFilePathsToVector(std::vector<LPCWSTR> &spriteFilePaths) {
     // Filenames vector
-    spriteFilePaths.emplace_back(files.background);
     spriteFilePaths.emplace_back(files.playerFrame1);
     spriteFilePaths.emplace_back(files.playerFrame2);
     spriteFilePaths.emplace_back(files.playerRedLightffect1);
@@ -1408,7 +1390,8 @@ void InitializeAssets() {
     spriteFilePaths.emplace_back(files.base_Interior);
     spriteFilePaths.emplace_back(files.entrance);
     spriteFilePaths.emplace_back(files.status_Bar);
-    spriteFilePaths.emplace_back(files.health_Bar);
+    spriteFilePaths.emplace_back(files.health_Bar_Top);
+    spriteFilePaths.emplace_back(files.health_Bar_Bottom);
     spriteFilePaths.emplace_back(files.player_Death_Animation_1);
     spriteFilePaths.emplace_back(files.player_Death_Animation_2);
     spriteFilePaths.emplace_back(files.player_Death_Animation_3);
@@ -1451,14 +1434,44 @@ void InitializeAssets() {
     spriteFilePaths.emplace_back(files.player_sideways_r);
     spriteFilePaths.emplace_back(files.player_upside_tilted_l);
     spriteFilePaths.emplace_back(files.player_upside_tilted_r);
+}
 
+
+
+//--------------
+// Declarations
+//--------------
+
+std::vector<LPCWSTR> spriteFilePaths;
+std::vector<Object> enemyBullets;
+Player player;
+Object pickup;
+std::vector<Object> bases;
+std::vector<Object> objects;
+std::vector<Object> pickups;
+Object background;
+std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
+std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
+std::unordered_set<std::pair<int, int>, hash_function> pendingChunks;
+std::mutex chunkInProgress; 
+std::vector<Environment> environments;
+unsigned __int8 currEnvID(0);
+std::vector<Object> UI;
+
+
+//-------------------------
+// Consolidatory Functions 
+//-------------------------
+
+void InitializeAssets() {
     player.power = 2;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = float(mapSizeX) * 0.55;
-    player.yPos = float(mapSizeY) * 0.8;
+    player.xPos = mapSizeX/2;
+    player.yPos = mapSizeY/2;
 
-    environments.emplace_back(nullptr, 1, true);
+    environments.emplace_back(nullptr, 0, true);
 
     std::uniform_int_distribution<int> range(1, 100000);
     int minY = std::max(int(player.yPos / 224) - 1, 0);
@@ -1642,23 +1655,29 @@ void InitializeAssets() {
             true,
             false
         );
+        D2D1_SIZE_F size = bitmaps[files.base_Door]->GetSize();
+        float width = float(size.width) / 2;
+        float height = float(size.height) / 2;
         float hboxL = bases.at(i).xPos - 181.5;
         float hboxU = bases.at(i).yPos - 0.5;
-        environments.at(0).AddDoor(hboxL, hboxL + 20, hboxU, hboxU + 20, 0, 128, 1, files.base_Door);
-        environments.emplace_back(files.base_Interior, i + 2, false);
-        environments.at(i + 1).AddDoor(0, 2, 100, 200, hboxL - 20, hboxU, 1, nullptr);
+        environments.at(0).AddDoor(hboxL - width, hboxL + width, hboxU - height, hboxU + height, 40, 112, i + 1, files.base_Door);
+        environments.emplace_back(files.base_Interior, i + 1, false);
+        environments.at(i + 1).AddDoor(0, 2, 22, 187, hboxL - 40, hboxU, 0, nullptr);
     }
 
-    objects.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
+    UI.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
         files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, false, false);
 
-    objects.emplace_back(L"Health_Bar", leftBoundary + (6 * scalerX), (5 * scalerY), 0,
-        files.health_Bar, false, 0, nullptr, files.health_Bar, 0, 0, false, false, false);
+    UI.emplace_back(L"Health_Bar_Bottom", leftBoundary + (6 * scalerX), (6 * scalerY), 0,
+        files.health_Bar_Bottom, false, 0, nullptr, files.health_Bar_Bottom, 0, 0, false, false, false);
 
-    objects.emplace_back(L"Boost_Bar_Top", leftBoundary + (6 * scalerX), (11 * scalerY), 0,
+    UI.emplace_back(L"Health_Bar_Top", leftBoundary + (6 * scalerX), (5 * scalerY), 0,
+        files.health_Bar_Top, false, 0, nullptr, files.health_Bar_Top, 0, 0, false, false, false);
+
+    UI.emplace_back(L"Boost_Bar_Top", leftBoundary + (6.05 * scalerX), (11 * scalerY), 0,
         files.boost_Bar_top, false, 0, nullptr, files.boost_Bar_top, 0, 0, false, false, false);
 
-    objects.emplace_back(L"Boost_Bar_Bottom", leftBoundary + (6 * scalerX), (12 * scalerY), 0,
+    UI.emplace_back(L"Boost_Bar_Bottom", leftBoundary + (6.05 * scalerX), (13 * scalerY), 0,
         files.boost_Bar_bottom, false, 0, nullptr, files.boost_Bar_bottom, 0, 0, false, false, false);
 }
 
@@ -1726,6 +1745,7 @@ void UpdateBackgroundElements(double deltaTime) {
 
     for (int y = upBound; y <= lowBound; ++y) {
         for (int x = leftBound; x <= rightBound; ++x) {
+            std::lock_guard<std::mutex> lock(chunkInProgress);
             auto it = starGrid.find({ x, y });
             if (it != starGrid.end()) {
                 for (Star& star : it->second) {
@@ -1734,8 +1754,6 @@ void UpdateBackgroundElements(double deltaTime) {
             }
             else {
                 std::pair<int, int> cell = { x, y };
-
-                std::lock_guard<std::mutex> lock(chunkInProgress);
                 if (pendingChunks.count(cell)) {
                     continue;
                 }
@@ -2305,7 +2323,7 @@ void UpdateEnemyShootingLogic(double deltaTime) {
 }
 
 void UpdateOverworldAssets() {
-    if (environments.at(currEnvID - 1).overworld) {
+    if (environments.at(currEnvID).overworld) {
         bool shieldGeneratorFound = false;
         for (auto object : objects) {
             if (object.name == L"Shield Generator") {
@@ -2331,23 +2349,6 @@ void UpdateOverworldAssets() {
             if (object.name == L"Base Door") {
                 //baseDoorFound = true;
                 break;
-            }
-        }
-
-        bool baseEntered = false;
-        if (!baseDoorFound) {
-            for (auto environment : environments) {
-                if (environment.id == currEnvID) {
-                    for (auto door : environment.doors) {
-                        if (player.CheckCollision(door)) {
-                            background = files.base_Interior;
-                            player.sideMode = true;
-                            player.xPos = 128;
-                            player.yPos = 112;
-                            baseEntered = true;
-                        }
-                    }
-                }
             }
         }
     }
@@ -2389,18 +2390,18 @@ void CheckPickupCollision() {
     }
 }
 
-void CheckDoorCollisions(std::vector<Environment> envs) {
-    for (auto door : envs.at(currEnvID - 1).doors) {
+void CheckEnvironmentCollisions(std::vector<Environment> envs) {
+    for (auto door : envs.at(currEnvID).doors) {
         if (player.CheckCollision(door)) {
             currEnvID = door.destID;
             player.xPos = door.destX;
             player.yPos = door.destY;
-            background = envs.at(currEnvID - 1).frame;
+            background = envs.at(currEnvID).frame;
+            player.sideMode = envs.at(currEnvID).side;
             return;
         }
     }
 }
-
 
 
 
@@ -2443,7 +2444,6 @@ void Render() {
 
             if (backgroundBitmap) {
                 D2D1_RECT_F screen = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
-
                 // Render a slice of the background equal to the camera coords, with no interpolation or transparency, to the defined display bounds
                 renderTarget->DrawBitmap(backgroundBitmap, screen, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, cameraPos);
             }
@@ -2687,6 +2687,9 @@ void Render() {
                         inverse ? keys.up = !keys.up : keys.up;
                     }
                 }
+                else if (player.sideMode && player.currentFramePath == files.player_upside_tilted_l) {
+                    xOff1 = -1, xOff2 = 1;
+                }
                 D2D1_RECT_F displayPos1 = D2D1::RectF(
                     (screenX / 2) - (((size.width / 2) - 4 - xOff1) * scalerX),
                     (screenY / 2) - (((size.height / 2) + 2) * scalerY),
@@ -2772,6 +2775,8 @@ void Render() {
 
             renderTarget->DrawBitmap(basicShotEffectBitmap, displayPos, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
+        // Resets the rotation transformation on renderTarget
+        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
 
 
@@ -2915,81 +2920,14 @@ void Render() {
         //    //renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
         //}
 
-        double top_width = 0;
-        for (auto object : objects) {
-            if (object.name == L"Status_Bar") {
-                ID2D1Bitmap* statusBarBitmap = bitmaps[object.currentFramePath];
-                if (statusBarBitmap) {
-                    D2D1_SIZE_F size = statusBarBitmap->GetSize();
-                    D2D1_RECT_F position = D2D1::RectF(
-                        object.xPos, object.yPos,
-                        object.xPos + (size.width * scalerX), object.yPos + (size.height * scalerY)
-                    );
-                    renderTarget->DrawBitmap(statusBarBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
-                }
-            }
-            if (object.name == L"Health_Bar") {
-                ID2D1Bitmap* healthBarBitmap = bitmaps[object.currentFramePath];
-                if (healthBarBitmap) {
-                    D2D1_SIZE_F size = healthBarBitmap->GetSize();
-                    D2D1_RECT_F portion = D2D1::RectF(
-                        object.xPos, object.yPos,
-                        object.xPos + ((size.width * scalerX) * (double(player.health) / double(player.maxHP))), object.yPos + (size.height * scalerY)
-                    );
-                    D2D1_RECT_F source = D2D1::RectF(
-                        0, 0,
-                        size.width * (double(player.health) / double(player.maxHP)),
-                        size.height
-                    );
-
-                    renderTarget->DrawBitmap(healthBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
-                }
-            }
-            if (object.name == L"Boost_Bar_Top") {
-                ID2D1Bitmap* boostBarBitmap = bitmaps[object.currentFramePath];
-                if (boostBarBitmap) {
-                    D2D1_SIZE_F size = boostBarBitmap->GetSize();
-                    top_width = size.width;
-                    D2D1_RECT_F portion = D2D1::RectF(
-                        object.xPos, object.yPos,
-                        object.xPos + ((size.width * scalerX) * (double(player.boost) / 100.0)), object.yPos + (size.height * scalerY)
-                    );
-                    D2D1_RECT_F source = D2D1::RectF(
-                        0, 0,
-                        size.width * (double(player.health) / double(player.maxHP)),
-                        size.height
-                    );
-
-                    renderTarget->DrawBitmap(boostBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
-                }
-            }
-            if (object.name == L"Boost_Bar_Bottom") {
-                ID2D1Bitmap* boostBarBitmap = bitmaps[object.currentFramePath];
-                if (boostBarBitmap) {
-                    D2D1_SIZE_F size = boostBarBitmap->GetSize();
-                    D2D1_RECT_F portion = D2D1::RectF(
-                        object.xPos, object.yPos,
-                        object.xPos + ((size.width * scalerX) * std::min(1.0, double(player.boost / ((size.width / top_width) * 100.0)))), object.yPos + (size.height * scalerY)
-                    );
-                    D2D1_RECT_F source = D2D1::RectF(
-                        0, 0,
-                        size.width * (double(player.health) / double(player.maxHP)),
-                        size.height
-                    );
-
-                    renderTarget->DrawBitmap(boostBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
-                }
-            }
-        }
-
         ID2D1Bitmap* currencyIconBitmap = bitmaps[files.jewel_Red];
         if (currencyIconBitmap) {
             D2D1_SIZE_F size = currencyIconBitmap->GetSize();
             D2D1_RECT_F position = D2D1::RectF(
-                (4 * scalerX) + leftBoundary,
-                25 * scalerY,
-                (4 * scalerX) + (size.width * scalerX) + leftBoundary,
-                (25 * scalerY) + (size.height * scalerY)
+                (3 * scalerX) + leftBoundary,
+                19 * scalerY,
+                (3 * scalerX) + (size.width * scalerX) + leftBoundary,
+                (19 * scalerY) + (size.height * scalerY)
             );
             renderTarget->DrawBitmap(currencyIconBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
@@ -3034,16 +2972,109 @@ void Render() {
             if (digitBitmap) {
                 D2D1_SIZE_F size = digitBitmap->GetSize();
                 D2D1_RECT_F position = D2D1::RectF(
-                    (11 * scalerX) + (spaces * scalerX) + leftBoundary,
-                    24 * scalerY,
-                    (11 * scalerX) + (spaces * scalerX) + (size.width * scalerX) + leftBoundary,
-                    (24 * scalerY) + (size.height * scalerY)
+                    (10 * scalerX) + (spaces * scalerX) + leftBoundary,
+                    18 * scalerY,
+                    (10 * scalerX) + (spaces * scalerX) + (size.width * scalerX) + leftBoundary,
+                    (18 * scalerY) + (size.height * scalerY)
                 );
                 renderTarget->DrawBitmap(digitBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
                 spaces += size.width + 1;
             }
         }
 
+        double hp_bottom_width = 0;
+        double boost_top_width = 0;
+        for (auto elem : UI) {
+            ID2D1Bitmap* bitmap = bitmaps[elem.currentFramePath];
+            if (bitmap) {
+                if (elem.name == L"Status_Bar") {
+                    ID2D1Bitmap* statusBarBitmap = bitmaps[elem.currentFramePath];
+                    if (statusBarBitmap) {
+                        D2D1_SIZE_F size = statusBarBitmap->GetSize();
+                        D2D1_RECT_F position = D2D1::RectF(
+                            elem.xPos, elem.yPos,
+                            elem.xPos + (size.width * scalerX), elem.yPos + (size.height * scalerY)
+                        );
+                        renderTarget->DrawBitmap(statusBarBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+                    }
+                    continue;
+                }
+                if (elem.name == L"Health_Bar_Bottom") {
+                    ID2D1Bitmap* healthBarBitmap = bitmaps[elem.currentFramePath];
+                    if (healthBarBitmap) {
+                        D2D1_SIZE_F size = healthBarBitmap->GetSize();
+                        hp_bottom_width = size.width;
+                        D2D1_RECT_F portion = D2D1::RectF(
+                            elem.xPos, elem.yPos,
+                            elem.xPos + ((size.width * scalerX) * (double(player.health) / double(player.maxHP))), elem.yPos + (size.height * scalerY)
+                        );
+                        D2D1_RECT_F source = D2D1::RectF(
+                            0, 0,
+                            size.width * (double(player.health) / double(player.maxHP)),
+                            size.height
+                        );
+
+                        renderTarget->DrawBitmap(healthBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
+                    }
+                    continue;
+                }
+                if (elem.name == L"Health_Bar_Top") {
+                    ID2D1Bitmap* healthBarBitmap = bitmaps[elem.currentFramePath];
+                    if (healthBarBitmap) {
+                        D2D1_SIZE_F size = healthBarBitmap->GetSize();
+                        D2D1_RECT_F portion = D2D1::RectF(
+                            elem.xPos, elem.yPos,
+                            elem.xPos + ((size.width * scalerX) * std::min(1.0, (double(player.health) / ((size.width / hp_bottom_width) * double(player.maxHP))))), elem.yPos + (size.height * scalerY)
+                        );
+                        D2D1_RECT_F source = D2D1::RectF(
+                            0, 0,
+                            size.width * (double(player.health) / double(player.maxHP)),
+                            size.height
+                        );
+
+                        renderTarget->DrawBitmap(healthBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
+                    }
+                    continue;
+                }
+                if (elem.name == L"Boost_Bar_Top") {
+                    ID2D1Bitmap* boostBarBitmap = bitmaps[elem.currentFramePath];
+                    if (boostBarBitmap) {
+                        D2D1_SIZE_F size = boostBarBitmap->GetSize();
+                        boost_top_width = size.width;
+                        D2D1_RECT_F portion = D2D1::RectF(
+                            elem.xPos, elem.yPos,
+                            elem.xPos + ((size.width * scalerX) * (double(player.boost) / 100.0)), elem.yPos + ((size.height + .1) * scalerY)
+                        );
+                        D2D1_RECT_F source = D2D1::RectF(
+                            0, 0,
+                            size.width * (double(player.boost) / 100.0),
+                            size.height
+                        );
+
+                        renderTarget->DrawBitmap(boostBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
+                    }
+                    continue;
+                }
+                if (elem.name == L"Boost_Bar_Bottom") {
+                    ID2D1Bitmap* boostBarBitmap = bitmaps[elem.currentFramePath];
+                    if (boostBarBitmap) {
+                        D2D1_SIZE_F size = boostBarBitmap->GetSize();
+                        D2D1_RECT_F portion = D2D1::RectF(
+                            elem.xPos, elem.yPos,
+                            elem.xPos + ((size.width * scalerX) * std::min(1.0, double(player.boost / ((size.width / boost_top_width) * 100.0)))), elem.yPos + (size.height * scalerY)
+                        );
+                        D2D1_RECT_F source = D2D1::RectF(
+                            0, 0,
+                            size.width * (double(player.boost) / 100.0),
+                            size.height
+                        );
+
+                        renderTarget->DrawBitmap(boostBarBitmap, portion, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR, source);
+                    }
+                    continue;
+                }
+            }
+        }
 
 
         /*if (std::chrono::steady_clock::now() - mapTick >= std::chrono::nanoseconds(16666666)) {
@@ -3176,7 +3207,7 @@ void UpdateGameLogic(double deltaTime) {
         player.UpdateRedLightEffect(deltaTime);
         player.ApplyShootingLogic(deltaTime);
         player.UpdateBullets(deltaTime, objects);
-        CheckDoorCollisions(environments);
+        CheckEnvironmentCollisions(environments);
 
         bool spawnEnemies = true;
         bool spawnsExist = false;
@@ -3191,27 +3222,12 @@ void UpdateGameLogic(double deltaTime) {
         UpdateEnemyShootingLogic(deltaTime);
         CheckPickupCollision();
         UpdateOverworldAssets();
-
-        if (background.currentFramePath == files.base_Interior) {
-            if (player.xPos <= 0) {
-                background = nullptr;
-                player.sideMode = false;
-            }
-        }
-        else {
-            if (keys.space) {
-                splashscreen = false;
-            }
-        }
     }
 }
 
 LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
-
-    InitializeAssets();
-
     HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &D2DFactory);
     if (SUCCEEDED(hr)) {
         WNDCLASSEX wc = { sizeof(WNDCLASSEX) };
@@ -3232,7 +3248,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 screenX, screenY, NULL, NULL, hInstance, NULL);
 
             if (hWnd) {
+                LoadFilePathsToVector(spriteFilePaths);
                 LoadSpritesToMemory(hWnd, spriteFilePaths);
+                InitializeAssets();
                 ShowWindow(hWnd, nCmdShow);
                 //PlaySound(L"Music\\Neodyum Overworld Idea.wav", NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 
