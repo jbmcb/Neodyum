@@ -184,8 +184,8 @@ bool isMultiCore = std::thread::hardware_concurrency() > 1;
 
 struct hash_function {
     std::size_t operator()(const std::pair<int, int>& p) const {
-        std::size_t h1 = std::hash<int>{}(p.first);
-        std::size_t h2 = std::hash<int>{}(p.second);
+        std::size_t h1 = std::hash<size_t>{}(p.first);
+        std::size_t h2 = std::hash<size_t>{}(p.second);
         return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
     }
 };
@@ -351,6 +351,7 @@ public:
     bool rolling = false;
     std::chrono::steady_clock::time_point rollTime = std::chrono::steady_clock::now();
     bool sideMode;
+    float speed = 10;
 
 
     Player() {
@@ -370,10 +371,10 @@ public:
 
     void ApplyDirectionalInput(double deltaTime) {
         // Apply Player Inputs
-        double velocity = 1.5;
+        float velocity = speed;
         if (keys.lShift && keys.directionPressed && !keys.f) {
             if (boost > 0 && ((std::chrono::steady_clock::now() - runoutTime) >= std::chrono::seconds(2))) {
-                velocity *= 1.66;
+                velocity *= 2;
                 boost -= 1 * deltaTime;
                 if (boost <= 0) {
                     boost = 0;
@@ -1121,7 +1122,6 @@ public:
 class Star : public Object {
 public:
     float r, g, b, a, rate;
-    bool direction;
     Star(int x, int y, int red, int green, int blue, float alpha) {
         xPos = x;
         yPos = y;
@@ -1129,26 +1129,15 @@ public:
         g = green;
         b = blue;
         a = alpha;
-        std::uniform_int_distribution<int> range(25, 75);
-        int roll = range(generator);
-        rate = (float(roll) / 20000.0);
+        std::uniform_real_distribution<float> range(0.00125, 0.00375);
+        float roll = range(generator);
         std::uniform_int_distribution<int> range1(0, 1);
-        direction = range1(generator);
+        rate = range1(generator) ? roll : -roll;
     }
     void Pulsate(double deltaTime) {
-        if (direction) {
-            a += rate * deltaTime;
-            if (a >= 1.0) {
-                a = 1.0;
-                direction = false;
-            }
-        }
-        else {
-            a -= rate * deltaTime;
-            if (a <= 0) {
-                a = 0;
-                direction = true;
-            }
+        a += rate * deltaTime;
+        if ((a >= 1.0) || (a <= 0)) {
+            rate *= -1;
         }
     }
 };
@@ -1473,80 +1462,7 @@ void InitializeAssets() {
 
     environments.emplace_back(nullptr, 0, true);
 
-    std::uniform_int_distribution<int> range(1, 100000);
-    int minY = std::max(int(player.yPos / 224) - 1, 0);
-    int minX = std::max(int(player.xPos / 256) - 1, 0);
-    int maxY = std::min(int(player.yPos / 224) + 1, int(mapSizeY / 224));
-    int maxX = std::min(int(player.xPos / 256) + 2, int(mapSizeY / 256));
 
-    for (int y = minY; y <= maxY; y++) {
-        bool updated = false;
-        for (int x = minX; x <= maxX; x++) {
-            int roll = range(generator);
-            if (roll <= 250) {
-                updated = true;
-                std::pair<int, int> cell = { x / 256, y / 224 };
-                std::vector<std::pair<int, int>> chunks = { cell };
-                if (x == 0) {
-                    chunks.emplace_back((x - 1) / 256, y / 224);
-                }
-                else if (x == 256) {
-                    chunks.emplace_back((x + 1) / 256, y / 224);
-                }
-                if (y == 0) {
-                    chunks.emplace_back(x / 256, (y - 1) / 224);
-                }
-                else if (y == 224) {
-                    chunks.emplace_back(x / 256, (y + 1) / 224);
-                }
-
-                bool starFound = false;
-                for (const auto chunk : chunks) {
-                    auto it = starGrid.find(chunk);
-                    if (it != starGrid.end()) {
-                        for (const auto& star : it->second) {
-                            if (std::abs(star.xPos - x) <= 1 || std::abs(star.yPos - y) <= 1) {
-                                starFound = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (starFound) {
-                        break;
-                    }
-                }
-
-                int r, g, b;
-                roll = range(generator);
-                if (roll <= 92000) {
-                    r = g = b = 200;
-                }
-                else if (roll <= 94660) {
-                    r = 102;
-                    g = 138;
-                    b = 200;
-                }
-                else if (roll <= 97320) {
-                    r = 200;
-                    g = 200;
-                    b = 200;
-                }
-                else {
-                    r = 200;
-                    g = 53;
-                    b = 46;
-                }
-                roll = range(generator);
-                float alpha = std::max(float(roll) / 100000.0, 0.01);
-                starGrid[cell].emplace_back(x, y, r, g, b, alpha);
-            }
-            roll = range(generator);
-            if (roll <= 5) {
-                std::pair<int, int> cell = { x / 256, y / 224 };
-                asteroids[cell].emplace_back(x, y);
-            }
-        }
-    }
 
     background.currentFramePath = files.background;
 
@@ -1610,9 +1526,9 @@ void InitializeAssets() {
                 files.turret,
                 0,
                 0,
+                false,
                 true,
-                true,
-                true
+                false
             );
             objects[j + (i * 17)].turnRadius = pi / 4;
             objects[j + (i * 17)].shotSpeed = std::chrono::milliseconds(1250);
@@ -1740,8 +1656,8 @@ void UpdateBackgroundElements(double deltaTime) {
     int rightBound = (int(player.xPos + 128) / 256) + 1;
     int lowBound = (int(player.yPos + 112) / 224) + 1;
 
-    int leftBound = ((int(player.xPos) - 128) / 256);
-    int upBound = ((int(player.yPos) - 112) / 224);
+    int leftBound = ((int(player.xPos) - 128) / 256) - 1;
+    int upBound = ((int(player.yPos) - 112) / 224) - 1;
 
     for (int y = upBound; y <= lowBound; ++y) {
         for (int x = leftBound; x <= rightBound; ++x) {
@@ -1809,7 +1725,7 @@ void UpdateBackgroundElements(double deltaTime) {
                                 }
                             }
                             roll = range(generator);
-                            if (roll <= 5) {
+                            if (roll <= 2) {
                                 std::lock_guard<std::mutex> lock(chunkInProgress);
                                 asteroids[cell].emplace_back(j, i);
                             }
@@ -1890,7 +1806,7 @@ void UpdateBackgroundElements(double deltaTime) {
                                             starGrid[cell].emplace_back(j, i, r, g, b, alpha);
                                         }
                                         roll = range(generator);
-                                        if (roll <= 5) {
+                                        if (roll <= 2) {
                                             std::pair<int, int> cell = { x, y };
                                             asteroids[cell].emplace_back(j, i);
                                         }
@@ -1917,6 +1833,8 @@ void HandleEnemySpawns(double deltaTime, bool spawnEnemies, bool spawnsExist) {
             spawnEnemies = false;
             spawnsExist = true;
         }
+        //debug mode
+        spawnEnemies = false;
     }
     if (!player.sideMode && (spawnEnemies && (std::chrono::steady_clock::now() - timeSinceSpawn >= std::chrono::seconds(10)))) {
         for (int i = 0; i < 3; i++) {
@@ -2468,10 +2386,13 @@ void Render() {
                                 ((star.xPos - player.xPos) * scalerX) + scalerX,
                                 ((star.yPos - player.yPos) * scalerY) + scalerY);
 
+                            float red = float(star.r) / 255.0;
+                            float green = float(star.g) / 255.0;
+                            float blue = float(star.b) / 255.0;
                             renderTarget->CreateSolidColorBrush(D2D1::ColorF(
-                                star.r / 255.0,
-                                star.g / 255.0,
-                                star.b / 255.0,
+                                float(star.r) / 255.0,
+                                float(star.g) / 255.0,
+                                float(star.b) / 255.0,
                                 star.a),
                                 &brush);
                             renderTarget->FillRectangle(pixel, brush);
