@@ -1465,7 +1465,7 @@ std::vector<Object> UI;
 //-------------------------
 
 void InitializeAssets() {
-    player.power = 2;
+        player.power = 2;
     player.health = 100;
     player.maxHP = 100;
     player.xPos = mapSizeX/2;
