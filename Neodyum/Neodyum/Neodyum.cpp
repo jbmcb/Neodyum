@@ -22,10 +22,8 @@
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
-#pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "winmm.lib") 
 
-#undef min
-#undef max
 #define VK_L 0x4C
 #define VK_Q 0x51
 #define VK_S 0x53
@@ -1679,7 +1677,7 @@ void UpdateBackgroundElements(double deltaTime) {
 
                 if (isMultiCore) {
                     std::thread([cell, x, y]() mutable {
-                        std::vector<std::pair<int, int>> chunks = { cell };
+                    std::vector<std::pair<int, int>> chunks = { cell };
                     std::uniform_int_distribution<int> range(1, 100000);
 
                     for (int i = y * 224; i <= ((y * 224) + 224); i++) {
@@ -1718,7 +1716,7 @@ void UpdateBackgroundElements(double deltaTime) {
                                         b = 46;
                                     }
                                     roll = range(generator);
-                                    float alpha = std::max(float(roll) / 100000.0, 0.01);
+                                    float alpha = max(float(roll) / 100000.0, 0.01);
 
                                     std::lock_guard<std::mutex> lock(chunkInProgress);
                                     starGrid[cell].emplace_back(j, i, r, g, b, alpha);
@@ -1802,7 +1800,7 @@ void UpdateBackgroundElements(double deltaTime) {
                                                 b = 46;
                                             }
                                             roll = range(generator);
-                                            float alpha = std::max(float(roll) / 100000.0, 0.01);
+                                            float alpha = max(float(roll) / 100000.0, 0.01);
                                             starGrid[cell].emplace_back(j, i, r, g, b, alpha);
                                         }
                                         roll = range(generator);
@@ -2106,7 +2104,7 @@ void UpdateMasterObjectLogic(double deltaTime, int &spawnerCounter) {
                     }
                     if (objects.at(i).name == L"Health Pickup") {
                         if (player.CheckCollision(objects.at(i))) {
-                            player.health = std::min(player.health + 10, player.maxHP);
+                            player.health = min(player.health + 10, player.maxHP);
                             objects.erase(objects.begin() + i);
                             i--;
                             continue;
@@ -2285,7 +2283,7 @@ void CheckPickupCollision() {
         if (objects.at(i).pickup) {
             if (player.CheckCollision(objects.at(i))) {
                 if (objects.at(i).name == L"Health Pickup") {
-                    player.health = std::min(player.health + 10, player.maxHP);
+                    player.health = min(player.health + 10, player.maxHP);
                 }
                 player.currencyAcquired = std::chrono::steady_clock::now();
                 if (objects.at(i).name == L"Red Jewel") {
@@ -2348,8 +2346,8 @@ void Render() {
             bgWidth = size.width;
             bgHeight = size.height;
 
-            float left = std::max(0.0, std::max(player.xPos - 128, 0.0));
-            float right = std::min(std::max(0.0, player.xPos + 128), double(size.width));
+            float left = max(0.0, max(player.xPos - 128, 0.0));
+            float right = min(max(0.0, player.xPos + 128), double(size.width));
             if (left == 0) {
                 right = 256;
             }
@@ -2945,7 +2943,7 @@ void Render() {
                         D2D1_SIZE_F size = healthBarBitmap->GetSize();
                         D2D1_RECT_F portion = D2D1::RectF(
                             elem.xPos, elem.yPos,
-                            elem.xPos + ((size.width * scalerX) * std::min(1.0, (double(player.health) / ((size.width / hp_bottom_width) * double(player.maxHP))))), elem.yPos + (size.height * scalerY)
+                            elem.xPos + ((size.width * scalerX) * min(1.0, (double(player.health) / ((size.width / hp_bottom_width) * double(player.maxHP))))), elem.yPos + (size.height * scalerY)
                         );
                         D2D1_RECT_F source = D2D1::RectF(
                             0, 0,
@@ -2982,7 +2980,7 @@ void Render() {
                         D2D1_SIZE_F size = boostBarBitmap->GetSize();
                         D2D1_RECT_F portion = D2D1::RectF(
                             elem.xPos, elem.yPos,
-                            elem.xPos + ((size.width * scalerX) * std::min(1.0, double(player.boost / ((size.width / boost_top_width) * 100.0)))), elem.yPos + (size.height * scalerY)
+                            elem.xPos + ((size.width * scalerX) * min(1.0, double(player.boost / ((size.width / boost_top_width) * 100.0)))), elem.yPos + (size.height * scalerY)
                         );
                         D2D1_RECT_F source = D2D1::RectF(
                             0, 0,
@@ -3122,7 +3120,7 @@ void UpdateGameLogic(double deltaTime) {
         for (auto& object : objects) {
             object.UpdateHitBox();
         }
-        UpdateBackgroundElements(deltaTime);
+        //UpdateBackgroundElements(deltaTime);
 
         player.ApplyDirectionalInput(deltaTime);
         player.UpdateRedLightEffect(deltaTime);
