@@ -1460,8 +1460,6 @@ void InitializeAssets() {
 
     environments.emplace_back(nullptr, 0, true);
 
-
-
     background.currentFramePath = files.background;
 
     // Initializations
@@ -1659,7 +1657,6 @@ void UpdateBackgroundElements(double deltaTime) {
 
     for (int y = upBound; y <= lowBound; ++y) {
         for (int x = leftBound; x <= rightBound; ++x) {
-            std::lock_guard<std::mutex> lock(chunkInProgress);
             auto it = starGrid.find({ x, y });
             if (it != starGrid.end()) {
                 for (Star& star : it->second) {
@@ -1675,7 +1672,8 @@ void UpdateBackgroundElements(double deltaTime) {
                     pendingChunks.insert(cell);
                 }
 
-                if (isMultiCore) {
+                if (false/*isMultiCore*/) {
+                    std::lock_guard<std::mutex> lock(chunkInProgress);
                     std::thread([cell, x, y]() mutable {
                     std::vector<std::pair<int, int>> chunks = { cell };
                     std::uniform_int_distribution<int> range(1, 100000);
@@ -3120,7 +3118,7 @@ void UpdateGameLogic(double deltaTime) {
         for (auto& object : objects) {
             object.UpdateHitBox();
         }
-        //UpdateBackgroundElements(deltaTime);
+        UpdateBackgroundElements(deltaTime);
 
         player.ApplyDirectionalInput(deltaTime);
         player.UpdateRedLightEffect(deltaTime);
