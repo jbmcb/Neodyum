@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <mmsystem.h>
+#include <set>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -349,7 +350,7 @@ public:
     bool rolling = false;
     std::chrono::steady_clock::time_point rollTime = std::chrono::steady_clock::now();
     bool sideMode;
-    float speed = 10;
+    float speed = 1.5;
 
 
     Player() {
@@ -402,15 +403,21 @@ public:
         if (keys.down) {
             yPos += (velocity * deltaTime);
         }
-        if (keys.right) {
-            xPos += (velocity * deltaTime);
+        if (sideMode) {
+            xPos += 1.5 * deltaTime;
         }
-        if (keys.left) {
-            xPos -= (velocity * deltaTime);
+        else {
+            if (keys.right) {
+                xPos += (velocity * deltaTime);
+            }
+            if (keys.left) {
+                xPos -= (velocity * deltaTime);
+            }
         }
 
         lastFrame = currentFramePath;
         if (sideMode) {
+            xVel = 1;
             directionX = 1;
             directionY = 0;
             if (keys.up) {
@@ -1445,6 +1452,7 @@ std::mutex chunkInProgress;
 std::vector<Environment> environments;
 unsigned __int8 currEnvID(0);
 std::vector<Object> UI;
+float camPosX = 0;
 
 
 //-------------------------
@@ -1455,8 +1463,8 @@ void InitializeAssets() {
         player.power = 2;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = mapSizeX/2;
-    player.yPos = mapSizeY/2;
+    player.xPos = 2800;
+    player.yPos = 1100;
 
     environments.emplace_back(nullptr, 0, true);
 
@@ -1572,7 +1580,7 @@ void InitializeAssets() {
         float height = float(size.height) / 2;
         float hboxL = bases.at(i).xPos - 181.5;
         float hboxU = bases.at(i).yPos - 0.5;
-        environments.at(0).AddDoor(hboxL - width, hboxL + width, hboxU - height, hboxU + height, 40, 112, i + 1, files.base_Door);
+        environments.at(0).AddDoor(hboxL - width, hboxL + width, hboxU - height, hboxU + height, 6, 112, i + 1, files.base_Door);
         environments.emplace_back(files.base_Interior, i + 1, false);
         environments.at(i + 1).AddDoor(0, 2, 22, 187, hboxL - 40, hboxU, 0, nullptr);
     }
@@ -1649,22 +1657,23 @@ void CycleShotEffect(Object& object) {
 }
 
 void UpdateBackgroundElements(double deltaTime) {
-    int rightBound = (int(player.xPos + 128) / 256) + 1;
-    int lowBound = (int(player.yPos + 112) / 224) + 1;
+    int rightBound = (int(player.xPos) / 256) + 1;
+    int lowBound = (int(player.yPos) / 224) + 1;
 
     int leftBound = ((int(player.xPos) - 128) / 256) - 1;
-    int upBound = ((int(player.yPos) - 112) / 224) - 1;
+    int upBound = (int(player.yPos) / 224) - 1;
 
     for (int y = upBound; y <= lowBound; ++y) {
         for (int x = leftBound; x <= rightBound; ++x) {
-            auto it = starGrid.find({ x, y });
+            std::pair<int, int> cell = { x, y };
+            auto it = starGrid.find(cell);
             if (it != starGrid.end()) {
                 for (Star& star : it->second) {
                     star.Pulsate(deltaTime);
                 }
+                continue;
             }
             else {
-                std::pair<int, int> cell = { x, y };
                 if (pendingChunks.count(cell)) {
                     continue;
                 }
@@ -1672,7 +1681,7 @@ void UpdateBackgroundElements(double deltaTime) {
                     pendingChunks.insert(cell);
                 }
 
-                if (false/*isMultiCore*/) {
+                if (false) {//isMultiCore) {
                     std::lock_guard<std::mutex> lock(chunkInProgress);
                     std::thread([cell, x, y]() mutable {
                     std::vector<std::pair<int, int>> chunks = { cell };
@@ -1734,85 +1743,57 @@ void UpdateBackgroundElements(double deltaTime) {
 
                 }
                 else {
-                    int rightBound = (int(player.xPos + 128) / 256) + 1;
-                    int lowBound = (int(player.yPos + 112) / 224) + 1;
-
-                    int leftBound = ((int(player.xPos) - 128) / 256);
-                    int upBound = ((int(player.yPos) - 112) / 224);
-
-                    for (int y = upBound; y <= lowBound; ++y) {
-                        for (int x = leftBound; x <= rightBound; ++x) {
-                            auto it = starGrid.find({ x, y });
-                            if (it != starGrid.end()) {
-                                for (Star& star : it->second) {
-                                    star.Pulsate(deltaTime);
-                                }
-                            }
-                            else {
-                                std::pair<int, int> cell = { x, y };
-                                std::vector<std::pair<int, int>> chunks = { cell };
-                                std::uniform_int_distribution<int> range(1, 100000);
-                                bool updated = false;
-                                for (int i = y * 224; i <= ((y * 224) + 224); i++) {
-                                    for (int j = x * 256; j <= ((x * 256) + 256); j++) {
-                                        int roll = range(generator);
-                                        if (roll <= 250) {
-                                            updated = true;
-                                            std::pair<int, int> cell = { x , y };
-                                            std::vector<std::pair<int, int>> chunks = { cell };
-
-                                            bool starFound = false;
-                                            for (const auto chunk : chunks) {
-                                                auto it = starGrid.find(chunk);
-                                                if (it != starGrid.end()) {
-                                                    for (const auto& star : it->second) {
-                                                        if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
-                                                            starFound = true;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                                if (starFound) {
-                                                    break;
-                                                }
-                                            }
-
-                                            int r, g, b;
-                                            roll = range(generator);
-                                            if (roll <= 92000) {
-                                                r = g = b = 200;
-                                            }
-                                            else if (roll <= 94660) {
-                                                r = 102;
-                                                g = 138;
-                                                b = 200;
-                                            }
-                                            else if (roll <= 97320) {
-                                                r = 200;
-                                                g = 200;
-                                                b = 200;
-                                            }
-                                            else {
-                                                r = 200;
-                                                g = 53;
-                                                b = 46;
-                                            }
-                                            roll = range(generator);
-                                            float alpha = max(float(roll) / 100000.0, 0.01);
-                                            starGrid[cell].emplace_back(j, i, r, g, b, alpha);
-                                        }
-                                        roll = range(generator);
-                                        if (roll <= 2) {
-                                            std::pair<int, int> cell = { x, y };
-                                            asteroids[cell].emplace_back(j, i);
+                    std::uniform_int_distribution<int> range(1, 100000);
+                    for (int i = y * 224; i <= ((y * 224) + 224); i++) {
+                        for (int j = x * 256; j <= ((x * 256) + 256); j++) {
+                            int roll = range(generator);
+                            if (roll <= 250) {
+                                bool starFound = false;
+                                auto it = starGrid.find(cell);
+                                if (it != starGrid.end()) {
+                                    for (const auto& star : it->second) {
+                                        if (std::abs(star.xPos - j) <= 1 || std::abs(star.yPos - i) <= 1) {
+                                            starFound = true;
+                                            break;
                                         }
                                     }
                                 }
+                                if (!starFound) {
+                                    int r, g, b;
+                                    roll = range(generator);
+                                    if (roll <= 92000) {
+                                        r = g = b = 200;
+                                    }
+                                    else if (roll <= 94660) {
+                                        r = 102;
+                                        g = 138;
+                                        b = 200;
+                                    }
+                                    else if (roll <= 97320) {
+                                        r = 200;
+                                        g = 200;
+                                        b = 200;
+                                    }
+                                    else {
+                                        r = 200;
+                                        g = 53;
+                                        b = 46;
+                                    }
+                                    roll = range(generator);
+                                    float alpha = max(float(roll) / 100000.0, 0.01);
+                                    starGrid[cell].emplace_back(j, i, r, g, b, alpha);
+                                }
+                            }
+                            roll = range(generator);
+                            if (roll <= 2) {
+                                asteroids[cell].emplace_back(j, i);
                             }
                         }
                     }
+                    pendingChunks.erase(cell);
                 }
             }
+            
         }
     }
 }
@@ -2307,6 +2288,10 @@ void CheckPickupCollision() {
 void CheckEnvironmentCollisions(std::vector<Environment> envs) {
     for (auto door : envs.at(currEnvID).doors) {
         if (player.CheckCollision(door)) {
+            std::set<int> interiodIds = { 1, 2, 3 };
+            if (interiodIds.count(door.destID) > 0) {
+                camPosX = 128;
+            }
             currEnvID = door.destID;
             player.xPos = door.destX;
             player.yPos = door.destY;
@@ -2314,6 +2299,18 @@ void CheckEnvironmentCollisions(std::vector<Environment> envs) {
             player.sideMode = envs.at(currEnvID).side;
             return;
         }
+    }
+}
+
+void UpdateSideViewCamera() {
+    if (player.xPos < 128) {
+        camPosX = 128;
+    }
+    else if (player.xPos > 1920) {
+        camPosX = 1920;
+    }
+    else {
+        camPosX = player.xPos;
     }
 }
 
@@ -2344,8 +2341,8 @@ void Render() {
             bgWidth = size.width;
             bgHeight = size.height;
 
-            float left = max(0.0, max(player.xPos - 128, 0.0));
-            float right = min(max(0.0, player.xPos + 128), double(size.width));
+            float left = max(0.0, max(camPosX - 128, 0.0));
+            float right = min(max(0.0, camPosX + 128), double(size.width));
             if (left == 0) {
                 right = 256;
             }
@@ -2385,12 +2382,16 @@ void Render() {
                             float red = float(star.r) / 255.0;
                             float green = float(star.g) / 255.0;
                             float blue = float(star.b) / 255.0;
-                            renderTarget->CreateSolidColorBrush(D2D1::ColorF(
+                            /*renderTarget->CreateSolidColorBrush(D2D1::ColorF(
                                 float(star.r) / 255.0,
                                 float(star.g) / 255.0,
                                 float(star.b) / 255.0,
-                                star.a),
-                                &brush);
+                                star.a));*/
+                            brush->SetColor(D2D1::ColorF(
+                                float(star.r) / 255.0,
+                                float(star.g) / 255.0,
+                                float(star.b) / 255.0,
+                                star.a));
                             renderTarget->FillRectangle(pixel, brush);
                         }
                     }
@@ -3139,6 +3140,8 @@ void UpdateGameLogic(double deltaTime) {
         UpdateEnemyShootingLogic(deltaTime);
         CheckPickupCollision();
         UpdateOverworldAssets();
+        UpdateSideViewCamera();
+
     }
 }
 
