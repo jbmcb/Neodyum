@@ -20,6 +20,7 @@
 #include <mutex>
 #include <mmsystem.h>
 #include <set>
+#include <ctime>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -30,6 +31,7 @@
 #define VK_S 0x53
 #define pi 3.141592653589793238462643383279502884197
 
+void TripErrorMissingFile(LPCWSTR file);
 
 
 //---------
@@ -139,8 +141,301 @@ struct {
     LPCWSTR player_sideways_r = L"Sprites\\Ship\\Player_Sideways_R.png";
     LPCWSTR player_upside_tilted_l = L"Sprites\\Ship\\Player_upside_tilted_L.png";
     LPCWSTR player_upside_tilted_r = L"Sprites\\Ship\\Player_upside_tilted_R.png";
-
+    LPCWSTR title_screen = L"Sprites\\Menu\\Title_Screen.png";
+    LPCWSTR save_file_panel = L"Sprites\\Menu\\Save_File_Panel.png";
+    LPCWSTR shrunken_repair_screen = L"Sprites\\Menu\\Shrunken_Repair_Screen.png";
+    LPCWSTR lower_a = L"Sprites\\Fonts\\lower_a.png";
+    LPCWSTR lower_b = L"Sprites\\Fonts\\lower_b.png";
+    LPCWSTR lower_c = L"Sprites\\Fonts\\lower_c.png";
+    LPCWSTR lower_d = L"Sprites\\Fonts\\lower_d.png";
+    LPCWSTR lower_e = L"Sprites\\Fonts\\lower_e.png";
+    LPCWSTR lower_f = L"Sprites\\Fonts\\lower_f.png";
+    LPCWSTR lower_g = L"Sprites\\Fonts\\lower_g.png";
+    LPCWSTR lower_h = L"Sprites\\Fonts\\lower_h.png";
+    LPCWSTR lower_i = L"Sprites\\Fonts\\lower_i.png";
+    LPCWSTR lower_j = L"Sprites\\Fonts\\lower_j.png";
+    LPCWSTR lower_k = L"Sprites\\Fonts\\lower_k.png";
+    LPCWSTR lower_l = L"Sprites\\Fonts\\lower_l.png";
+    LPCWSTR lower_m = L"Sprites\\Fonts\\lower_m.png";
+    LPCWSTR lower_n = L"Sprites\\Fonts\\lower_n.png";
+    LPCWSTR lower_o = L"Sprites\\Fonts\\lower_o.png";
+    LPCWSTR lower_p = L"Sprites\\Fonts\\lower_p.png";
+    LPCWSTR lower_q = L"Sprites\\Fonts\\lower_q.png";
+    LPCWSTR lower_r = L"Sprites\\Fonts\\lower_r.png";
+    LPCWSTR lower_s = L"Sprites\\Fonts\\lower_s.png";
+    LPCWSTR lower_t = L"Sprites\\Fonts\\lower_t.png";
+    LPCWSTR lower_u = L"Sprites\\Fonts\\lower_u.png";
+    LPCWSTR lower_v = L"Sprites\\Fonts\\lower_v.png";
+    LPCWSTR lower_w = L"Sprites\\Fonts\\lower_w.png";
+    LPCWSTR lower_x = L"Sprites\\Fonts\\lower_x.png";
+    LPCWSTR lower_y = L"Sprites\\Fonts\\lower_y.png";
+    LPCWSTR lower_z = L"Sprites\\Fonts\\lower_z.png";
+    LPCWSTR upper_a = L"Sprites\\Fonts\\Capital_A.png";
+    LPCWSTR upper_b = L"Sprites\\Fonts\\Capital_B.png";
+    LPCWSTR upper_c = L"Sprites\\Fonts\\Capital_C.png";
+    LPCWSTR upper_d = L"Sprites\\Fonts\\Capital_D.png";
+    LPCWSTR upper_e = L"Sprites\\Fonts\\Capital_E.png";
+    LPCWSTR upper_f = L"Sprites\\Fonts\\Capital_F.png";
+    LPCWSTR upper_g = L"Sprites\\Fonts\\Capital_G.png";
+    LPCWSTR upper_h = L"Sprites\\Fonts\\Capital_H.png";
+    LPCWSTR upper_i = L"Sprites\\Fonts\\Capital_I.png";
+    LPCWSTR upper_j = L"Sprites\\Fonts\\Capital_J.png";
+    LPCWSTR upper_k = L"Sprites\\Fonts\\Capital_K.png";
+    LPCWSTR upper_l = L"Sprites\\Fonts\\Capital_L.png";
+    LPCWSTR upper_m = L"Sprites\\Fonts\\Capital_M.png";
+    LPCWSTR upper_n = L"Sprites\\Fonts\\Capital_N.png";
+    LPCWSTR upper_o = L"Sprites\\Fonts\\Capital_O.png";
+    LPCWSTR upper_p = L"Sprites\\Fonts\\Capital_P.png";
+    LPCWSTR upper_q = L"Sprites\\Fonts\\Capital_Q.png";
+    LPCWSTR upper_r = L"Sprites\\Fonts\\Capital_R.png";
+    LPCWSTR upper_s = L"Sprites\\Fonts\\Capital_S.png";
+    LPCWSTR upper_t = L"Sprites\\Fonts\\Capital_T.png";
+    LPCWSTR upper_u = L"Sprites\\Fonts\\Capital_U.png";
+    LPCWSTR upper_v = L"Sprites\\Fonts\\Capital_V.png";
+    LPCWSTR upper_w = L"Sprites\\Fonts\\Capital_W.png";
+    LPCWSTR upper_x = L"Sprites\\Fonts\\Capital_X.png";
+    LPCWSTR upper_y = L"Sprites\\Fonts\\Capital_Y.png";
+    LPCWSTR upper_z = L"Sprites\\Fonts\\Capital_Z.png";
+    LPCWSTR semicolon = L"Sprites\\Fonts\\semicolon.png";
+    LPCWSTR selec_arrow = L"Sprites\\Menu\\Selection_Arrow.png";
+    LPCWSTR save_station_1 = L"Sprites\\Environment\\Save Station_1.png";
+    LPCWSTR save_station_2 = L"Sprites\\Environment\\Save Station_2.png";
+    LPCWSTR save_station_3 = L"Sprites\\Environment\\Save Station_3.png";
+    LPCWSTR save_station_4 = L"Sprites\\Environment\\Save Station_4.png";
+    LPCWSTR save_station_5 = L"Sprites\\Environment\\Save Station_5.png";
+    LPCWSTR save_station_6 = L"Sprites\\Environment\\Save Station_6.png";
+    LPCWSTR save_station_7 = L"Sprites\\Environment\\Save Station_7.png";
+    LPCWSTR save_station_8 = L"Sprites\\Environment\\Save Station_8.png";
+    LPCWSTR save_station_9 = L"Sprites\\Environment\\Save Station_9.png";
+    LPCWSTR save_station_10 = L"Sprites\\Environment\\Save Station_10.png";
+    LPCWSTR save_station_11 = L"Sprites\\Environment\\Save Station_11.png";
+    LPCWSTR save_station_12 = L"Sprites\\Environment\\Save Station_12.png";
+    LPCWSTR save_station_13 = L"Sprites\\Environment\\Save Station_13.png";
+    LPCWSTR save_station_14 = L"Sprites\\Environment\\Save Station_14.png";
+    LPCWSTR save_station_15 = L"Sprites\\Environment\\Save Station_15.png";
+    LPCWSTR player_descending_1 = L"Sprites\\Ship\\Player_Descending_1.png";
+    LPCWSTR player_descending_2 = L"Sprites\\Ship\\Player_Descending_2.png";
+    LPCWSTR player_descending_3 = L"Sprites\\Ship\\Player_Descending_3.png";
+    LPCWSTR player_descending_4 = L"Sprites\\Ship\\Player_Descending_4.png";
+    LPCWSTR player_descending_5 = L"Sprites\\Ship\\Player_Descending_5.png";
+    LPCWSTR player_descending_6 = L"Sprites\\Ship\\Player_Descending_6.png";
+    LPCWSTR repair_station_menu = L"Sprites\\Menu\\Repair_Station_Menu.png";
+    LPCWSTR invalid_char = L"Sprites\\Fonts\\Invalid_Char.png";
+    LPCWSTR repair_station_bar_shell = L"Sprites\\Menu\\Repair_Station_Bar_Shell.png";
+    LPCWSTR repair_station_blasters_filling = L"Sprites\\Menu\\Repair_Station_Blasters_Filling.png";
+    LPCWSTR repair_station_thruster_filling = L"Sprites\\Menu\\Repair_Station_Thruster_Filling.png";
+    LPCWSTR repair_station_hull_filling = L"Sprites\\Menu\\Repair_Station_Hull_Filling.png";
+    LPCWSTR repair_station_utilities_filling = L"Sprites\\Menu\\Repair_Station_Utilities_Filling.png";
+    LPCWSTR period = L"Sprites\\Fonts\\period.png";
+    LPCWSTR repair_Selection_1 = L"Sprites\\Menu\\Repair_Selection_1.png";
+    LPCWSTR repair_Selection_2 = L"Sprites\\Menu\\Repair_Selection_2.png";
+    LPCWSTR repair_Selection_3 = L"Sprites\\Menu\\Repair_Selection_3.png";
+    LPCWSTR repair_Selection_4 = L"Sprites\\Menu\\Repair_Selection_4.png";
+    LPCWSTR repair_Selection_5 = L"Sprites\\Menu\\Repair_Selection_5.png";
+    LPCWSTR repair_station_info_box = L"Sprites\\Menu\\Repair_Station_Info_Panel.png";
+    LPCWSTR upgrade_button = L"Sprites\\Menu\\Repair_Station_Upgrade_Button.png";
+    LPCWSTR upgrade_button_pressed = L"Sprites\\Menu\\Repair_Station_Upgrade_Button_Pressed.png";
+    LPCWSTR apostrophe = L"Sprites\\Fonts\\apostrophe.png";
+    LPCWSTR comma = L"Sprites\\Fonts\\comma.png";
 } files;
+
+void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
+    // Filenames vector
+    spriteFilePaths.emplace_back(files.playerFrame1);
+    spriteFilePaths.emplace_back(files.playerFrame2);
+    spriteFilePaths.emplace_back(files.playerRedLightffect1);
+    spriteFilePaths.emplace_back(files.playerRedLightffect2);
+    spriteFilePaths.emplace_back(files.playerRedLightffect3);
+    spriteFilePaths.emplace_back(files.playerRedLightffect4);
+    spriteFilePaths.emplace_back(files.playerRedLightffect5);
+    spriteFilePaths.emplace_back(files.playerRedLightffect6);
+    spriteFilePaths.emplace_back(files.playerRedLightffect7);
+    spriteFilePaths.emplace_back(files.playerRedLightffect8);
+    spriteFilePaths.emplace_back(files.playerRedLightffect9);
+    spriteFilePaths.emplace_back(files.asteroid1);
+    spriteFilePaths.emplace_back(files.pause);
+    spriteFilePaths.emplace_back(files.pauseBackground);
+    spriteFilePaths.emplace_back(files.basicShotEffect1);
+    spriteFilePaths.emplace_back(files.basicShotEffect2);
+    spriteFilePaths.emplace_back(files.basicShotEffect3);
+    spriteFilePaths.emplace_back(files.basicShotEffect4);
+    spriteFilePaths.emplace_back(files.basicShotEffect5);
+    spriteFilePaths.emplace_back(files.basicShotDefault);
+    spriteFilePaths.emplace_back(files.basicShotPurple);
+    spriteFilePaths.emplace_back(files.basicShotBlue);
+    spriteFilePaths.emplace_back(files.hitBox);
+    spriteFilePaths.emplace_back(files.hurtBox);
+    spriteFilePaths.emplace_back(files.enemyShip1);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue1);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue2);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue3);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue4);
+    spriteFilePaths.emplace_back(files.basicShotEffectBlue5);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple1);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple2);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple3);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple4);
+    spriteFilePaths.emplace_back(files.basicShotEffectPurple5);
+    spriteFilePaths.emplace_back(files.enemyShip1Damaged);
+    spriteFilePaths.emplace_back(files.explosion1);
+    spriteFilePaths.emplace_back(files.explosion2);
+    spriteFilePaths.emplace_back(files.explosion3);
+    spriteFilePaths.emplace_back(files.explosion4);
+    spriteFilePaths.emplace_back(files.doubleShotPickup);
+    spriteFilePaths.emplace_back(files.base);
+    spriteFilePaths.emplace_back(files.brody_the_toad);
+    /*spriteFilePaths.emplace_back(files.brody_the_toad_pain);*/
+    spriteFilePaths.emplace_back(files.turret);
+    spriteFilePaths.emplace_back(files.turret_Shader);
+    spriteFilePaths.emplace_back(files.turret_Damaged);
+    spriteFilePaths.emplace_back(L"Sprites\\Menu\\How_To_Play_Screen.png");
+    spriteFilePaths.emplace_back(files.shield_Generator);
+    spriteFilePaths.emplace_back(files.shield_Generator_Damaged);
+    spriteFilePaths.emplace_back(files.base_Door);
+    spriteFilePaths.emplace_back(files.base_Interior);
+    spriteFilePaths.emplace_back(files.entrance);
+    spriteFilePaths.emplace_back(files.status_Bar);
+    spriteFilePaths.emplace_back(files.health_Bar_Top);
+    spriteFilePaths.emplace_back(files.health_Bar_Bottom);
+    spriteFilePaths.emplace_back(files.player_Death_Animation_1);
+    spriteFilePaths.emplace_back(files.player_Death_Animation_2);
+    spriteFilePaths.emplace_back(files.player_Death_Animation_3);
+    spriteFilePaths.emplace_back(files.jewel_Blue);
+    spriteFilePaths.emplace_back(files.jewel_Green);
+    spriteFilePaths.emplace_back(files.jewel_Purple);
+    spriteFilePaths.emplace_back(files.jewel_Red);
+    spriteFilePaths.emplace_back(files.jewel_Silver);
+    spriteFilePaths.emplace_back(files.jewel_Yellow);
+    spriteFilePaths.emplace_back(files.boost_Bar_top);
+    spriteFilePaths.emplace_back(files.boost_Bar_bottom);
+    spriteFilePaths.emplace_back(files.font_0);
+    spriteFilePaths.emplace_back(files.font_1);
+    spriteFilePaths.emplace_back(files.font_2);
+    spriteFilePaths.emplace_back(files.font_3);
+    spriteFilePaths.emplace_back(files.font_4);
+    spriteFilePaths.emplace_back(files.font_5);
+    spriteFilePaths.emplace_back(files.font_6);
+    spriteFilePaths.emplace_back(files.font_7);
+    spriteFilePaths.emplace_back(files.font_8);
+    spriteFilePaths.emplace_back(files.font_9);
+    spriteFilePaths.emplace_back(files.hp_pickup_1);
+    spriteFilePaths.emplace_back(files.hp_pickup_2);
+    spriteFilePaths.emplace_back(files.hp_pickup_3);
+    spriteFilePaths.emplace_back(files.bomber_drone);
+    spriteFilePaths.emplace_back(files.drone_Shot_1);
+    spriteFilePaths.emplace_back(files.drone_Shot_2);
+    spriteFilePaths.emplace_back(files.drone_Shot_3);
+    spriteFilePaths.emplace_back(files.drone_Shot_4);
+    spriteFilePaths.emplace_back(files.drone_Shot_5);
+    spriteFilePaths.emplace_back(files.drone_Shot_6);
+    spriteFilePaths.emplace_back(files.drone_Shot_7);
+    spriteFilePaths.emplace_back(files.asteroid_2);
+    spriteFilePaths.emplace_back(files.map_frame);
+    spriteFilePaths.emplace_back(files.base_icon);
+    spriteFilePaths.emplace_back(files.boss_icon);
+    spriteFilePaths.emplace_back(files.player_tilt_left);
+    spriteFilePaths.emplace_back(files.player_tilt_right);
+    spriteFilePaths.emplace_back(files.player_sideways_l);
+    spriteFilePaths.emplace_back(files.player_sideways_r);
+    spriteFilePaths.emplace_back(files.player_upside_tilted_l);
+    spriteFilePaths.emplace_back(files.player_upside_tilted_r);
+    spriteFilePaths.emplace_back(files.title_screen);
+    spriteFilePaths.emplace_back(files.save_file_panel);
+    spriteFilePaths.emplace_back(files.shrunken_repair_screen);
+    spriteFilePaths.emplace_back(files.lower_a);
+    spriteFilePaths.emplace_back(files.lower_b);
+    spriteFilePaths.emplace_back(files.lower_c);
+    spriteFilePaths.emplace_back(files.lower_d);
+    spriteFilePaths.emplace_back(files.lower_e);
+    spriteFilePaths.emplace_back(files.lower_f);
+    spriteFilePaths.emplace_back(files.lower_g);
+    spriteFilePaths.emplace_back(files.lower_h);
+    spriteFilePaths.emplace_back(files.lower_i);
+    spriteFilePaths.emplace_back(files.lower_j);
+    spriteFilePaths.emplace_back(files.lower_k);
+    spriteFilePaths.emplace_back(files.lower_l);
+    spriteFilePaths.emplace_back(files.lower_m);
+    spriteFilePaths.emplace_back(files.lower_n);
+    spriteFilePaths.emplace_back(files.lower_o);
+    spriteFilePaths.emplace_back(files.lower_p);
+    spriteFilePaths.emplace_back(files.lower_q);
+    spriteFilePaths.emplace_back(files.lower_r);
+    spriteFilePaths.emplace_back(files.lower_s);
+    spriteFilePaths.emplace_back(files.lower_t);
+    spriteFilePaths.emplace_back(files.lower_u);
+    spriteFilePaths.emplace_back(files.lower_v);
+    spriteFilePaths.emplace_back(files.lower_w);
+    spriteFilePaths.emplace_back(files.lower_x);
+    spriteFilePaths.emplace_back(files.lower_y);
+    spriteFilePaths.emplace_back(files.lower_z);
+    spriteFilePaths.emplace_back(files.upper_a);
+    spriteFilePaths.emplace_back(files.upper_b);
+    spriteFilePaths.emplace_back(files.upper_c);
+    spriteFilePaths.emplace_back(files.upper_d);
+    spriteFilePaths.emplace_back(files.upper_e);
+    spriteFilePaths.emplace_back(files.upper_f);
+    spriteFilePaths.emplace_back(files.upper_g);
+    spriteFilePaths.emplace_back(files.upper_h);
+    spriteFilePaths.emplace_back(files.upper_i);
+    spriteFilePaths.emplace_back(files.upper_j);
+    spriteFilePaths.emplace_back(files.upper_k);
+    spriteFilePaths.emplace_back(files.upper_l);
+    spriteFilePaths.emplace_back(files.upper_m);
+    spriteFilePaths.emplace_back(files.upper_n);
+    spriteFilePaths.emplace_back(files.upper_o);
+    spriteFilePaths.emplace_back(files.upper_p);
+    spriteFilePaths.emplace_back(files.upper_q);
+    spriteFilePaths.emplace_back(files.upper_r);
+    spriteFilePaths.emplace_back(files.upper_s);
+    spriteFilePaths.emplace_back(files.upper_t);
+    spriteFilePaths.emplace_back(files.upper_u);
+    spriteFilePaths.emplace_back(files.upper_v);
+    spriteFilePaths.emplace_back(files.upper_w);
+    spriteFilePaths.emplace_back(files.upper_x);
+    spriteFilePaths.emplace_back(files.upper_y);
+    spriteFilePaths.emplace_back(files.upper_z);
+    spriteFilePaths.emplace_back(files.semicolon);
+    spriteFilePaths.emplace_back(files.selec_arrow);
+    spriteFilePaths.emplace_back(files.save_station_1);
+    spriteFilePaths.emplace_back(files.save_station_2);
+    spriteFilePaths.emplace_back(files.save_station_3);
+    spriteFilePaths.emplace_back(files.save_station_4);
+    spriteFilePaths.emplace_back(files.save_station_5);
+    spriteFilePaths.emplace_back(files.save_station_6);
+    spriteFilePaths.emplace_back(files.save_station_7);
+    spriteFilePaths.emplace_back(files.save_station_8);
+    spriteFilePaths.emplace_back(files.save_station_9);
+    spriteFilePaths.emplace_back(files.save_station_10);
+    spriteFilePaths.emplace_back(files.save_station_11);
+    spriteFilePaths.emplace_back(files.save_station_12);
+    spriteFilePaths.emplace_back(files.save_station_13);
+    spriteFilePaths.emplace_back(files.save_station_14);
+    spriteFilePaths.emplace_back(files.save_station_15);
+    spriteFilePaths.emplace_back(files.player_descending_1);
+    spriteFilePaths.emplace_back(files.player_descending_2);
+    spriteFilePaths.emplace_back(files.player_descending_3);
+    spriteFilePaths.emplace_back(files.player_descending_4);
+    spriteFilePaths.emplace_back(files.player_descending_5);
+    spriteFilePaths.emplace_back(files.player_descending_6);
+    spriteFilePaths.emplace_back(files.repair_station_menu);
+    spriteFilePaths.emplace_back(files.invalid_char);
+    spriteFilePaths.emplace_back(files.repair_station_bar_shell);
+    spriteFilePaths.emplace_back(files.repair_station_blasters_filling);
+    spriteFilePaths.emplace_back(files.repair_station_thruster_filling);
+    spriteFilePaths.emplace_back(files.repair_station_hull_filling);
+    spriteFilePaths.emplace_back(files.repair_station_utilities_filling);
+    spriteFilePaths.emplace_back(files.period);
+    spriteFilePaths.emplace_back(files.repair_Selection_1);
+    spriteFilePaths.emplace_back(files.repair_Selection_2);
+    spriteFilePaths.emplace_back(files.repair_Selection_3);
+    spriteFilePaths.emplace_back(files.repair_Selection_4);
+    spriteFilePaths.emplace_back(files.repair_Selection_5);
+    spriteFilePaths.emplace_back(files.repair_station_info_box);
+    spriteFilePaths.emplace_back(files.upgrade_button);
+    spriteFilePaths.emplace_back(files.upgrade_button_pressed);
+    spriteFilePaths.emplace_back(files.apostrophe);
+    spriteFilePaths.emplace_back(files.comma);
+}
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
 ID2D1Factory* D2DFactory = NULL;
@@ -173,13 +468,276 @@ bool modulatorTicker = true;
 bool splashscreen = false;
 
 std::mt19937 generator(std::random_device{}());
-int mapSizeX = 5000;
-int mapSizeY = 5000;
+int mapSizeX = 3000;
+int mapSizeY = 3000;
 
 std::chrono::steady_clock::time_point mapTick = std::chrono::steady_clock::now();
 bool displayMap;
 
 bool isMultiCore = std::thread::hardware_concurrency() > 1;
+
+std::chrono::milliseconds menuInputBuffer = std::chrono::milliseconds(150);
+std::chrono::steady_clock::time_point menuLastInput = std::chrono::steady_clock::now();
+
+LPCWSTR fontArray[255]{
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.apostrophe,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.comma,
+    files.invalid_char,
+    files.period,
+    files.invalid_char,
+    files.font_0,
+    files.font_1,
+    files.font_2,
+    files.font_3,
+    files.font_4,
+    files.font_5,
+    files.font_6,
+    files.font_7,
+    files.font_8,
+    files.font_9,
+    files.semicolon,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.upper_a,
+    files.upper_b,
+    files.upper_c,
+    files.upper_d,
+    files.upper_e,
+    files.upper_f,
+    files.upper_g,
+    files.upper_h,
+    files.upper_i,
+    files.upper_j,
+    files.upper_k,
+    files.upper_l,
+    files.upper_m,
+    files.upper_n,
+    files.upper_o,
+    files.upper_p,
+    files.upper_q,
+    files.upper_r,
+    files.upper_s,
+    files.upper_t,
+    files.upper_u,
+    files.upper_v,
+    files.upper_w,
+    files.upper_x,
+    files.upper_y,
+    files.upper_z,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.lower_a,
+    files.lower_b,
+    files.lower_c,
+    files.lower_d,
+    files.lower_e,
+    files.lower_f,
+    files.lower_g,
+    files.lower_h,
+    files.lower_i,
+    files.lower_j,
+    files.lower_k,
+    files.lower_l,
+    files.lower_m,
+    files.lower_n,
+    files.lower_o,
+    files.lower_p,
+    files.lower_q,
+    files.lower_r,
+    files.lower_s,
+    files.lower_t,
+    files.lower_u,
+    files.lower_v,
+    files.lower_w,
+    files.lower_x,
+    files.lower_y,
+    files.lower_z,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.apostrophe,
+    files.apostrophe,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+    files.invalid_char,
+};
+
+
 
 struct hash_function {
     std::size_t operator()(const std::pair<int, int>& p) const {
@@ -327,9 +885,71 @@ public:
     }
 };
 
+class SaveStation : public Object {
+public:
+    unsigned __int8 id;
+    bool closed = true;
+    std::chrono::milliseconds doorInterval = std::chrono::milliseconds(66);
+    std::chrono::steady_clock::time_point lastFrame = std::chrono::steady_clock::now();
+    LPCWSTR frames[15] = {
+        files.save_station_1,
+        files.save_station_2,
+        files.save_station_3,
+        files.save_station_4,
+        files.save_station_5,
+        files.save_station_6,
+        files.save_station_7,
+        files.save_station_8,
+        files.save_station_9,
+        files.save_station_10,
+        files.save_station_11,
+        files.save_station_12,
+        files.save_station_13,
+        files.save_station_14,
+        files.save_station_15,
+    };
+    __int8 currFrame = 0;
+
+    SaveStation() {
+        currentFramePath = frames[0];
+    }
+
+    void PlayOpenAnimation(double deltaTime) {
+        if (currFrame == 0) {
+            lastFrame = std::chrono::steady_clock::now();
+            currentFramePath = frames[1];
+            currFrame = 1;
+            return;
+        }
+        if (std::chrono::steady_clock::now() - lastFrame <= doorInterval) return;
+        lastFrame = std::chrono::steady_clock::now();
+        currFrame = min(14, currFrame + 1);
+        currentFramePath = (frames[currFrame]);
+        if (currFrame == 14) {
+            closed = false;
+        }
+    }
+
+    void PlayCloseAnimation(double deltaTime) {
+        if (currFrame == 14) {
+            lastFrame = std::chrono::steady_clock::now();
+            currentFramePath = frames[13];
+            currFrame = 13;
+            return;
+        }
+        if (std::chrono::steady_clock::now() - lastFrame <= doorInterval) return;
+        lastFrame = std::chrono::steady_clock::now();
+        currFrame = max(0, currFrame - 1);
+        currentFramePath = (frames[currFrame]);
+        if (currFrame == 0) {
+            closed = true;
+        }
+    }
+};
+
 class Player : public Object {
 public:
-    int directionX, directionY;
+    float directionX, directionY;
     std::vector<Object> bullets;
     LPCWSTR redLightFrame = files.playerRedLightffect1;
     LPCWSTR basicShotFrame = nullptr;
@@ -351,10 +971,42 @@ public:
     std::chrono::steady_clock::time_point rollTime = std::chrono::steady_clock::now();
     bool sideMode;
     float speed = 1.5;
+    bool alreadyOnStation = true;
+    unsigned __int8 stationTouchingID = 0;
+    bool inDockingSequence = false;
+    bool descending = false;
+    std::chrono::milliseconds descendingInterval = std::chrono::milliseconds(250);
+    LPCWSTR descentFrames[6] = {
+        files.player_descending_1,
+        files.player_descending_2,
+        files.player_descending_3,
+        files.player_descending_4,
+        files.player_descending_5,
+        files.player_descending_6,
+    };
+    __int8 currDescentFrame = 0;
+    bool approaching = false;
+    bool adjustingForEntry = false;
+    bool inAscendingSequence = false;
+    bool ascending = true;
+    bool inModifiedDockingAngle = false;
+    __int8 tweakBarLength[4];
 
 
     Player() {
         currentFramePath = files.playerFrame1;
+        std::ifstream inFile((L"Save Files\\Save.txt"));
+        if (inFile.is_open()) {
+            std::string line;
+            int i = 0;
+            while (std::getline(inFile, line)) {
+                if (i > 3) {
+                    tweakBarLength[i - 4] = stoi(line);
+                }
+                i++;
+            }
+            inFile.close();
+        }
     }
 
     void UpdateHitBox() {
@@ -434,7 +1086,8 @@ public:
             if (keys.right || keys.left || keys.up || keys.down) {
                 if (!keys.f) {
                     directionX = keys.right - keys.left;
-                    directionY = keys.up - keys.down;
+                    directionY = keys.down - keys.up;
+                    angleRadians = atan2(directionY, directionX) / 2;
                 }
                 else {
                     if (abs(directionX) > 0 && directionY == 0) {
@@ -672,184 +1325,11 @@ public:
                             }
                         }
                     }
-                    /*if (!((keys.up && (keys.right || keys.left)) && (!keys.right && !keys.left))) {
-                        if ((keys.left || keys.right) && !(keys.left && keys.right) && !(keys.up || keys.down)) {
-                            bool inverse = (directionY > 0) ? false : true;
-                            keys.left = (inverse) ? !keys.left : keys.left;
-                            keys.right = (inverse) ? !keys.right : keys.right;
-                            if (keys.left) {
-                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
-                                    rolling = true;
-                                    lastFrame = currentFramePath;
-                                    currentFramePath = files.player_tilt_left;
-                                    rollTime = std::chrono::steady_clock::now();
-                                }
-                                else if (rolling) {
-                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
-                                        rolling = false;
-                                    }
-                                }
-                                else {
-                                    lastFrame = currentFramePath;
-                                    currentFramePath = files.player_sideways_l;
-                                }
-                            }
-                            else if (keys.right) {
-                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
-                                    rolling = true;
-                                    lastFrame = currentFramePath;
-                                    currentFramePath = files.player_tilt_right;
-                                    rollTime = std::chrono::steady_clock::now();
-                                }
-                                else if (rolling) {
-                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
-                                        rolling = false;
-                                    }
-                                }
-                                else {
-                                    lastFrame = currentFramePath;
-                                    currentFramePath = files.player_sideways_r;
-                                }
-                            }
-                            else {
-                                currentFramePath = files.player_sideways_r;
-                            }
-                            keys.left = (inverse) ? !keys.left : keys.left;
-                            keys.right = (inverse) ? !keys.right : keys.right;
-                        }
-                        else if (keys.right && !keys.left) {
-                            if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
-                                rolling = false;
-                                currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                            }
-                        }
-                        else if (keys.left && !keys.right) {
-                            if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
-                                rolling = false;
-                                currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
-                            }
-                        }
-                        else {
-                            currentFramePath = files.playerFrame1;
-                        }
-                    }*/
                     else {
                         lastFrame = currentFramePath;
                         currentFramePath = files.playerFrame1;
                     }
                 }
-                /*else if (abs(directionY) > 0 && directionX == 0 && (keys.left || keys.right)) {
-                    if (directionY > 0) {
-                        if (keys.left && keys.up) {
-                            currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
-                        }
-                        else if (keys.right && keys.up) {
-                            currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                        }
-                        else if (keys.left && !keys.up) {
-                            currentFramePath = (directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
-                        }
-                        else if (keys.right && !keys.up) {
-                            currentFramePath = (directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
-                        }
-                        else {
-                            currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    if (directionY < 0) {
-                        if (keys.left && keys.down) {
-                            currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
-                        }
-                        else if (keys.right && keys.down) {
-                            currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
-                        }
-                        else if (keys.left && !keys.down) {
-                            currentFramePath = (directionY > 0) ? files.player_sideways_l : files.player_sideways_r;
-                        }
-                        else if (keys.right && !keys.down) {
-                            currentFramePath = (directionY > 0) ? files.player_sideways_r : files.player_sideways_l;
-                        }
-                        else {
-                            currentFramePath = files.playerFrame1;
-                        }
-                    }
-                }
-                else if (abs(directionX) > 0 && directionY > 0) {
-                    if (directionX > 0) {
-                        if (keys.right && keys.down) {
-                            currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.up && keys.left) {
-                            currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.up && !keys.right) {
-                            currentFramePath = files.player_tilt_left;
-                        }
-                        else if (keys.right && !keys.up) {
-                            currentFramePath = files.player_tilt_right;
-                        }
-                        else {
-                            currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    else {
-                        if (keys.left && keys.down) {
-                            currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.up && keys.right) {
-                            currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.up && !keys.left) {
-                            currentFramePath = files.player_tilt_right;
-                        }
-                        else if (keys.left && !keys.up) {
-                            currentFramePath = files.player_tilt_left;
-                        }
-                        else {
-                            currentFramePath = files.playerFrame1;
-                        }
-                    }
-                }
-                else if (abs(directionX) > 0 && directionY < 0) {
-                    if (directionX > 0) {
-                        if (keys.right && keys.up) {
-                            currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.down && keys.left) {
-                            currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.down && !keys.right) {
-                            currentFramePath = files.player_tilt_right;
-                        }
-                        else if (keys.right && !keys.down) {
-                            currentFramePath = files.player_tilt_left;
-                        }
-                        else {
-                            currentFramePath = files.playerFrame1;
-                        }
-                    }
-                    else {
-                        if (keys.left && keys.up) {
-                            currentFramePath = files.player_sideways_r;
-                        }
-                        else if (keys.down && keys.right) {
-                            currentFramePath = files.player_sideways_l;
-                        }
-                        else if (keys.down && !keys.left) {
-                            currentFramePath = files.player_tilt_left;
-                        }
-                        else if (keys.left && !keys.down) {
-                            currentFramePath = files.player_tilt_right;
-                        }
-                        else {
-                            currentFramePath = files.playerFrame1;
-                        }
-                    }
-                }
-                //else if (abs(directionY) > 0 && directionX == 0) {
-                //    currentFramePath = (keys.right - keys.left) ? files.player_tilt_right : files.player_tilt_left;
-                //}
-                */
             }
             else if (keys.f) { // If pressing f with no directional input
                 if (lastFrame == files.player_sideways_l || lastFrame == files.player_sideways_r) {
@@ -926,6 +1406,7 @@ public:
 
             lastShotEffectTime = std::chrono::steady_clock::now();
             double xPosition, yPosition;
+            double angle = (angleRadians * 2) + pi / 2;
 
             if (doubleShot) {
                 double xOffset(0), yOffset(0);
@@ -978,7 +1459,7 @@ public:
                     bullets.back().xVel = 0;
                 }
 
-
+                float angle = angleRadians;
                 if (angleRadians > -pi / 6 && angleRadians < pi / 6) {
                     xOffset = 4;
                     yOffset = 4;
@@ -1015,8 +1496,8 @@ public:
                 yPosition = yPos + yOffset - (11 * cos(angleRadians));
             }
             else {
-                xPosition = xPos + (11 * sin(angleRadians));
-                yPosition = yPos - (11 * cos(angleRadians));
+                xPosition = xPos + (11 * sin(angle));
+                yPosition = yPos - (11 * cos(angle));
             }
 
 
@@ -1026,8 +1507,8 @@ public:
             bullets.back().yPos = yPosition;
             bullets.back().UpdateHitBox();
             bullets.back().power = power;
-            bullets.back().angleRadians = angleRadians;
-            bullets.back().yVel = round(-cos(angleRadians) * 100) / 100;
+            bullets.back().angleRadians = angle;
+            bullets.back().yVel = round(-cos(angle) * 100) / 100;
             bullets.back().modulator = double((rand() % 628)) / 100;
             bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
             int result = (rand() % 2);
@@ -1042,7 +1523,7 @@ public:
             if (abs(bullets.back().yVel) < 0.0001) {
                 bullets.back().yVel = 0;
             }
-            bullets.back().xVel = round(sin(angleRadians) * 100) / 100;
+            bullets.back().xVel = round(sin(angle) * 100) / 100;
             if (abs(bullets.back().xVel) < 0.0001) {
                 bullets.back().xVel = 0;
             }
@@ -1075,7 +1556,7 @@ public:
         }
     }
 
-    void UpdateBullets(double deltaTime, std::vector<Object> &objects) {
+    void UpdateBullets(double deltaTime, std::vector<Object>& objects) {
         // Bullet logic
         if (!bullets.empty()) {
             for (auto it = bullets.begin(); it != bullets.end(); ) {
@@ -1109,6 +1590,100 @@ public:
                 }
             }
         }
+    }
+
+    void MovePlayerForward(double deltaTime, float vel) {
+        float x = cos(angleRadians * 2);
+        float y = sin(angleRadians * 2);
+        directionX = x;
+        directionY = y;
+        xPos += (x * vel * deltaTime);
+        yPos += (y * vel * deltaTime);
+    }
+
+    void PlayDescendingAnimation(double deltaTime) {
+        if (currentFramePath == files.playerFrame1 || currentFramePath == files.playerFrame2) {
+            currentFramePath = descentFrames[0];
+            currDescentFrame = 0;
+            lastFrameChange = std::chrono::steady_clock::now();
+        }
+        if ((std::chrono::steady_clock::now() - lastFrameChange) <= descendingInterval) return;
+        lastFrameChange = std::chrono::steady_clock::now();
+        currDescentFrame = min(5, currDescentFrame + 1);
+        currentFramePath = descentFrames[currDescentFrame];
+        if (currDescentFrame == 5) {
+            descending = false;
+        }
+    }
+
+    void PlayDockingAnimation(double deltaTime, SaveStation& s) {
+        if (approaching) {
+            ID2D1Bitmap* pbmp = bitmaps[currentFramePath];
+            if (!pbmp) TripErrorMissingFile(currentFramePath);
+            D2D1_SIZE_F size = pbmp->GetSize();
+            D2D1_POINT_2F pcenter = D2D1::Point2F(xPos + (size.width / 2) + 8, yPos + (size.height / 2) + 8);
+
+            ID2D1Bitmap* obmp = bitmaps[s.currentFramePath];
+            if (!obmp) TripErrorMissingFile(s.currentFramePath);
+            size = obmp->GetSize();
+            D2D1_POINT_2F ocenter = D2D1::Point2F(s.xPos + (size.width / 2), s.yPos + (size.height / 2));
+
+            if ((abs(pcenter.x - ocenter.x) >= 0.1) || (abs(pcenter.y - ocenter.y) >= 0.1)) {
+                inModifiedDockingAngle = true;
+                angleRadians = atan2(ocenter.y - pcenter.y, ocenter.x - pcenter.x) / 2;
+                MovePlayerForward(deltaTime, speed / 2.5);
+            }
+            else {
+                approaching = false;
+                if (angleRadians != 0) adjustingForEntry = true;
+            }
+        }
+        else {
+            if (s.closed) {
+                s.PlayOpenAnimation(deltaTime);
+                if (!s.closed) {
+                    descending = true;
+                }
+            }
+            else if (currDescentFrame < 2) {
+                PlayDescendingAnimation(deltaTime);
+            }
+            else {
+                if (currDescentFrame < 6) {
+                    PlayDescendingAnimation(deltaTime);
+                }
+                s.PlayCloseAnimation(deltaTime);
+                if (s.currentFramePath == s.frames[0]) {
+                    currDescentFrame = 0;
+                    inDockingSequence = false;
+                }
+            }
+        }
+
+    }
+
+    void PlayAscendingAnimation(double deltaTime) {
+        if (currentFramePath == descentFrames[5]) {
+            currentFramePath = descentFrames[4];
+            currDescentFrame = 4;
+            lastFrameChange = std::chrono::steady_clock::now();
+        }
+        if ((std::chrono::steady_clock::now() - lastFrameChange) <= descendingInterval) return;
+        lastFrameChange = std::chrono::steady_clock::now();
+        if (currDescentFrame == 0) {
+            currentFramePath = files.playerFrame1;
+            inAscendingSequence = false;
+            ascending = false;
+            inModifiedDockingAngle = false;
+            return;
+        }
+        currDescentFrame = max(0, currDescentFrame - 1);
+        currentFramePath = descentFrames[currDescentFrame];
+    }
+
+    void PlayAscendingSequence(double deltaTime, SaveStation& s) {
+        s.PlayOpenAnimation(deltaTime);
+        PlayAscendingAnimation(deltaTime);
     }
 };
 
@@ -1206,6 +1781,23 @@ public:
     }
 };
 
+class Stopwatch {
+public:
+    std::chrono::steady_clock::time_point startTime;
+    unsigned int duration;
+
+    Stopwatch() {
+        duration = 0;
+    }
+
+    void Start() {
+        startTime = std::chrono::steady_clock::now();
+    }
+
+    void Stop() {
+        duration = duration + int(std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count());
+    }
+};
 
 
 //-------------------------------
@@ -1328,109 +1920,19 @@ void LoadSpritesToMemory(HWND hWnd, std::vector<LPCWSTR> spriteFilePaths) {
     bitmapFactory->Release();
 }
 
-void LoadFilePathsToVector(std::vector<LPCWSTR> &spriteFilePaths) {
-    // Filenames vector
-    spriteFilePaths.emplace_back(files.playerFrame1);
-    spriteFilePaths.emplace_back(files.playerFrame2);
-    spriteFilePaths.emplace_back(files.playerRedLightffect1);
-    spriteFilePaths.emplace_back(files.playerRedLightffect2);
-    spriteFilePaths.emplace_back(files.playerRedLightffect3);
-    spriteFilePaths.emplace_back(files.playerRedLightffect4);
-    spriteFilePaths.emplace_back(files.playerRedLightffect5);
-    spriteFilePaths.emplace_back(files.playerRedLightffect6);
-    spriteFilePaths.emplace_back(files.playerRedLightffect7);
-    spriteFilePaths.emplace_back(files.playerRedLightffect8);
-    spriteFilePaths.emplace_back(files.playerRedLightffect9);
-    spriteFilePaths.emplace_back(files.asteroid1);
-    spriteFilePaths.emplace_back(files.pause);
-    spriteFilePaths.emplace_back(files.pauseBackground);
-    spriteFilePaths.emplace_back(files.basicShotEffect1);
-    spriteFilePaths.emplace_back(files.basicShotEffect2);
-    spriteFilePaths.emplace_back(files.basicShotEffect3);
-    spriteFilePaths.emplace_back(files.basicShotEffect4);
-    spriteFilePaths.emplace_back(files.basicShotEffect5);
-    spriteFilePaths.emplace_back(files.basicShotDefault);
-    spriteFilePaths.emplace_back(files.basicShotPurple);
-    spriteFilePaths.emplace_back(files.basicShotBlue);
-    spriteFilePaths.emplace_back(files.hitBox);
-    spriteFilePaths.emplace_back(files.hurtBox);
-    spriteFilePaths.emplace_back(files.enemyShip1);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue1);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue2);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue3);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue4);
-    spriteFilePaths.emplace_back(files.basicShotEffectBlue5);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple1);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple2);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple3);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple4);
-    spriteFilePaths.emplace_back(files.basicShotEffectPurple5);
-    spriteFilePaths.emplace_back(files.enemyShip1Damaged);
-    spriteFilePaths.emplace_back(files.explosion1);
-    spriteFilePaths.emplace_back(files.explosion2);
-    spriteFilePaths.emplace_back(files.explosion3);
-    spriteFilePaths.emplace_back(files.explosion4);
-    spriteFilePaths.emplace_back(files.doubleShotPickup);
-    spriteFilePaths.emplace_back(files.base);
-    spriteFilePaths.emplace_back(files.brody_the_toad);
-    /*spriteFilePaths.emplace_back(files.brody_the_toad_pain);*/
-    spriteFilePaths.emplace_back(files.turret);
-    spriteFilePaths.emplace_back(files.turret_Shader);
-    spriteFilePaths.emplace_back(files.turret_Damaged);
-    spriteFilePaths.emplace_back(L"Sprites\\Menu\\How_To_Play_Screen.png");
-    spriteFilePaths.emplace_back(files.shield_Generator);
-    spriteFilePaths.emplace_back(files.shield_Generator_Damaged);
-    spriteFilePaths.emplace_back(files.base_Door);
-    spriteFilePaths.emplace_back(files.base_Interior);
-    spriteFilePaths.emplace_back(files.entrance);
-    spriteFilePaths.emplace_back(files.status_Bar);
-    spriteFilePaths.emplace_back(files.health_Bar_Top);
-    spriteFilePaths.emplace_back(files.health_Bar_Bottom);
-    spriteFilePaths.emplace_back(files.player_Death_Animation_1);
-    spriteFilePaths.emplace_back(files.player_Death_Animation_2);
-    spriteFilePaths.emplace_back(files.player_Death_Animation_3);
-    spriteFilePaths.emplace_back(files.jewel_Blue);
-    spriteFilePaths.emplace_back(files.jewel_Green);
-    spriteFilePaths.emplace_back(files.jewel_Purple);
-    spriteFilePaths.emplace_back(files.jewel_Red);
-    spriteFilePaths.emplace_back(files.jewel_Silver);
-    spriteFilePaths.emplace_back(files.jewel_Yellow);
-    spriteFilePaths.emplace_back(files.boost_Bar_top);
-    spriteFilePaths.emplace_back(files.boost_Bar_bottom);
-    spriteFilePaths.emplace_back(files.font_0);
-    spriteFilePaths.emplace_back(files.font_1);
-    spriteFilePaths.emplace_back(files.font_2);
-    spriteFilePaths.emplace_back(files.font_3);
-    spriteFilePaths.emplace_back(files.font_4);
-    spriteFilePaths.emplace_back(files.font_5);
-    spriteFilePaths.emplace_back(files.font_6);
-    spriteFilePaths.emplace_back(files.font_7);
-    spriteFilePaths.emplace_back(files.font_8);
-    spriteFilePaths.emplace_back(files.font_9);
-    spriteFilePaths.emplace_back(files.hp_pickup_1);
-    spriteFilePaths.emplace_back(files.hp_pickup_2);
-    spriteFilePaths.emplace_back(files.hp_pickup_3);
-    spriteFilePaths.emplace_back(files.bomber_drone);
-    spriteFilePaths.emplace_back(files.drone_Shot_1);
-    spriteFilePaths.emplace_back(files.drone_Shot_2);
-    spriteFilePaths.emplace_back(files.drone_Shot_3);
-    spriteFilePaths.emplace_back(files.drone_Shot_4);
-    spriteFilePaths.emplace_back(files.drone_Shot_5);
-    spriteFilePaths.emplace_back(files.drone_Shot_6);
-    spriteFilePaths.emplace_back(files.drone_Shot_7);
-    spriteFilePaths.emplace_back(files.asteroid_2);
-    spriteFilePaths.emplace_back(files.map_frame);
-    spriteFilePaths.emplace_back(files.base_icon);
-    spriteFilePaths.emplace_back(files.boss_icon);
-    spriteFilePaths.emplace_back(files.player_tilt_left);
-    spriteFilePaths.emplace_back(files.player_tilt_right);
-    spriteFilePaths.emplace_back(files.player_sideways_l);
-    spriteFilePaths.emplace_back(files.player_sideways_r);
-    spriteFilePaths.emplace_back(files.player_upside_tilted_l);
-    spriteFilePaths.emplace_back(files.player_upside_tilted_r);
+void TripErrorMissingFile(LPCWSTR file) {
+    if (D2DFactory) D2DFactory->Release();
+    ReleaseD2DResourcesFromMemory();
+    // Display a top-most, foreground error message box
+    MessageBox(
+        NULL, // parent: NULL for desktop-level, or hWnd if you want relative to your window
+        (std::wstring(L"Sprite Missing: ") + file).c_str(),
+        L"Error",
+        MB_ICONERROR | MB_OK | MB_TOPMOST | MB_SETFOREGROUND | MB_SERVICE_NOTIFICATION
+    );
+    exit(EXIT_FAILURE);  // or use abort(); or return 1;
+    return;
 }
-
-
 
 //--------------
 // Declarations
@@ -1448,11 +1950,14 @@ std::chrono::steady_clock::time_point timeSinceSpawn = std::chrono::steady_clock
 std::unordered_map<std::pair<int, int>, std::vector<Star>, hash_function> starGrid;
 std::unordered_map<std::pair<int, int>, std::vector<Asteroid>, hash_function> asteroids;
 std::unordered_set<std::pair<int, int>, hash_function> pendingChunks;
-std::mutex chunkInProgress; 
+std::mutex chunkInProgress;
 std::vector<Environment> environments;
 unsigned __int8 currEnvID(0);
 std::vector<Object> UI;
 float camPosX = 0;
+Stopwatch stopwatch;
+SaveStation saveStations[3];
+int gameState = 1;
 
 
 //-------------------------
@@ -1460,13 +1965,14 @@ float camPosX = 0;
 //-------------------------
 
 void InitializeAssets() {
-        player.power = 2;
+    player.power = 2;
     player.health = 100;
     player.maxHP = 100;
-    player.xPos = 2800;
-    player.yPos = 1100;
+    player.inAscendingSequence = true;
+    player.currentFramePath = player.descentFrames[5];
+    player.angleRadians = -pi / 4;
 
-    environments.emplace_back(nullptr, 0, true);
+    environments.emplace_back(nullptr, 1, true);
 
     background.currentFramePath = files.background;
 
@@ -1499,13 +2005,13 @@ void InitializeAssets() {
     turretOffsets[11].second = 140.5;
 
     bases.emplace_back(files.base);
-    bases.at(0).xPos = .6 * mapSizeX;
-    bases.at(0).yPos = .8 * mapSizeY;
+    bases.at(0).xPos = .3 * mapSizeX;
+    bases.at(0).yPos = .2 * mapSizeY;
     bases.emplace_back(files.base);
-    bases.at(1).xPos = .6 * mapSizeX;
-    bases.at(1).yPos = .2 * mapSizeY;
+    bases.at(1).xPos = .5 * mapSizeX;
+    bases.at(1).yPos = .8 * mapSizeY;
     bases.emplace_back(files.base);
-    bases.at(2).xPos = .85 * mapSizeX;
+    bases.at(2).xPos = .75 * mapSizeX;
     bases.at(2).yPos = .5 * mapSizeY;
     std::pair <double, double> shieldOffsets[12];
     shieldOffsets[0].first = -130.5;
@@ -1581,7 +2087,7 @@ void InitializeAssets() {
         float hboxL = bases.at(i).xPos - 181.5;
         float hboxU = bases.at(i).yPos - 0.5;
         environments.at(0).AddDoor(hboxL - width, hboxL + width, hboxU - height, hboxU + height, 6, 112, i + 1, files.base_Door);
-        environments.emplace_back(files.base_Interior, i + 1, false);
+        environments.emplace_back(files.base_Interior, i + 2, false);
         environments.at(i + 1).AddDoor(0, 2, 22, 187, hboxL - 40, hboxU, 0, nullptr);
     }
 
@@ -1657,8 +2163,8 @@ void CycleShotEffect(Object& object) {
 }
 
 void UpdateBackgroundElements(double deltaTime) {
-    int rightBound = (int(player.xPos) / 256) + 1;
-    int lowBound = (int(player.yPos) / 224) + 1;
+    int rightBound = (int(player.xPos) / 256) + 2;
+    int lowBound = (int(player.yPos) / 224) + 2;
 
     int leftBound = ((int(player.xPos) - 128) / 256) - 1;
     int upBound = (int(player.yPos) / 224) - 1;
@@ -1671,7 +2177,6 @@ void UpdateBackgroundElements(double deltaTime) {
                 for (Star& star : it->second) {
                     star.Pulsate(deltaTime);
                 }
-                continue;
             }
             else {
                 if (pendingChunks.count(cell)) {
@@ -1684,7 +2189,7 @@ void UpdateBackgroundElements(double deltaTime) {
                 if (false) {//isMultiCore) {
                     std::lock_guard<std::mutex> lock(chunkInProgress);
                     std::thread([cell, x, y]() mutable {
-                    std::vector<std::pair<int, int>> chunks = { cell };
+                        std::vector<std::pair<int, int>> chunks = { cell };
                     std::uniform_int_distribution<int> range(1, 100000);
 
                     for (int i = y * 224; i <= ((y * 224) + 224); i++) {
@@ -1793,7 +2298,66 @@ void UpdateBackgroundElements(double deltaTime) {
                     pendingChunks.erase(cell);
                 }
             }
-            
+
+            auto it2 = asteroids.find(cell);
+            if (it2 != asteroids.end()) {
+                for (int i = 0; i < it2->second.size(); i++) {
+                    it2->second.at(i).UpdateHitBox();
+                    int j = 0;
+                    for (auto& b : player.bullets) {
+                        if (b.CheckCollision(it2->second.at(i))) {
+                            float x = it2->second.at(i).xPos;
+                            float y = it2->second.at(i).yPos;
+                            it2->second.erase(it2->second.begin() + i);
+                            b.currentFramePath = files.explosion1;
+                            b.collided = true;
+                            b.explosionBegin = std::chrono::steady_clock::now();
+
+                            std::uniform_int_distribution<int> distribution(1, 2);
+                            int qty = distribution(generator);
+                            float percentage = player.health / player.maxHP;
+                            for (int j = 0; j < qty; j++) {
+                                float percentage = player.health / player.maxHP;
+                                std::uniform_int_distribution<int> distribution(1, 100);
+                                int rng = distribution(generator);
+                                bool rollHP = false;
+                                std::uniform_real_distribution<float> fdistribution(-pi, pi);
+                                float angle = fdistribution(generator);
+                                float xOffset = 2 * sin(angle);
+                                angle = fdistribution(generator);
+                                float yOffset = 2 * sin(angle);
+                                if (((percentage <= 0.75) && rng >= 90) || ((percentage <= 0.5) && rng >= 80) || ((percentage <= 0.33) && rng >= 50)) {
+                                    rollHP = true;
+                                }
+                                if (rollHP) {
+                                    objects.emplace_back(L"Health Pickup", x + xOffset, y + yOffset, 0, files.hp_pickup_2, false, 0, nullptr, files.hp_pickup_2, 0, 0, false, true, false);
+                                    objects.back().genericFrameMarker = std::chrono::steady_clock::now();
+                                    objects.back().pickup = true;
+                                }
+                                else {
+                                    rng = distribution(generator);
+                                    if (rng <= 85) {
+                                        objects.emplace_back(L"Red Jewel", x + xOffset, y + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
+                                    }
+                                    else if (rng <= 94) {
+                                        objects.emplace_back(L"Blue Jewel", x + xOffset, y + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
+                                    }
+                                    else if (rng <= 98) {
+                                        objects.emplace_back(L"Purple Jewel", x + xOffset, y + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
+                                    }
+                                    else {
+                                        objects.emplace_back(L"Yellow Jewel", x + xOffset, y + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
+                                    }
+                                    objects.back().UpdateHitBox();
+                                    objects.back().pickup = true;
+                                }
+                            }
+                            break;
+                        }
+                        j++;
+                    }
+                }
+            }
         }
     }
 }
@@ -1892,7 +2456,7 @@ void HandleEnemySpawns(double deltaTime, bool spawnEnemies, bool spawnsExist) {
     }
 }
 
-void UpdateMasterObjectLogic(double deltaTime, int &spawnerCounter) {
+void UpdateMasterObjectLogic(double deltaTime, int& spawnerCounter) {
     // Master Object logic
     if (!objects.empty()) {
         for (int i = 0; i < objects.size(); i++) {
@@ -2295,6 +2859,7 @@ void CheckEnvironmentCollisions(std::vector<Environment> envs) {
             currEnvID = door.destID;
             player.xPos = door.destX;
             player.yPos = door.destY;
+            player.angleRadians = 0;
             background = envs.at(currEnvID).frame;
             player.sideMode = envs.at(currEnvID).side;
             return;
@@ -2314,6 +2879,834 @@ void UpdateSideViewCamera() {
     }
 }
 
+void UpdateSaveStationLogic(double deltaTime) {
+    if (player.alreadyOnStation) {
+        if (!player.CheckCollision(saveStations[player.stationTouchingID])) {
+            player.alreadyOnStation = false;
+        }
+    }
+    for (auto& s : saveStations) {
+        if (!player.alreadyOnStation && player.CheckCollision(s)) {
+            player.alreadyOnStation = true;
+            player.inDockingSequence = true;
+            player.approaching = true;
+            player.stationTouchingID = s.id;
+            return;
+        }
+        if (!s.closed) {
+            s.PlayCloseAnimation(deltaTime);
+        }
+    }
+
+}
+
+
+//--------------------
+// Rendering Functions
+//--------------------
+
+void RenderTextLeft(std::string text, unsigned __int8 x, unsigned __int8 y) {
+    __int8 spacerX(0), spacerY(0);
+    for (char c : text) {
+        unsigned __int8 i = unsigned __int8(c);
+
+        if (c == ' ') {
+            spacerX += 2;
+            continue;
+        }
+        ID2D1Bitmap* symbol = bitmaps[fontArray[i]];
+        D2D1_SIZE_F size = symbol->GetSize();
+
+        if (c == 'p' || c == 'g' || c == 'q' || c == 'y') {
+            spacerY = 3;
+        }
+        else if (c == 'j') {
+            spacerY = 1;
+            spacerX -= 2;
+        }
+        else {
+            spacerY = max(0, 9 - size.height);
+        }
+        D2D1_RECT_F destRect = D2D1::RectF(
+            ((x + spacerX) * scalerX) + leftBoundary,
+            (y + spacerY) * scalerY,
+            ((x + size.width + spacerX) * scalerX) + leftBoundary,
+            (y + size.height + spacerY) * scalerY);
+        renderTarget->DrawBitmap(symbol, destRect, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+
+        spacerX += (size.width);
+    }
+    return;
+}
+
+int RenderTextMid(std::string text, unsigned __int8 x, unsigned __int8 y) {
+    __int8 spacerX(0), spacerY(0);
+    for (char c : text) {
+        unsigned __int8 i = unsigned __int8(c);
+        if (c == ' ') {
+            spacerX += 2;
+            continue;
+        }
+        ID2D1Bitmap* symbol = bitmaps[fontArray[i]];
+        D2D1_SIZE_F size = symbol->GetSize();
+        spacerX += (size.width);
+    }
+
+    float xPos = x - (spacerX / 2);
+    for (char c : text) {
+        unsigned __int8 i = unsigned __int8(c);
+        if (c == ' ') {
+            xPos += 2;
+            continue;
+        }
+        ID2D1Bitmap* symbol = bitmaps[fontArray[i]];
+        D2D1_SIZE_F size = symbol->GetSize();
+
+        if (c == 'p' || c == 'g' || c == 'q' || c == 'y') {
+            spacerY = 3;
+        }
+        else if (c == 'j') {
+            spacerY = 1;
+        }
+        else {
+            spacerY = 9 - size.height;
+        }
+        D2D1_RECT_F destRect = D2D1::RectF(
+            ((xPos)*scalerX) + leftBoundary,
+            (y + spacerY) * scalerY,
+            ((size.width + xPos) * scalerX) + leftBoundary,
+            (y + size.height + spacerY) * scalerY);
+        renderTarget->DrawBitmap(symbol, destRect, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+
+        xPos += (size.width);
+    }
+    return spacerX;
+}
+
+void RenderObjectLeft(LPCWSTR file, double x, double y) {
+    ID2D1Bitmap* bmp = bitmaps[file];
+    if (bmp) {
+        D2D1_SIZE_F size = bmp->GetSize();
+
+        D2D1_RECT_F position = D2D1::RectF(
+            (x * scalerX) + leftBoundary,
+            (y * scalerX),
+            ((x + size.width) * scalerX) + leftBoundary,
+            ((y + size.height) * scalerY)
+        );
+        renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+    }
+}
+
+void RenderObjectRight(LPCWSTR file, double x, double y) {
+    ID2D1Bitmap* bmp = bitmaps[file];
+    if (bmp) {
+        D2D1_SIZE_F size = bmp->GetSize();
+
+        D2D1_RECT_F position = D2D1::RectF(
+            ((x - size.width) * scalerX) + leftBoundary,
+            (y * scalerX),
+            (x * scalerX) + leftBoundary,
+            ((y + size.height) * scalerY)
+        );
+        renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+    }
+}
+
+void RenderWorldObject(LPCWSTR file, double x, double y) {
+    ID2D1Bitmap* bmp = bitmaps[file];
+    if (bmp) {
+        D2D1_SIZE_F size = bmp->GetSize();
+
+        D2D1_RECT_F position = D2D1::RectF(
+            ((screenX / 2) + ((x - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
+            ((screenY / 2) + ((y - player.yPos) * scalerY)) - ((size.height / 2) * scalerY),
+            ((screenX / 2) + ((x - player.xPos) * scalerX)) + ((size.width / 2) * scalerX),
+            ((screenY / 2) + ((y - player.yPos) * scalerY)) + ((size.height / 2) * scalerY)
+        );
+
+        renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+    }
+}
+
+void RenderObjectandTextMid(LPCWSTR file, std::string text, double x, double y) {
+    __int8 spacerX(0), spacerY(0);
+    ID2D1Bitmap* bmp = bitmaps[file];
+    if (!bmp) TripErrorMissingFile(file);
+    D2D1_SIZE_F osize = bmp->GetSize();
+    spacerX += osize.width;
+    for (char c : text) {
+        unsigned __int8 i = unsigned __int8(c);
+        if (c == ' ') {
+            spacerX += 2;
+            continue;
+        }
+        ID2D1Bitmap* symbol = bitmaps[fontArray[i]];
+        D2D1_SIZE_F tsize = symbol->GetSize();
+        spacerX += (tsize.width);
+    }
+
+    double xPos = double(x) - (spacerX / 2);
+
+    D2D1_RECT_F position = { D2D1::RectF(
+        (xPos * scalerX) + leftBoundary,
+        (y + 2 + spacerY) * scalerY,
+        (((osize.width + xPos) * scalerX) + leftBoundary),
+        (y + 2 + osize.height + spacerY) * scalerY
+    ) };
+    renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+    xPos += osize.width + 1;
+
+    for (char c : text) {
+        unsigned __int8 i = unsigned __int8(c);
+        if (c == ' ') {
+            xPos += 2;
+            continue;
+        }
+        ID2D1Bitmap* symbol = bitmaps[fontArray[i]];
+        D2D1_SIZE_F size = symbol->GetSize();
+
+        if (c == 'p' || c == 'g' || c == 'q' || c == 'y') {
+            spacerY = 3;
+        }
+        else if (c == 'j') {
+            spacerY = 1;
+        }
+        else {
+            spacerY = 9 - size.height;
+        }
+        D2D1_RECT_F destRect = D2D1::RectF(
+            ((xPos)*scalerX) + leftBoundary,
+            (y + spacerY) * scalerY,
+            ((size.width + xPos) * scalerX) + leftBoundary,
+            (y + size.height + spacerY) * scalerY);
+        renderTarget->DrawBitmap(symbol, destRect, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+
+        xPos += (size.width);
+    }
+}
+
+
+
+//--------------
+// Game Menus
+//--------------
+
+class MenuElement : public Object {
+public:
+    MenuElement(LPCWSTR path, int x, int y) {
+        currentFramePath = path;
+        xPos = x;
+        yPos = y;
+    }
+};
+
+class Menu {
+public:
+    __int8 selection = 0;
+    __int8 selecSize = 2;
+    unsigned __int8 state = 0;
+    std::vector<MenuElement> elements;
+    bool holdU = false;
+    bool holdD = false;
+
+    void ChangeSelection(bool up, bool down) {
+        if (up) {
+            holdU = true;
+            menuLastInput = std::chrono::steady_clock::now();
+            selection = max(0, selection - 1);
+        }
+        else {
+            holdU = false;
+        }
+        if (down) {
+            holdD = true;
+            menuLastInput = std::chrono::steady_clock::now();
+            selection = min(selecSize - 1, selection + 1);
+        }
+        else {
+            holdD = false;
+        }
+    }
+};
+
+class SaveMenu : public Menu {
+public:
+    std::vector<MenuElement> elements;
+
+
+    SaveMenu() {
+        elements.emplace_back(files.save_file_panel, 16, 17);
+        elements.emplace_back(files.save_file_panel, 16, 87);
+        elements.emplace_back(files.save_file_panel, 16, 157);
+        selecSize = 3;
+    }
+
+    void UpdateLogic() {
+        if (std::chrono::steady_clock::now() - menuLastInput <= menuInputBuffer) return;
+        if (keys.space) {
+            std::ifstream inFile((L"Save Files\\Save.txt"));
+            if (inFile.is_open()) {
+
+                std::string line;
+                for (int i = 0; i <= 4; i++) {
+                    std::getline(inFile, line);
+                    switch (i) {
+                        // Currency
+                    case 1:
+                        player.currency = stoi(line);
+                        break;
+                        // Time
+                    case 2:
+                        stopwatch.duration = stoi(line);
+                        stopwatch.Start();
+                        break;
+                        // Save Station ID
+                    case 3:
+                        player.xPos = saveStations[stoi(line)].xPos;
+                        player.yPos = saveStations[stoi(line)].yPos;
+                        break;
+                    }
+                }
+
+                gameState = 0;
+                InitializeAssets();
+                inFile.close();
+                paused = false;
+            }
+        }
+        if (keys.escape) {
+            menuLastInput = std::chrono::steady_clock::now();
+            state = 1;
+            selecSize = 2;
+            return;
+        }
+        ChangeSelection(keys.up, keys.down);
+        if (keys.right && gameState == 2) {
+            menuLastInput = std::chrono::steady_clock::now();
+            gameState = 3;
+        }
+    }
+
+    void Render() {
+        ID2D1Bitmap* bmp;
+        bmp = bitmaps[files.save_file_panel];
+        D2D1_SIZE_F size = bmp->GetSize();
+        if (!bmp) return;
+        for (const auto& elem : elements) {
+            D2D1_RECT_F position = D2D1::RectF(
+                leftBoundary + (elem.xPos * scalerX),
+                0 + (elem.yPos * scalerY),
+                leftBoundary + ((elem.xPos + size.width) * scalerX),
+                (elem.yPos + size.height) * scalerY
+            );
+            renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+        }
+        std::ifstream inFile((L"Save Files\\Save.txt"));
+        if (inFile.is_open()) {
+            std::string line;
+            int yOffset = 0;
+
+            std::string name;
+            std::string curr;
+            std::string time;
+
+            // File Name
+            if (std::getline(inFile, line)) {
+                yOffset += 17 + ((std::stoi(line) - 1) * 70);
+                name = "File " + line;
+            }
+
+            // Currency amount
+            if (std::getline(inFile, line)) {
+                curr = line;
+            }
+
+            // Time Played
+            if (std::getline(inFile, line)) {
+                time = line;
+            }
+
+            RenderTextLeft(name, 69, 23);
+            RenderTextLeft(curr, 77, 45);
+            RenderTextLeft(time, 69, 57);
+            RenderObjectLeft(files.jewel_Red, 69, 47);
+
+            if (std::chrono::steady_clock::now() - player.lastFrameChange >= player.frameInterval) {
+                player.lastFrameChange = std::chrono::steady_clock::now();
+                if (player.currentFramePath == files.playerFrame2) {
+                    player.currentFramePath = files.playerFrame1;
+                }
+                else {
+                    player.currentFramePath = files.playerFrame2;
+                }
+            }
+            RenderObjectLeft(player.currentFramePath, 35, 36 + (selection * 69));
+
+            inFile.close();
+        }
+    }
+};
+
+SaveMenu saveMenu;
+
+class TitleMenu : public Menu {
+public:
+    bool startPressed = false;
+    std::chrono::milliseconds heldInputBuffer = std::chrono::milliseconds(150);
+
+    TitleMenu() {}
+
+    void UpdateLogic() {
+        // Start Screen
+        if (state == 0) {
+            if (std::chrono::steady_clock::now() - menuLastInput <= menuInputBuffer) return;
+            if (keys.space) {
+                menuLastInput = std::chrono::steady_clock::now();
+                state = 1;
+            }
+            return;
+        }
+
+        // New Game/Load Screen
+        if (state == 1) {
+            if (std::chrono::steady_clock::now() - menuLastInput <= menuInputBuffer) return;
+            ChangeSelection(keys.up, keys.down);
+            if (keys.escape) {
+                menuLastInput = std::chrono::steady_clock::now();
+                state = 0;
+                return;
+            }
+            if (!keys.space) return;
+            menuLastInput = std::chrono::steady_clock::now();
+            switch (selection) {
+                // New Game
+            case 0:
+                player.xPos = saveStations[0].xPos;
+                player.yPos = saveStations[0].yPos;
+                InitializeAssets();
+                gameState = 0;
+                paused = false;
+                break;
+
+                // Load
+            case 1:
+                elements.emplace_back(files.save_file_panel, 16, 17);
+                elements.emplace_back(files.save_file_panel, 16, 87);
+                elements.emplace_back(files.save_file_panel, 16, 157);
+                selection = 0;
+                selecSize = 3;
+                state = 2;
+                break;
+            }
+            return;
+        }
+
+        // Save/Load Menu
+        if (state == 2) {
+            saveMenu.UpdateLogic();
+        }
+        return;
+    }
+
+    void Render() {
+        ID2D1Bitmap* bmp;
+        int x, y;
+        switch (state) {
+        case 0: // title screen
+            bmp = bitmaps[files.title_screen];
+
+            if (bmp) {
+                D2D1_RECT_F position = D2D1::RectF(
+                    leftBoundary,
+                    0,
+                    leftBoundary + (256 * scalerX),
+                    224 * scalerY
+                );
+
+                renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            }
+            RenderTextMid("Press Space", 128, 190);
+            RenderTextMid("NEODYUM", 128, 40);
+            break;
+
+        case 1: // new game, load game select
+            bmp = bitmaps[files.title_screen];
+            y = 192 + (selection * 12);
+
+            if (bmp) {
+                D2D1_RECT_F position = D2D1::RectF(
+                    leftBoundary,
+                    0,
+                    leftBoundary + (256 * scalerX),
+                    224 * scalerY
+                );
+
+                renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            }
+            if (selection == 0) {
+                x = RenderTextMid("New Game", 127, 190);
+                RenderTextMid("Load Game", 127, 202);
+            }
+            else {
+                RenderTextMid("New Game", 127, 190);
+                x = RenderTextMid("Load Game", 127, 202);
+            }
+            x = 117 - (x / 2);
+            RenderObjectLeft(files.selec_arrow, x, y);
+
+            break;
+
+        case 2: // load game screen
+            saveMenu.Render();
+            break;
+        }
+        return;
+    }
+};
+
+class RepairStation : public Menu {
+public:
+    unsigned __int8 xSelec = 7, ySelec = 26;
+    std::chrono::milliseconds selecAnimationInterval = std::chrono::milliseconds(150);
+    std::chrono::steady_clock::time_point lastSelectButtonInterval = std::chrono::steady_clock::now();
+    LPCWSTR selecFrames[5];
+    __int8 currFrame = 0;
+    bool animForward = true;
+    bool componentSelected = false;
+    __int8 panelSelected = 0;
+    __int8 displayLength[4];
+    bool componentModified = false;
+    std::chrono::steady_clock::time_point lastButtonChange = std::chrono::steady_clock::now();
+    std::chrono::milliseconds buttonInterval = std::chrono::milliseconds(500);
+    LPCWSTR currentButtonFile = files.upgrade_button;
+    int cost = 0;
+
+
+    RepairStation() {
+        selecSize = 4;
+        selecFrames[0] = files.repair_Selection_1;
+        selecFrames[1] = files.repair_Selection_2;
+        selecFrames[2] = files.repair_Selection_3;
+        selecFrames[3] = files.repair_Selection_4;
+        selecFrames[4] = files.repair_Selection_5;
+        currFrame = 0;
+        for (int i = 0; i <= 3; i++) {
+            displayLength[i] = player.tweakBarLength[i];
+        }
+    }
+
+    void ChangeCost(int i, bool increase) {
+        if (increase) {
+            switch (i) {
+            case 1:
+                cost += 80;
+                break;
+            case 2:
+                cost += 200;
+                break;
+            case 3:
+                cost += 450;
+                break;
+            case 4:
+                cost += 1000;
+                break;
+            case 5:
+                cost += 1600;
+                break;
+            }
+        }
+        else {
+            switch (i) {
+            case 0:
+                cost -= 80;
+                break;
+            case 1:
+                cost -= 200;
+                break;
+            case 2:
+                cost -= 450;
+                break;
+            case 3:
+                cost -= 1000;
+                break;
+            case 4:
+                cost -= 1600;
+                break;
+            }
+        }
+    }
+
+    void ProcessKeyInputs() {
+        if (std::chrono::steady_clock::now() - menuLastInput <= menuInputBuffer) return;
+        if ((keys.escape && !componentSelected) || (keys.left && selection == 0 && !componentSelected)) {
+            menuLastInput = std::chrono::steady_clock::now();
+            gameState = 2;
+            return;
+        }
+        else if (keys.escape && componentSelected) {
+            menuLastInput = std::chrono::steady_clock::now();
+            componentSelected = false;
+            for (int i = 0; i <= 3; i++) {
+                displayLength[i] = player.tweakBarLength[i];
+            }
+            cost = 0;
+            componentModified = false;
+            return;
+        }
+        if (keys.space) {
+            menuLastInput = std::chrono::steady_clock::now();
+            componentSelected = true;
+            switch (selection) {
+            case 0:
+                panelSelected = 0;
+                break;
+            case 1:
+                panelSelected = 2;
+                break;
+            case 2:
+                panelSelected = 2;
+                break;
+            case 3:
+                panelSelected = 3;
+                break;
+            }
+            return;
+        }
+        if (!componentSelected) {
+            if (keys.right) {
+                menuLastInput = std::chrono::steady_clock::now();
+                if (selection == 0) { // Plating
+                    selection = 1;
+                }
+            }
+            else if (keys.left) {
+                menuLastInput = std::chrono::steady_clock::now();
+                if (selection == 1) { // Ionizer
+                    selection = 0;
+                }
+                else if (selection == 2) { // E. Coil
+                    selection = 0;
+                }
+                else if (selection == 3) { // Injectors
+                    selection = 0;
+                }
+            }
+            else if (keys.up) {
+                menuLastInput = std::chrono::steady_clock::now();
+                if (selection == 3) { // Injectors
+                    selection = 2;
+                }
+                else if (selection == 2) { // E. Coil
+                    selection = 1;
+                }
+                else if (selection == 1) {
+                    selection = 0;
+                }
+            }
+            else if (keys.down) {
+                menuLastInput = std::chrono::steady_clock::now();
+                if (selection == 0) {
+                    selection = 1;
+                }
+                else if (selection == 1) {
+                    selection = 2;
+                }
+                else if (selection == 2) {
+                    selection = 3;
+                }
+            }
+        }
+        else {
+            if (keys.right) {
+                menuLastInput = std::chrono::steady_clock::now();
+                int delta = displayLength[selection];
+                displayLength[selection] = min(5, displayLength[selection] + 1);
+                delta = delta - displayLength[selection];
+                if (delta != 0) ChangeCost(displayLength[selection], true);
+                componentModified = true;
+            }
+            else if (keys.left) {
+                menuLastInput = std::chrono::steady_clock::now();
+                int delta = displayLength[selection];
+                displayLength[selection] = max(player.tweakBarLength[selection], displayLength[selection] - 1);
+                delta = delta - displayLength[selection];
+                if (delta != 0) ChangeCost(displayLength[selection], false);
+                if (displayLength[selection] == player.tweakBarLength[selection]) {
+                    componentModified = false;
+                }
+            }
+
+        }
+
+        switch (selection) {
+        case 0:
+            xSelec = 7;
+            ySelec = 25;
+            break;
+        case 1:
+            xSelec = 180;
+            ySelec = 25;
+            break;
+        case 2:
+            xSelec = 180;
+            ySelec = 37;
+            break;
+        case 3:
+            xSelec = 180;
+            ySelec = 115;
+            break;
+        }
+    }
+
+    void CycleSelectionAnimation() {
+        if (std::chrono::steady_clock::now() - lastSelectButtonInterval < selecAnimationInterval) return;
+        lastSelectButtonInterval = std::chrono::steady_clock::now();
+        int sign;
+        animForward ? sign = 1 : sign = -1;
+        currFrame += sign;
+        if (currFrame > 4) {
+            currFrame = 4;
+            animForward = false;
+        }
+        else if (currFrame < 0) {
+            currFrame = 0;
+            animForward = true;
+        }
+    }
+
+    void UpdateLogic() {
+        ProcessKeyInputs();
+        CycleSelectionAnimation();
+    }
+
+    void RenderComponentFilling(LPCWSTR file, __int8 qty, double x, double y) {
+        if (qty == 0) return;
+        __int8 spacerX = 1;
+        for (__int8 i = 0; i < qty; i++) {
+            RenderObjectLeft(file, x + spacerX, y);
+            spacerX += 3;
+        }
+    }
+
+    void Render() {
+        RenderObjectLeft(files.repair_station_menu, 0, 0);
+        if (componentModified) {
+            if (std::chrono::steady_clock::now() - lastButtonChange >= buttonInterval) {
+                lastButtonChange = std::chrono::steady_clock::now();
+                if (currentButtonFile == files.upgrade_button) {
+                    currentButtonFile = files.upgrade_button_pressed;
+                }
+                else {
+                    currentButtonFile = files.upgrade_button;
+                }
+            }
+        }
+        if (!componentSelected) {
+            RenderObjectLeft(selecFrames[currFrame], xSelec, ySelec);
+            RenderTextLeft("Plating", 9, 27);
+            RenderTextLeft("Ionizers", 182, 27);
+            RenderTextLeft("E. Coil", 182, 39);
+            RenderTextLeft("Injectors", 182, 117);
+            RenderObjectRight(files.repair_station_bar_shell, 76, 26);
+            RenderComponentFilling(files.repair_station_hull_filling, player.tweakBarLength[0], 59, 26.995);
+            RenderObjectRight(files.repair_station_bar_shell, 248, 26);
+            RenderComponentFilling(files.repair_station_blasters_filling, player.tweakBarLength[1], 231, 26.995);
+            RenderObjectRight(files.repair_station_bar_shell, 248, 38);
+            RenderComponentFilling(files.repair_station_blasters_filling, player.tweakBarLength[2], 231, 39);
+            RenderObjectRight(files.repair_station_bar_shell, 248, 116);
+            RenderComponentFilling(files.repair_station_thruster_filling, player.tweakBarLength[3], 231, 117.005);
+
+        }
+        else {
+            int yOffset;
+            switch (panelSelected) {
+            case 0:
+                RenderObjectLeft(selecFrames[currFrame], xSelec, 25);
+                RenderObjectRight(files.repair_station_bar_shell, 76, 26);
+                RenderComponentFilling(files.repair_station_hull_filling, displayLength[0], 59, 26.995);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 26);
+                RenderComponentFilling(files.repair_station_blasters_filling, displayLength[1], 231, 26.995);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 38);
+                RenderComponentFilling(files.repair_station_blasters_filling, displayLength[2], 231, 39);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 116);
+                RenderComponentFilling(files.repair_station_thruster_filling, displayLength[3], 231, 117.005);
+                RenderTextLeft("Plating", 9, 27);
+                RenderObjectLeft(files.repair_station_info_box, 8, 40);
+                RenderTextLeft("Ionizers", 182, 27);
+                RenderTextLeft("E. Coil", 182, 39);
+                RenderTextLeft("Injectors", 182, 117);
+
+                RenderTextLeft("Reinforces the", 9, 42);
+                RenderTextLeft("ship's hull, ", 9, 53);
+                RenderTextLeft("reducing DMG.", 9, 64);
+                if (componentModified) {
+                    RenderObjectLeft(currentButtonFile, 22, 76);
+                    (currentButtonFile == files.upgrade_button_pressed) ? yOffset = 2 : yOffset = 0;
+                    RenderObjectandTextMid(files.jewel_Red, std::to_string(cost), 43, 78 + yOffset);
+                }
+                break;
+            case 1:
+                RenderObjectLeft(files.repair_station_info_box, 8, 40);
+                if (componentModified) {
+                    RenderObjectLeft(currentButtonFile, 195, 76);
+                    (currentButtonFile == files.upgrade_button_pressed) ? yOffset = 2 : yOffset = 0;
+                    RenderObjectandTextMid(files.jewel_Red, std::to_string(cost), 216, 78 + yOffset);
+                }
+                break;
+            case 2:
+                RenderObjectLeft(selecFrames[currFrame], xSelec, 25);
+                RenderObjectRight(files.repair_station_bar_shell, 76, 26);
+                RenderComponentFilling(files.repair_station_hull_filling, displayLength[0], 59, 26.995);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 26);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 116);
+                RenderComponentFilling(files.repair_station_thruster_filling, displayLength[3], 231, 117.005);
+                if (selection == 1) {
+                    RenderTextLeft("Ionizers", 182, 27);
+                    RenderComponentFilling(files.repair_station_blasters_filling, displayLength[1], 231, 26.995);
+                }
+                else {
+                    RenderTextLeft("E. Coil", 182, 27);
+                    RenderComponentFilling(files.repair_station_blasters_filling, displayLength[2], 231, 26.995);
+                }
+                RenderObjectLeft(files.repair_station_info_box, 181, 40);
+                RenderTextLeft("Plating", 9, 27);
+                RenderTextLeft("Injectors", 182, 117);
+                if (componentModified) {
+                    RenderObjectLeft(currentButtonFile, 195, 75);
+                    (currentButtonFile == files.upgrade_button_pressed) ? yOffset = 2 : yOffset = 0;
+                    RenderObjectandTextMid(files.jewel_Red, std::to_string(cost), 216, 77 + yOffset);
+                }
+                break;
+            case 3:
+                RenderObjectLeft(selecFrames[currFrame], xSelec, 115);
+                RenderObjectRight(files.repair_station_bar_shell, 76, 26);
+                RenderComponentFilling(files.repair_station_hull_filling, displayLength[0], 59, 26.995);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 26);
+                RenderComponentFilling(files.repair_station_blasters_filling, displayLength[1], 231, 26.995);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 38);
+                RenderComponentFilling(files.repair_station_blasters_filling, displayLength[2], 231, 39);
+                RenderObjectRight(files.repair_station_bar_shell, 248, 116);
+                RenderComponentFilling(files.repair_station_thruster_filling, displayLength[3], 231, 117.005);
+                RenderTextLeft("Injectors", 182, 117);
+                RenderObjectLeft(files.repair_station_info_box, 181, 130);
+                RenderTextLeft("Plating", 9, 27);
+                RenderTextLeft("Ionizers", 182, 27);
+                RenderTextLeft("E. Coil", 182, 39);
+                if (componentModified) {
+                    RenderObjectLeft(currentButtonFile, 195, 187);
+                    (currentButtonFile == files.upgrade_button_pressed) ? yOffset = 2 : yOffset = 0;
+                    RenderObjectandTextMid(files.jewel_Red, std::to_string(cost), 216, 189 + yOffset);
+                }
+                break;
+            }
+        }
+    }
+};
+
+TitleMenu titleMenu;
+RepairStation repairStation;
+
 
 
 //---------------------
@@ -2326,7 +3719,10 @@ void Render() {
 
     renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
-    if (!paused && !splashscreen) {
+    if (gameState == 1) titleMenu.Render();
+    else if (gameState == 2) saveMenu.Render();
+    else if (gameState == 3) repairStation.Render();
+    else if (!paused && !splashscreen) {
         // Keeps stuff from being rendered outside boundaries
         D2D1_RECT_F aspectEnforcer = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
 
@@ -2417,6 +3813,11 @@ void Render() {
                     }
                 }
             }
+        }
+
+        int length = sizeof(saveStations) / sizeof(saveStations[0]);
+        for (int i = 0; i < length; i++) {
+            RenderWorldObject(saveStations[i].currentFramePath, saveStations[i].xPos, saveStations[i].yPos);
         }
 
         ID2D1Bitmap* bPickup = bitmaps[pickup.currentFramePath];
@@ -2553,12 +3954,14 @@ void Render() {
                     );*/
                 }
                 // Ship and and effects will need to have uniform rotation, so setting that upfront...
-                    // Finds direction angle based on inputs
-                double angleRadians = 0;
-                double angleDegrees = (player.angleRadians * pi) / 180;
-                angleRadians = atan2(player.directionX, player.directionY);
-                angleDegrees = angleRadians * (180.0 / 3.14159265359);
-                player.angleRadians = angleRadians;
+                // Finds direction angle based on inputs
+                double angleDegrees;
+                if (player.inModifiedDockingAngle) {
+                    angleDegrees = ((player.angleRadians + pi / 4) / pi) * 360;
+                }
+                else {
+                    angleDegrees = ((player.angleRadians + pi / 4) / pi) * 360;
+                }
                 D2D1_POINT_2F center = D2D1::Point2F(screenX / 2, screenY / 2);
 
 
@@ -2580,7 +3983,7 @@ void Render() {
 
             ID2D1Bitmap* redLightBitmap = bitmaps[player.redLightFrame];
 
-            if (redLightBitmap) {
+            if (redLightBitmap && !(player.inDockingSequence && !saveStations[player.stationTouchingID].closed) && !player.inAscendingSequence) {
                 D2D1_SIZE_F size = redLightBitmap->GetSize();
                 int xOff1(0), xOff2(0), yOff1(0), yOff2(0);
                 if (player.currentFramePath == files.player_tilt_left || player.currentFramePath == files.player_tilt_right) {
@@ -2663,17 +4066,17 @@ void Render() {
             if (player.sideMode) {
                 float xOffset(0), yOffset(0);
                 if (player.xPos < 128) {
-                    xOffset = cos(player.angleRadians) * (player.xPos - 128);
+                    xOffset = sin(player.angleRadians) * (player.xPos - 128);
                 }
                 else if (player.xPos > (bgWidth - 128)) {
-                    xOffset = cos(player.angleRadians) * (player.xPos - (bgWidth - 128));
+                    xOffset = sin(player.angleRadians) * (player.xPos - (bgWidth - 128));
                 }
 
                 if (player.yPos < 112) {
-                    yOffset = cos(player.angleRadians) * (player.yPos - 112);
+                    yOffset = sin(player.angleRadians) * (player.yPos - 112);
                 }
                 else if (player.yPos > (bgHeight - 112)) {
-                    yOffset = cos(player.angleRadians) * (player.yPos - (bgHeight - 112));
+                    yOffset = sin(player.angleRadians) * (player.yPos - (bgHeight - 112));
                 }
                 displayPos = D2D1::RectF(
                     screenX / 2 - ((size.width / 2) * scalerX) + (xOffset * scalerX),
@@ -3019,18 +4422,22 @@ void Render() {
                 renderTarget->DrawBitmap(mapBmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
 
                 ID2D1SolidColorBrush* brush;
-                renderTarget->CreateSolidColorBrush(D2D1::ColorF(153 / 255.0F, 213 / 255.0F, 234 / 255.0F), &brush);
+                renderTarget->CreateSolidColorBrush(D2D1::ColorF(156 / 255.0f, 148 / 255.0f, 0), &brush);
 
-                float proportionX = player.xPos / mapSizeX;
-                float proportionY = player.yPos / mapSizeY;
-                D2D1_RECT_F playerIcon = D2D1::RectF(
-                    screenX - leftBoundary - (int(mapFrameSize.width + 4 - (mapFrameSize.width * proportionX)) * scalerX),
-                    screenY - (int(mapFrameSize.height + 4 - (mapFrameSize.height * proportionY)) * scalerY),
-                    screenX - leftBoundary - (int(mapFrameSize.width + 5 - (mapFrameSize.width * proportionX)) * scalerX),
-                    screenY - (int(mapFrameSize.height + 5 - (mapFrameSize.height * proportionY)) * scalerY)
-                );
-                renderTarget->FillRectangle(playerIcon, brush);
-                brush->Release();
+                float proportionX;
+                float proportionY;
+                int length = sizeof(saveStations) / sizeof(saveStations[0]);
+                for (int i = 0; i <= (length - 1); i++) {
+                    proportionX = saveStations[i].xPos / mapSizeX;
+                    proportionY = saveStations[i].yPos / mapSizeY;
+                    D2D1_RECT_F saveStationIcon = D2D1::RectF(
+                        screenX - leftBoundary - (int(mapFrameSize.width + 4 - (mapFrameSize.width * proportionX)) * scalerX),
+                        screenY - (int(mapFrameSize.height + 4 - (mapFrameSize.height * proportionY)) * scalerY),
+                        screenX - leftBoundary - (int(mapFrameSize.width + 5 - (mapFrameSize.width * proportionX)) * scalerX),
+                        screenY - (int(mapFrameSize.height + 5 - (mapFrameSize.height * proportionY)) * scalerY)
+                    );
+                    renderTarget->FillRectangle(saveStationIcon, brush);
+                }
 
                 ID2D1Bitmap* baseIconBMP = bitmaps[files.base_icon];
                 if (baseIconBMP) {
@@ -3047,6 +4454,18 @@ void Render() {
                         renderTarget->DrawBitmap(baseIconBMP, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
                     }
                 }
+
+                brush->SetColor(D2D1::ColorF(153 / 255.0F, 213 / 255.0F, 234 / 255.0F));
+                proportionX = player.xPos / mapSizeX;
+                proportionY = player.yPos / mapSizeY;
+                D2D1_RECT_F playerIcon = D2D1::RectF(
+                    screenX - leftBoundary - (int(mapFrameSize.width + 4 - (mapFrameSize.width * proportionX)) * scalerX),
+                    screenY - (int(mapFrameSize.height + 4 - (mapFrameSize.height * proportionY)) * scalerY),
+                    screenX - leftBoundary - (int(mapFrameSize.width + 5 - (mapFrameSize.width * proportionX)) * scalerX),
+                    screenY - (int(mapFrameSize.height + 5 - (mapFrameSize.height * proportionY)) * scalerY)
+                );
+                renderTarget->FillRectangle(playerIcon, brush);
+                brush->Release();
             }
         }
 
@@ -3069,26 +4488,7 @@ void Render() {
         renderTarget->PopAxisAlignedClip();
     }
     else if (paused) {
-
-        ID2D1Bitmap* pauseBackground = bitmaps[files.pauseBackground];
-        if (pauseBackground) {
-            D2D_RECT_F position = D2D1::RectF(leftBoundary, 0, rightBoundary, screenY);
-            renderTarget->DrawBitmap(pauseBackground, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
-        }
-
-        ID2D1Bitmap* pause = bitmaps[files.pause];
-        if (pause) {
-            D2D1_SIZE_F size = pause->GetSize();
-
-            D2D_RECT_F position = D2D1::RectF(
-                (screenX / 2) - ((size.width / 2) * scalerX),
-                (screenY / 2) - ((size.height / 2) * scalerY),
-                (screenX / 2) + ((size.width / 2) * scalerX),
-                (screenY / 2) + ((size.height / 2) * scalerY)
-            );
-
-            renderTarget->DrawBitmap(pause, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
-        }
+        RenderTextMid("Paused", 128, 112);
     }
     else if (splashscreen) {
         // Pulls bitmap for background
@@ -3114,18 +4514,36 @@ void Render() {
 
 void UpdateGameLogic(double deltaTime) {
 
-    if (!paused && !splashscreen) {
+    if (gameState == 1) titleMenu.UpdateLogic();
+    else if (gameState == 2) saveMenu.UpdateLogic();
+    else if (gameState == 3) repairStation.UpdateLogic();
+    else if (!paused && !splashscreen) {
         player.UpdateHitBox();
         for (auto& object : objects) {
             object.UpdateHitBox();
         }
         UpdateBackgroundElements(deltaTime);
 
-        player.ApplyDirectionalInput(deltaTime);
+
         player.UpdateRedLightEffect(deltaTime);
-        player.ApplyShootingLogic(deltaTime);
+
         player.UpdateBullets(deltaTime, objects);
         CheckEnvironmentCollisions(environments);
+
+        if (player.inAscendingSequence) {
+            player.PlayAscendingSequence(deltaTime, saveStations[player.stationTouchingID]);
+        }
+        else if (player.inDockingSequence) {
+            player.PlayDockingAnimation(deltaTime, saveStations[player.stationTouchingID]);
+            if (!player.inDockingSequence) {
+                gameState = 2;
+            }
+        }
+        else {
+            player.ApplyDirectionalInput(deltaTime);
+            player.ApplyShootingLogic(deltaTime);
+            UpdateSaveStationLogic(deltaTime);
+        }
 
         bool spawnEnemies = true;
         bool spawnsExist = false;
@@ -3143,6 +4561,24 @@ void UpdateGameLogic(double deltaTime) {
         UpdateSideViewCamera();
 
     }
+}
+
+void LoadEssentialData() {
+    saveStations[0].id = 0;
+    saveStations[0].xPos = mapSizeX * .25;
+    saveStations[0].yPos = mapSizeY * .3;
+
+    saveStations[1].id = 1;
+    saveStations[1].xPos = mapSizeX * .5;
+    saveStations[1].yPos = mapSizeY * .5;
+
+    saveStations[2].id = 2;
+    saveStations[2].xPos = mapSizeX * .85;
+    saveStations[2].yPos = mapSizeY * .5;
+
+    saveStations[0].UpdateHitBox();
+    saveStations[1].UpdateHitBox();
+    saveStations[2].UpdateHitBox();
 }
 
 LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -3170,7 +4606,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
             if (hWnd) {
                 LoadFilePathsToVector(spriteFilePaths);
                 LoadSpritesToMemory(hWnd, spriteFilePaths);
-                InitializeAssets();
+                LoadEssentialData();
                 ShowWindow(hWnd, nCmdShow);
                 //PlaySound(L"Music\\Neodyum Overworld Idea.wav", NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 
