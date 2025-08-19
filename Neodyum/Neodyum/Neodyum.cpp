@@ -244,6 +244,9 @@ struct {
     LPCWSTR upgrade_button_pressed = L"Sprites\\Menu\\Repair_Station_Upgrade_Button_Pressed.png";
     LPCWSTR apostrophe = L"Sprites\\Fonts\\apostrophe.png";
     LPCWSTR comma = L"Sprites\\Fonts\\comma.png";
+    LPCWSTR plus = L"Sprites\\Fonts\\plus.png";
+    LPCWSTR left_parenthesis = L"Sprites\\Fonts\\left_parenthesis.png";
+    LPCWSTR right_parenthesis = L"Sprites\\Fonts\\right_parenthesis.png";
 } files;
 
 void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
@@ -442,6 +445,9 @@ void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
     spriteFilePaths.emplace_back(files.upgrade_button_pressed);
     spriteFilePaths.emplace_back(files.apostrophe);
     spriteFilePaths.emplace_back(files.comma);
+    spriteFilePaths.emplace_back(files.plus);
+    spriteFilePaths.emplace_back(files.left_parenthesis);
+    spriteFilePaths.emplace_back(files.right_parenthesis);
 }
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
@@ -561,10 +567,10 @@ LPCWSTR fontArray[255]{
     files.invalid_char,
     files.invalid_char,
     files.apostrophe,
+    files.left_parenthesis,
+    files.right_parenthesis,
     files.invalid_char,
-    files.invalid_char,
-    files.invalid_char,
-    files.invalid_char,
+    files.plus,
     files.comma,
     files.invalid_char,
     files.period,
@@ -1011,6 +1017,8 @@ public:
     std::chrono::steady_clock::time_point rollTime = std::chrono::steady_clock::now();
     bool sideMode;
     float speed = 1.5;
+    float defense = 0;
+    std::chrono::milliseconds shotFrequency = std::chrono::milliseconds(250);
     bool alreadyOnStation = true;
     unsigned __int8 stationTouchingID = 0;
     bool inDockingSequence = false;
@@ -1030,7 +1038,7 @@ public:
     bool inAscendingSequence = false;
     bool ascending = true;
     bool inModifiedDockingAngle = false;
-    __int8 tweakBarLength[4];
+    __int8 components[4];
 
 
     Player() {
@@ -1041,11 +1049,17 @@ public:
             int i = 0;
             while (std::getline(inFile, line)) {
                 if (i > 3) {
-                    tweakBarLength[i - 4] = stoi(line);
+                    components[i - 4] = stoi(line);
                 }
                 i++;
             }
             inFile.close();
+            defense = components[0] * .1;
+            power = 2 * (1 + (components[1] * .3));
+            int ms = 250 / (1 + (components[2] * .25));
+            shotFrequency = std::chrono::milliseconds(ms);
+            speed = 1.5 * (1 + (components[3] * .15));
+            int j = 0;
         }
     }
 
@@ -2011,7 +2025,6 @@ int gameState = 1;
 //-------------------------
 
 void InitializeAssets() {
-    player.power = 2;
     player.health = 100;
     player.maxHP = 100;
     player.inAscendingSequence = true;
@@ -2809,7 +2822,7 @@ void UpdateEnemyShootingLogic(double deltaTime) {
                             enemyBullets.at(i).explosionBegin = std::chrono::steady_clock::now();
                         }
                         player.damaged = true;
-                        player.health -= enemyBullets.at(i).power * deltaTime;
+                        player.health -= enemyBullets.at(i).power * deltaTime * (1 - player.defense);
                         if (player.health <= 0) {
                             player.dead = true;
                             player.currentFramePath = files.player_Death_Animation_1;
@@ -3287,9 +3300,9 @@ public:
             }
 
             RenderTextLeft(name, 69, 23);
-            RenderTextLeft(curr, 77, 45);
+            RenderTextLeft(curr, 76, 45);
             RenderTextLeft(time, 69, 57);
-            RenderObjectLeft(files.jewel_Red, 69, 47);
+            RenderObjectLeft(files.jewel_Red, 69, 46);
 
             if (std::chrono::steady_clock::now() - player.lastFrameChange >= player.frameInterval) {
                 player.lastFrameChange = std::chrono::steady_clock::now();
@@ -3460,7 +3473,7 @@ public:
         selecFrames[4] = files.repair_Selection_5;
         currFrame = 0;
         for (int i = 0; i <= 3; i++) {
-            displayLength[i] = player.tweakBarLength[i];
+            displayLength[i] = player.components[i];
         }
     }
 
@@ -3516,7 +3529,7 @@ public:
             menuLastInput = std::chrono::steady_clock::now();
             componentSelected = false;
             for (int i = 0; i <= 3; i++) {
-                displayLength[i] = player.tweakBarLength[i];
+                displayLength[i] = player.components[i];
             }
             cost = 0;
             componentModified = false;
@@ -3524,6 +3537,31 @@ public:
         }
         if (keys.space) {
             menuLastInput = std::chrono::steady_clock::now();
+            if (componentSelected && !componentModified) componentSelected = false;
+            else if (componentSelected) {
+                if (player.currency - cost >= 0) {
+                    player.currency -= cost;
+                    player.components[selection] = displayLength[selection];
+                    switch (selection) {
+                    case 0:
+                        player.defense = .1 * displayLength[selection];
+                        break;
+                    case 1:
+                        player.power = 2 * (1 + (displayLength[selection] * .3));
+                        break;
+                    case 2:
+                        player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (displayLength[selection] * .25))));
+                        break;
+                    case 3:
+                        player.speed = 1.5 * (1 + (displayLength[selection] * .15));
+                        break;
+                    }
+                    return;
+                    componentSelected = false;
+                    componentModified = false;
+                }
+
+            }
             componentSelected = true;
             switch (selection) {
             case 0:
@@ -3597,10 +3635,10 @@ public:
             else if (keys.left) {
                 menuLastInput = std::chrono::steady_clock::now();
                 int delta = displayLength[selection];
-                displayLength[selection] = max(player.tweakBarLength[selection], displayLength[selection] - 1);
+                displayLength[selection] = max(player.components[selection], displayLength[selection] - 1);
                 delta = delta - displayLength[selection];
                 if (delta != 0) ChangeCost(displayLength[selection], false);
-                if (displayLength[selection] == player.tweakBarLength[selection]) {
+                if (displayLength[selection] == player.components[selection]) {
                     componentModified = false;
                 }
             }
@@ -3660,6 +3698,8 @@ public:
 
     void Render() {
         RenderObjectLeft(files.repair_station_menu, 0, 0);
+        RenderObjectLeft(files.jewel_Red, 5, 5);
+        RenderTextLeft(std::to_string(player.currency), 12, 4);
         if (componentModified) {
             if (std::chrono::steady_clock::now() - lastButtonChange >= buttonInterval) {
                 lastButtonChange = std::chrono::steady_clock::now();
@@ -3678,13 +3718,13 @@ public:
             RenderTextLeft("E. Coil", 182, 39);
             RenderTextLeft("Injectors", 182, 117);
             RenderObjectRight(files.repair_station_bar_shell, 76, 26);
-            RenderComponentFilling(files.repair_station_hull_filling, player.tweakBarLength[0], 59, 26.995);
+            RenderComponentFilling(files.repair_station_hull_filling, player.components[0], 59, 26.995);
             RenderObjectRight(files.repair_station_bar_shell, 248, 26);
-            RenderComponentFilling(files.repair_station_blasters_filling, player.tweakBarLength[1], 231, 26.995);
+            RenderComponentFilling(files.repair_station_blasters_filling, player.components[1], 231, 26.995);
             RenderObjectRight(files.repair_station_bar_shell, 248, 38);
-            RenderComponentFilling(files.repair_station_blasters_filling, player.tweakBarLength[2], 231, 39);
+            RenderComponentFilling(files.repair_station_blasters_filling, player.components[2], 231, 39);
             RenderObjectRight(files.repair_station_bar_shell, 248, 116);
-            RenderComponentFilling(files.repair_station_thruster_filling, player.tweakBarLength[3], 231, 117.005);
+            RenderComponentFilling(files.repair_station_thruster_filling, player.components[3], 231, 117.005);
 
         }
         else {
@@ -3707,8 +3747,8 @@ public:
                 RenderTextLeft("Injectors", 182, 117);
 
                 RenderTextLeft("Reinforces the", 9, 42);
-                RenderTextLeft("ship's hull, ", 9, 53);
-                RenderTextLeft("reducing DMG.", 9, 64);
+                RenderTextLeft("ship's hull", 9, 53);
+                RenderTextLeft("(+Defense)", 9, 64);
                 if (componentModified) {
                     RenderObjectLeft(currentButtonFile, 22, 76);
                     (currentButtonFile == files.upgrade_button_pressed) ? yOffset = 2 : yOffset = 0;
@@ -3730,15 +3770,21 @@ public:
                 RenderObjectRight(files.repair_station_bar_shell, 248, 26);
                 RenderObjectRight(files.repair_station_bar_shell, 248, 116);
                 RenderComponentFilling(files.repair_station_thruster_filling, displayLength[3], 231, 117.005);
+                RenderObjectLeft(files.repair_station_info_box, 181, 40);
                 if (selection == 1) {
                     RenderTextLeft("Ionizers", 182, 27);
                     RenderComponentFilling(files.repair_station_blasters_filling, displayLength[1], 231, 26.995);
+                    RenderTextLeft("Imprves plasma", 182, 42);
+                    RenderTextLeft("ionization rate", 182, 53);
+                    RenderTextLeft("(+Power)", 182, 64);
                 }
                 else {
                     RenderTextLeft("E. Coil", 182, 27);
                     RenderComponentFilling(files.repair_station_blasters_filling, displayLength[2], 231, 26.995);
+                    RenderTextLeft("Improves enrgy", 182, 42);
+                    RenderTextLeft("transfer rate", 182, 53);
+                    RenderTextLeft("(+Fire Rate)", 182, 64);
                 }
-                RenderObjectLeft(files.repair_station_info_box, 181, 40);
                 RenderTextLeft("Plating", 9, 27);
                 RenderTextLeft("Injectors", 182, 117);
                 if (componentModified) {
@@ -3759,6 +3805,9 @@ public:
                 RenderComponentFilling(files.repair_station_thruster_filling, displayLength[3], 231, 117.005);
                 RenderTextLeft("Injectors", 182, 117);
                 RenderObjectLeft(files.repair_station_info_box, 181, 130);
+                RenderTextLeft("Improved fuel", 182, 132);
+                RenderTextLeft("delivery", 182, 143);
+                RenderTextLeft("(+Mvmt Speed)", 182, 154);
                 RenderTextLeft("Plating", 9, 27);
                 RenderTextLeft("Ionizers", 182, 27);
                 RenderTextLeft("E. Coil", 182, 39);
@@ -4025,12 +4074,8 @@ void Render() {
                 // Ship and and effects will need to have uniform rotation, so setting that upfront...
                 // Finds direction angle based on inputs
                 double angleDegrees;
-                if (player.inModifiedDockingAngle) {
-                    angleDegrees = ((player.angleRadians + pi / 4) / pi) * 360;
-                }
-                else {
-                    angleDegrees = ((player.angleRadians + pi / 4) / pi) * 360;
-                }
+                angleDegrees = ((player.angleRadians + pi / 4) / pi) * 360;
+                
                 D2D1_POINT_2F center = D2D1::Point2F(screenX / 2, screenY / 2);
 
 
@@ -4315,9 +4360,9 @@ void Render() {
             D2D1_SIZE_F size = currencyIconBitmap->GetSize();
             D2D1_RECT_F position = D2D1::RectF(
                 (3 * scalerX) + leftBoundary,
-                19 * scalerY,
+                18 * scalerY,
                 (3 * scalerX) + (size.width * scalerX) + leftBoundary,
-                (19 * scalerY) + (size.height * scalerY)
+                (18 * scalerY) + (size.height * scalerY)
             );
             renderTarget->DrawBitmap(currencyIconBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
         }
@@ -4368,7 +4413,7 @@ void Render() {
                     (18 * scalerY) + (size.height * scalerY)
                 );
                 renderTarget->DrawBitmap(digitBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
-                spaces += size.width + 1;
+                spaces += size.width;
             }
         }
 
@@ -4651,6 +4696,7 @@ void LoadEssentialData() {
     saveStations[0].UpdateHitBox();
     saveStations[1].UpdateHitBox();
     saveStations[2].UpdateHitBox();
+    channels[0].setVolume(0);
 }
 
 LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
