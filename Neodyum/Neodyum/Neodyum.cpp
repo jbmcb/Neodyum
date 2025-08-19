@@ -486,14 +486,36 @@ bool isMultiCore = std::thread::hardware_concurrency() > 1;
 std::chrono::milliseconds menuInputBuffer = std::chrono::milliseconds(150);
 std::chrono::steady_clock::time_point menuLastInput = std::chrono::steady_clock::now();
 
-std::vector<sf::Sound> channels;
-__int8 maxChannels = 7;
+sf::SoundBuffer channelBuffers[8];
+sf::Sound channel1(channelBuffers[0]);
+sf::Sound channel2(channelBuffers[1]);
+sf::Sound channel3(channelBuffers[2]);
+sf::Sound channel4(channelBuffers[3]);
+sf::Sound channel5(channelBuffers[4]);
+sf::Sound channel6(channelBuffers[5]);
+sf::Sound channel7(channelBuffers[6]);
+sf::Sound channel8(channelBuffers[7]);
+sf::Sound channels[8] = {
+    channel1,
+    channel2,
+    channel3,
+    channel4,
+    channel5,
+    channel6,
+    channel7,
+    channel8,
+};
 
-void PlayAudio(LPCWSTR file) {
-    sf::SoundBuffer buffer;
-    if (!buffer.loadFromFile(file)) TripErrorMissingFile(file);
-    sf::Sound sound(buffer);
-    sound.play();
+void PlayAudio(LPCWSTR file, __int8 channel) {
+    if (!channelBuffers[channel].loadFromFile(file)) TripErrorMissingFile(file);
+    channels[channel].setBuffer(channelBuffers[channel]);
+    channels[channel].setLooping(true);
+    channels[channel].play();
+}
+
+void StopAudio(__int8 channel) {
+    channels[channel].stop();
+    channels[channel].setLooping(false);
 }
 
 
@@ -1672,7 +1694,7 @@ public:
                 }
                 s.PlayCloseAnimation(deltaTime);
                 if (s.currentFramePath == s.frames[0]) {
-                    currDescentFrame = 0;
+                    currDescentFrame = 5;
                     inDockingSequence = false;
                 }
             }
@@ -1680,7 +1702,7 @@ public:
 
     }
 
-    void PlayAscendingAnimation(double deltaTime) {
+    void PlayAscendingAnimation(double deltaTime, SaveStation& s) {
         if (currentFramePath == descentFrames[5]) {
             currentFramePath = descentFrames[4];
             currDescentFrame = 4;
@@ -1688,20 +1710,25 @@ public:
         }
         if ((std::chrono::steady_clock::now() - lastFrameChange) <= descendingInterval) return;
         lastFrameChange = std::chrono::steady_clock::now();
-        if (currDescentFrame == 0) {
-            currentFramePath = files.playerFrame1;
-            inAscendingSequence = false;
-            ascending = false;
-            inModifiedDockingAngle = false;
-            return;
-        }
         currDescentFrame = max(0, currDescentFrame - 1);
         currentFramePath = descentFrames[currDescentFrame];
     }
 
     void PlayAscendingSequence(double deltaTime, SaveStation& s) {
-        s.PlayOpenAnimation(deltaTime);
-        PlayAscendingAnimation(deltaTime);
+        if (currentFramePath == descentFrames[0] || currentFramePath == files.playerFrame1) {
+            s.PlayCloseAnimation(deltaTime);
+            alreadyOnStation = true;
+            currentFramePath = files.playerFrame1;
+            inModifiedDockingAngle = false;
+            if (s.closed) {
+                inAscendingSequence = false;
+            }
+            return;
+        }
+        else {
+            if (s.closed) s.PlayOpenAnimation(deltaTime);
+            PlayAscendingAnimation(deltaTime, s);
+        }
     }
 };
 
@@ -3105,6 +3132,7 @@ void RenderObjectandTextMid(LPCWSTR file, std::string text, double x, double y) 
 }
 
 
+__int8 prevState = 1;
 
 //--------------
 // Game Menus
@@ -3127,6 +3155,7 @@ public:
     std::vector<MenuElement> elements;
     bool holdU = false;
     bool holdD = false;
+    bool justArriving = false;
 
     void ChangeSelection(bool up, bool down) {
         if (up) {
@@ -3188,15 +3217,25 @@ public:
                 }
 
                 gameState = 0;
+                StopAudio(0);
                 InitializeAssets();
                 inFile.close();
                 paused = false;
             }
         }
         if (keys.escape) {
+            
             menuLastInput = std::chrono::steady_clock::now();
-            state = 1;
-            selecSize = 2;
+            if (prevState == 3 || prevState == 0) {
+                player.inAscendingSequence = true;
+                player.currentFramePath = player.descentFrames[5];
+                gameState = 0;
+                StopAudio(0);
+            }
+            else if (prevState == 1) {
+                gameState = 1;
+            }
+            prevState = 2;
             return;
         }
         ChangeSelection(keys.up, keys.down);
@@ -3277,8 +3316,13 @@ public:
     TitleMenu() {}
 
     void UpdateLogic() {
+        if (prevState == 2) {
+            state = 1;
+            selection = 1;
+            prevState = 1;
+        }
         if (justArriving) {
-            PlayAudio(audioFiles.menu);
+            PlayAudio(audioFiles.menu, 0);
             justArriving = false;
         }
         // Start Screen
@@ -3309,8 +3353,9 @@ public:
                 player.yPos = saveStations[0].yPos;
                 InitializeAssets();
                 gameState = 0;
+                prevState = 1;
                 justArriving = true;
-                StopAudio()
+                StopAudio(0);
                 paused = false;
                 break;
 
@@ -3329,7 +3374,8 @@ public:
 
         // Save/Load Menu
         if (state == 2) {
-            saveMenu.UpdateLogic();
+            prevState = 1;
+            gameState = 2;
         }
         return;
     }
@@ -3379,10 +3425,6 @@ public:
             x = 117 - (x / 2);
             RenderObjectLeft(files.selec_arrow, x, y);
 
-            break;
-
-        case 2: // load game screen
-            saveMenu.Render();
             break;
         }
         return;
@@ -3600,6 +3642,7 @@ public:
     }
 
     void UpdateLogic() {
+        if (justArriving) PlayAudio(audioFiles.repair_station, 0);
         ProcessKeyInputs();
         CycleSelectionAnimation();
     }
@@ -4560,6 +4603,8 @@ void UpdateGameLogic(double deltaTime) {
         else if (player.inDockingSequence) {
             player.PlayDockingAnimation(deltaTime, saveStations[player.stationTouchingID]);
             if (!player.inDockingSequence) {
+                PlayAudio(audioFiles.repair_station, 0);
+                prevState = 0;
                 gameState = 2;
             }
         }
@@ -4865,9 +4910,11 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             paused = false;
         }
     }
-    if (keys.escape && (std::chrono::steady_clock::now() - pauseBuffer >= std::chrono::milliseconds(250))) {
-        pauseBuffer = std::chrono::steady_clock::now();
-        paused ? paused = false : paused = true;
+    if (keys.escape && gameState == 0 && (std::chrono::steady_clock::now() - pauseBuffer >= std::chrono::milliseconds(250))) {
+        if (!player.inDockingSequence && !player.inAscendingSequence) {
+            pauseBuffer = std::chrono::steady_clock::now();
+            paused ? paused = false : paused = true;
+        }
     }
 
     return 0;
