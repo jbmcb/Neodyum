@@ -21,6 +21,7 @@
 #include <mmsystem.h>
 #include <set>
 #include <ctime>
+#include <SFML/Audio.hpp>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "windowscodecs.lib")
@@ -33,6 +34,12 @@
 
 void TripErrorMissingFile(LPCWSTR file);
 
+
+struct {
+    LPCWSTR menu = L"Music\\Menu.wav";
+    LPCWSTR overworld = L"Music\\Overworld.wav";
+    LPCWSTR repair_station = L"Music\\Repair Station.wav";
+} audioFiles;
 
 //---------
 // Globals
@@ -479,6 +486,18 @@ bool isMultiCore = std::thread::hardware_concurrency() > 1;
 std::chrono::milliseconds menuInputBuffer = std::chrono::milliseconds(150);
 std::chrono::steady_clock::time_point menuLastInput = std::chrono::steady_clock::now();
 
+std::vector<sf::Sound> channels;
+__int8 maxChannels = 7;
+
+void PlayAudio(LPCWSTR file) {
+    sf::SoundBuffer buffer;
+    if (!buffer.loadFromFile(file)) TripErrorMissingFile(file);
+    sf::Sound sound(buffer);
+    sound.play();
+}
+
+
+
 LPCWSTR fontArray[255]{
     files.invalid_char,
     files.invalid_char,
@@ -736,7 +755,6 @@ LPCWSTR fontArray[255]{
     files.invalid_char,
     files.invalid_char,
 };
-
 
 
 struct hash_function {
@@ -3254,10 +3272,15 @@ class TitleMenu : public Menu {
 public:
     bool startPressed = false;
     std::chrono::milliseconds heldInputBuffer = std::chrono::milliseconds(150);
+    bool justArriving = true;
 
     TitleMenu() {}
 
     void UpdateLogic() {
+        if (justArriving) {
+            PlayAudio(audioFiles.menu);
+            justArriving = false;
+        }
         // Start Screen
         if (state == 0) {
             if (std::chrono::steady_clock::now() - menuLastInput <= menuInputBuffer) return;
@@ -3286,6 +3309,8 @@ public:
                 player.yPos = saveStations[0].yPos;
                 InitializeAssets();
                 gameState = 0;
+                justArriving = true;
+                StopAudio()
                 paused = false;
                 break;
 
@@ -3327,7 +3352,6 @@ public:
                 renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
             }
             RenderTextMid("Press Space", 128, 190);
-            RenderTextMid("NEODYUM", 128, 40);
             break;
 
         case 1: // new game, load game select
