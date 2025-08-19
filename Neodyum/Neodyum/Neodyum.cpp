@@ -1722,6 +1722,7 @@ public:
             inModifiedDockingAngle = false;
             if (s.closed) {
                 inAscendingSequence = false;
+                PlayAudio(audioFiles.overworld, 0);
             }
             return;
         }
@@ -2936,6 +2937,7 @@ void UpdateSaveStationLogic(double deltaTime) {
             player.inDockingSequence = true;
             player.approaching = true;
             player.stationTouchingID = s.id;
+            StopAudio(0);
             return;
         }
         if (!s.closed) {
@@ -4603,6 +4605,7 @@ void UpdateGameLogic(double deltaTime) {
         else if (player.inDockingSequence) {
             player.PlayDockingAnimation(deltaTime, saveStations[player.stationTouchingID]);
             if (!player.inDockingSequence) {
+                StopAudio(0);
                 PlayAudio(audioFiles.repair_station, 0);
                 prevState = 0;
                 gameState = 2;
