@@ -39,6 +39,8 @@ struct {
     LPCWSTR menu = L"Music\\Menu.wav";
     LPCWSTR overworld = L"Music\\Overworld.wav";
     LPCWSTR repair_station = L"Music\\Repair Station.wav";
+    LPCWSTR ae = L"Music\\ae.mp3";
+    LPCWSTR shot_fx = L"Sound Effects\\basic_shot.mp3";
 } audioFiles;
 
 //---------
@@ -247,6 +249,11 @@ struct {
     LPCWSTR plus = L"Sprites\\Fonts\\plus.png";
     LPCWSTR left_parenthesis = L"Sprites\\Fonts\\left_parenthesis.png";
     LPCWSTR right_parenthesis = L"Sprites\\Fonts\\right_parenthesis.png";
+    LPCWSTR Shrunken_Repair_Station_Bar_Shell = L"Sprites\\Menu\\Shrunken_Repair_Station_Bar_Shell.png";
+    LPCWSTR Shrunken_Repair_Station_Hull_Filling = L"Sprites\\Menu\\Shrunken_Repair_Station_Hull_Filling.png";
+    LPCWSTR Shrunken_Repair_Station_Blasters_Filling = L"Sprites\\Menu\\Shrunken_Repair_Station_Blasters_Filling.png";
+    LPCWSTR Shrunken_Repair_Station_Thruster_Filling = L"Sprites\\Menu\\Shrunken_Repair_Station_Thruster_Filling.png";
+    LPCWSTR Shrunken_Repair_Station_Utilities_Filling = L"Sprites\\Menu\\Shrunken_Repair_Station_Utilities_Filling.png";
 } files;
 
 void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
@@ -448,6 +455,11 @@ void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
     spriteFilePaths.emplace_back(files.plus);
     spriteFilePaths.emplace_back(files.left_parenthesis);
     spriteFilePaths.emplace_back(files.right_parenthesis);
+    spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Bar_Shell);
+    spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Hull_Filling);
+    spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Blasters_Filling);
+    spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Thruster_Filling);
+    spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Utilities_Filling);
 }
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
@@ -492,6 +504,8 @@ bool isMultiCore = std::thread::hardware_concurrency() > 1;
 std::chrono::milliseconds menuInputBuffer = std::chrono::milliseconds(150);
 std::chrono::steady_clock::time_point menuLastInput = std::chrono::steady_clock::now();
 
+bool firstTime = false;
+
 sf::SoundBuffer channelBuffers[8];
 sf::Sound channel1(channelBuffers[0]);
 sf::Sound channel2(channelBuffers[1]);
@@ -512,10 +526,10 @@ sf::Sound channels[8] = {
     channel8,
 };
 
-void PlayAudio(LPCWSTR file, __int8 channel) {
+void PlayAudio(LPCWSTR file, __int8 channel, bool looping) {
     if (!channelBuffers[channel].loadFromFile(file)) TripErrorMissingFile(file);
     channels[channel].setBuffer(channelBuffers[channel]);
-    channels[channel].setLooping(true);
+    channels[channel].setLooping(looping);
     channels[channel].play();
 }
 
@@ -1039,28 +1053,12 @@ public:
     bool ascending = true;
     bool inModifiedDockingAngle = false;
     __int8 components[4];
+    __int8 upgrades[12];
+    __int8 saveID;
 
 
     Player() {
         currentFramePath = files.playerFrame1;
-        std::ifstream inFile((L"Save Files\\Save.txt"));
-        if (inFile.is_open()) {
-            std::string line;
-            int i = 0;
-            while (std::getline(inFile, line)) {
-                if (i > 3) {
-                    components[i - 4] = stoi(line);
-                }
-                i++;
-            }
-            inFile.close();
-            defense = components[0] * .1;
-            power = 2 * (1 + (components[1] * .3));
-            int ms = 250 / (1 + (components[2] * .25));
-            shotFrequency = std::chrono::milliseconds(ms);
-            speed = 1.5 * (1 + (components[3] * .15));
-            int j = 0;
-        }
     }
 
     void UpdateHitBox() {
@@ -1077,7 +1075,7 @@ public:
     void ApplyDirectionalInput(double deltaTime) {
         // Apply Player Inputs
         float velocity = speed;
-        if (keys.lShift && keys.directionPressed && !keys.f) {
+        if (keys.lShift && keys.directionPressed /* && !keys.f*/) {
             if (boost > 0 && ((std::chrono::steady_clock::now() - runoutTime) >= std::chrono::seconds(2))) {
                 velocity *= 2;
                 boost -= 1 * deltaTime;
@@ -1099,7 +1097,7 @@ public:
             if (boost > 100) {
                 boost = 100;
             }
-            if (keys.f) {
+            if (/*keys.f*/false) {
                 velocity *= 0.66;
             }
         }
@@ -1138,7 +1136,7 @@ public:
         }
         else {
             if (keys.right || keys.left || keys.up || keys.down) {
-                if (!keys.f) {
+                if (true/*!keys.f*/) {
                     directionX = keys.right - keys.left;
                     directionY = keys.down - keys.up;
                     angleRadians = atan2(directionY, directionX) / 2;
@@ -1456,9 +1454,10 @@ public:
 
     void ApplyShootingLogic(double deltaTime) {
         // Apply Ship's Shooting Logic
-        if (keys.space && !basicShotFrame && (std::chrono::steady_clock::now() - lastShotEffectTime >= std::chrono::milliseconds(250))) {
+        if (keys.space && !basicShotFrame && (std::chrono::steady_clock::now() - lastShotEffectTime >= shotFrequency)) {
 
             lastShotEffectTime = std::chrono::steady_clock::now();
+            PlayAudio(audioFiles.shot_fx, 1, false);
             double xPosition, yPosition;
             double angle = (angleRadians * 2) + pi / 2;
 
@@ -1610,7 +1609,7 @@ public:
         }
     }
 
-    void UpdateBullets(double deltaTime, std::vector<Object>& objects) {
+    void UpdateBullets(double deltaTime, std::vector<Object>& objects, std::vector<Object>& gShip) {
         // Bullet logic
         if (!bullets.empty()) {
             for (auto it = bullets.begin(); it != bullets.end(); ) {
@@ -1632,6 +1631,18 @@ public:
                             }
                         }
                     }
+
+                    for (auto& g : gShip) {
+                        if (!g.dead && it->CheckCollision(g)) {
+                                g.damaged = true;
+                                g.damageBegins = std::chrono::steady_clock::now();
+                                g.currentFramePath = g.damagedFrame;
+                                g.health -= it->power;
+                                it->currentFramePath = files.explosion1;
+                                it->collided = true;
+                                it->explosionBegin = std::chrono::steady_clock::now();
+                            }
+                        }
 
                     if (!it->collided) {
                         it->xPos += 7 * (deltaTime * it->xVel);
@@ -1735,8 +1746,9 @@ public:
             currentFramePath = files.playerFrame1;
             inModifiedDockingAngle = false;
             if (s.closed) {
+                firstTime = true;
                 inAscendingSequence = false;
-                PlayAudio(audioFiles.overworld, 0);
+                PlayAudio(audioFiles.overworld, 0, true);
             }
             return;
         }
@@ -1747,8 +1759,37 @@ public:
     }
 };
 
-class Enemy : public Object {
+class BomberDrone : public Object {
 public:
+    int id;
+    BomberDrone() {};
+    BomberDrone(float xPos, float yPos, float angle) {
+        currentFramePath = files.bomber_drone;
+        turnRadius = pi / 4;
+        shotSpeed = std::chrono::milliseconds(6000);
+        shotVelocity = 2;
+        shotType = files.drone_Shot_1;
+        power = 10;
+        angleRadians = angle;
+    }
+
+
+};
+
+class GunShip : public Object {
+public:
+    int id;
+    GunShip() {};
+    GunShip(float xPos, float yPos, float angle) {
+        currentFramePath = files.enemyShip1;
+        turnRadius = pi / 2;
+        shotSpeed = std::chrono::milliseconds(50);
+        shotVelocity = 4;
+        shotType = files.basicShotPurple;
+        defaultShotEffect = files.basicShotEffectPurple1;
+        power = 10;
+        angleRadians = angle;
+    }
 };
 
 class Turret : public Object {
@@ -2018,6 +2059,10 @@ float camPosX = 0;
 Stopwatch stopwatch;
 SaveStation saveStations[3];
 int gameState = 1;
+std::vector<Object> gunship;
+std::vector<BomberDrone> bomberdrone;
+
+
 
 
 //-------------------------
@@ -2030,8 +2075,74 @@ void InitializeAssets() {
     player.inAscendingSequence = true;
     player.currentFramePath = player.descentFrames[5];
     player.angleRadians = -pi / 4;
-
     environments.emplace_back(nullptr, 1, true);
+    float gunshipAngles[32] = {
+        pi / 4, // 1
+        pi / 4, // 2
+        pi / 3, // 3
+        pi / 3, // 4
+        pi / 3, // 5
+        pi / 2, // 6
+        -pi / 4, // 7
+        0, // 8
+        pi / 4, // 9
+        pi / 4, // 10
+        0, // 11
+        0, // 12
+        0, // 13
+        pi / 2, // 14
+        pi / 2, // 15
+        pi / 2, // 16
+        pi / 4, // 17
+        pi / 4, // 18
+        0, // 19
+        0, // 20
+        pi / 3, // 21
+        -pi / 3, // 22
+        -pi / 3, // 23
+        pi / 2, // 24
+        pi / 2, // 25
+        pi / 2, // 26
+        pi / 3, // 27
+        pi / 3, // 28
+        -pi / 4, // 29
+        pi / 6, // 30
+        -pi / 3, // 31
+       -pi / 3 // 32
+    };
+
+    float gunshipXPos[32] = { 6.3, 9.7, 21, 24, 23.6, 19, 31.3, 41, 31.3, 28.3, 33.6, 37, 34.6, 42, 40.3, 41.6, 47, 49.3, 60.3, 60.3, 6.3, 66, 72.6, 72, 69.6, 72, 64.3, 73.6, 82.3, 81.3, 91, 64 };
+    float gunshipYPos[32] = { 38.3, 38.3, 42.6, 42.6, 45, 50.6, 52, 53.6, 84.3, 85.9, 87.6, 90, 95, 87.6, 87.6, 75, 66, 62.3, 55.6, 53, 83, 46, 45, 36.6, 10, 85, 61 };
+
+    for (int i = 0; i < 32; i++) {
+        gunship.emplace_back();
+        gunship[i].currentFramePath = files.enemyShip1;
+        gunship[i].turnRadius = pi / 2;
+        gunship[i].shotSpeed = std::chrono::milliseconds(50);
+        gunship[i].shotVelocity = 3;
+        gunship[i].shotType = files.basicShotPurple;
+        gunship[i].defaultShotEffect = files.basicShotEffectPurple1;
+        gunship[i].power = 20;
+        gunship[i].health = 1;
+        gunship[i].angleRadians = gunshipAngles[i];
+        gunship[i].xPos = (gunshipXPos[i] / 100) * mapSizeX;
+        gunship[i].yPos = (gunshipYPos[i] / 100) * mapSizeY;
+        gunship[i].burstFire = true;
+        gunship[i].xVel = .75;
+        gunship[i].yVel = .75;
+    }
+
+    /*for (int i = 0; i < 34; i++) {
+        gunship[i].currentFramePath = files.bomber_drone;
+        gunship[i].turnRadius = pi / 4;
+        gunship[i].shotSpeed = std::chrono::milliseconds(6000);
+        gunship[i].shotVelocity = 2;
+        gunship[i].shotType = files.drone_Shot_1;
+        gunship[i].power = 10;
+
+
+        gunship[i].angleRadians = angle;
+    }*/
 
     background.currentFramePath = files.background;
 
@@ -2734,6 +2845,172 @@ void UpdateMasterObjectLogic(double deltaTime, int& spawnerCounter) {
     }
 }
 
+void UpdateEnemyLogic(double deltaTime) {
+    for (int i = 0; i < gunship.size(); i++) {
+        if (gunship[i].damaged) {
+            if (gunship[i].health <= 0) {
+                if (gunship[i].dead == false) {
+                    std::uniform_int_distribution<int> distribution(3, 5);
+                    int qty = distribution(generator);
+                    float percentage = player.health / player.maxHP;
+                    for (int j = 0; j < qty; j++) {
+                        std::uniform_int_distribution<int> distribution(1, 100);
+                        int rng = distribution(generator);
+                        bool rollHP = false;
+                        std::uniform_real_distribution<float> fdistribution(-pi, pi);
+                        float angle = fdistribution(generator);
+                        float xOffset = 8 * sin(angle);
+                        angle = fdistribution(generator);
+                        float yOffset = 8 * sin(angle);
+                        if (((percentage <= 0.75) && rng >= 90) || ((percentage <= 0.5) && rng >= 80) || ((percentage <= 0.33) && rng >= 50)) {
+                            rollHP = true;
+                        }
+                        if (rollHP) {
+                            objects.emplace_back(L"Health Pickup", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.hp_pickup_2, false, 0, nullptr, files.hp_pickup_2, 0, 0, false, true, false);
+                            objects.back().genericFrameMarker = std::chrono::steady_clock::now();
+                            objects.back().pickup = true;
+                        }
+                        else {
+                            rng = distribution(generator);
+                            if (rng <= 85) {
+                                objects.emplace_back(L"Red Jewel", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
+                            }
+                            else if (rng <= 94) {
+                                objects.emplace_back(L"Blue Jewel", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
+                            }
+                            else if (rng <= 98) {
+                                objects.emplace_back(L"Purple Jewel", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
+                            }
+                            else {
+                                objects.emplace_back(L"Yellow Jewel", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
+                            }
+                            objects.back().UpdateHitBox();
+                            objects.back().pickup = true;
+                        }
+                    }
+                    gunship[i].dead = true;
+                    gunship[i].currentFramePath = files.explosion1;
+                    gunship[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                }
+                bool updated(false);
+                std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - gunship[i].lastDeathFrameUpdate;
+                if (gunship[i].currentFramePath == files.explosion1 && !gunship[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                    gunship[i].currentFramePath = files.explosion2;
+                    updated = true;
+                }
+                else if (gunship[i].currentFramePath == files.explosion2 && !gunship[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                    gunship[i].currentFramePath = files.explosion3;
+                    updated = true;
+                }
+                else if (gunship[i].currentFramePath == files.explosion3 && !gunship[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                    gunship[i].currentFramePath = files.explosion4;
+                    updated = true;
+                }
+                else if (gunship[i].currentFramePath == files.explosion4 && !gunship[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                    gunship[i].currentFramePath = files.explosion3;
+                    updated = true;
+                    gunship[i].reverseDeathAnimation = true;
+                }
+                else if (gunship[i].currentFramePath == files.explosion3 && gunship[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                    gunship[i].currentFramePath = files.explosion2;
+                    updated = true;
+                }
+                else if (gunship[i].currentFramePath == files.explosion2 && gunship[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                    gunship[i].currentFramePath = files.explosion1;
+                    updated = true;
+                }
+                else if (gunship[i].currentFramePath == files.explosion1 && gunship[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
+                    gunship.erase(gunship.begin() + i);
+                    i--;
+                    continue;
+                }
+                if (updated) {
+                    gunship[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
+                }
+            }
+            if (!gunship[i].dead) {
+                if (std::chrono::steady_clock::now() - gunship[i].damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
+                    gunship[i].damaged = false;
+                }
+                if (gunship[i].damaged) {
+                    gunship[i].currentFramePath = files.enemyShip1Damaged;
+                }
+                else {
+                    gunship[i].currentFramePath = files.enemyShip1;
+                }
+            }
+        }
+
+        if (!gunship[i].dead && (abs(gunship[i].xPos - player.xPos) < 256 && abs(gunship[i].yPos - player.yPos) < 224)) {
+            double newAngle = atan2(player.yPos - gunship[i].yPos, player.xPos - gunship[i].xPos);
+            double angleDelta = newAngle - gunship[i].angleRadians;
+            if (angleDelta > pi) {
+                angleDelta -= (2 * pi);
+            }
+            else if (angleDelta < -pi) {
+                angleDelta += (2 * pi);
+            }
+            if (angleDelta > 0) {
+                gunship[i].angleRadians += gunship[i].turnRadius * ((deltaTime / 50) / 1);
+            }
+            else {
+                gunship[i].angleRadians -= gunship[i].turnRadius * ((deltaTime / 50) / 1);
+            }
+
+            gunship[i].xPos += gunship[i].xVel * deltaTime * cos(gunship[i].angleRadians);
+            gunship[i].yPos += gunship[i].yVel * deltaTime * sin(gunship[i].angleRadians);
+            if (gunship[i].burstFire && !gunship[i].burstAvailable && (std::chrono::steady_clock::now() - gunship[i].timeSinceBurst >= std::chrono::seconds(2))) {
+                gunship[i].burstAvailable = true;
+                gunship[i].shotsInBurst = 0;
+            }
+            if (abs(angleDelta) <= pi / 12 && !gunship[i].shotFrame && std::chrono::steady_clock::now() - gunship[i].lastShotTime >= gunship[i].shotSpeed
+                && ((gunship[i].burstFire && gunship[i].burstAvailable) || !gunship[i].burstFire)) {
+                // Create new bullet, position it with player, give it its velocities
+                gunship[i].shotsInBurst++;
+                if (gunship[i].shotsInBurst >= 3) {
+                    gunship[i].burstAvailable = false;
+                }
+                else if (gunship[i].shotsInBurst == 1) {
+                    gunship[i].timeSinceBurst = std::chrono::steady_clock::now();
+                }
+                enemyBullets.emplace_back(gunship[i].shotType);
+                enemyBullets.back().xPos = gunship[i].xPos;
+                enemyBullets.back().yPos = gunship[i].yPos;
+                enemyBullets.back().shotVelocity = gunship[i].shotVelocity;
+                enemyBullets.back().power = gunship[i].power;
+                enemyBullets.back().defaultFrame = gunship.at(i).shotType;
+                enemyBullets.back().UpdateHitBox();
+                enemyBullets.back().angleRadians = gunship[i].angleRadians + pi / 2;
+                enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
+                if (abs(enemyBullets.back().yVel) < 0.0001) {
+                    enemyBullets.back().yVel = 0;
+                }
+                enemyBullets.back().xVel = round(sin(enemyBullets.back().angleRadians) * 100) / 100;
+                if (abs(enemyBullets.back().xVel) < 0.0001) {
+                    enemyBullets.back().xVel = 0;
+                }
+
+                //enemyBullets.back().modulator = double((rand() % 628)) / 100;
+                //bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
+                //int result = (rand() % 2);
+                //if (modulatorTicker == true) {
+                //    modulatorTicker = false;
+                //    bullets.back().modulatorPositiveDelta = false;
+                //}
+                //else {
+                //    modulatorTicker = true;
+                //    bullets.back().modulatorPositiveDelta = true;
+                //}
+                gunship[i].shotFrame = gunship[i].defaultShotEffect;
+            }
+            else {
+                CycleShotEffect(gunship[i]);
+            }
+            gunship.at(i).UpdateHitBox();
+        }
+    }
+}
+
 void UpdateEnemyShootingLogic(double deltaTime) {
     // Enemy Bullet Logic
     if (!enemyBullets.empty()) {
@@ -3146,6 +3423,59 @@ void RenderObjectandTextMid(LPCWSTR file, std::string text, double x, double y) 
     }
 }
 
+void RenderEnemy(Object file, double x, double y, double angle) {
+    ID2D1Bitmap* bmp = bitmaps[file.currentFramePath];
+    if (bmp) {
+        D2D1_SIZE_F size = bmp->GetSize();
+
+        D2D1_RECT_F position = D2D1::RectF(
+            ((screenX / 2) + ((x - player.xPos) * scalerX)) - ((size.width / 2) * scalerX),
+            ((screenY / 2) + ((y - player.yPos) * scalerY)) - ((size.height / 2) * scalerY),
+            ((screenX / 2) + ((x - player.xPos) * scalerX)) + ((size.width / 2) * scalerX),
+            ((screenY / 2) + ((y - player.yPos) * scalerY)) + ((size.height / 2) * scalerY)
+        );
+
+        double angleDegrees = (angle + pi / 2) * (180.0 / pi);
+        D2D1_POINT_2F center = D2D1::Point2F(((position.right + position.left) / 2), ((position.top + position.bottom) / 2));
+
+        // Rotates sprite. Makes art less consistent but saves time
+        D2D1_MATRIX_3X2_F rotation = D2D1::Matrix3x2F::Rotation(angleDegrees, center);
+
+        // Rotates bitmap based on rotation calculations
+        renderTarget->SetTransform(rotation);
+
+        renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+
+        renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+        if (file.shotFrame) {
+            ID2D1Bitmap* shotEffectBitmap = bitmaps[file.shotFrame];
+            D2D1_SIZE_F size = shotEffectBitmap->GetSize();
+
+            D2D1_RECT_F displayPos = D2D1::RectF(
+                (screenX / 2) + (((file.xPos - player.xPos) * scalerX) - ((size.width / 2) * scalerX)),
+                (screenY / 2) + (((file.yPos - player.yPos) * scalerY) - (((size.height / 2) + 8) * scalerY)),
+                (screenX / 2) + (((file.xPos - player.xPos) * scalerX) + ((size.width / 2) * scalerX)),
+                (screenY / 2) + (((file.yPos - player.yPos) * scalerY) + (((size.height / 2) - 8) * scalerY))
+            );
+
+            angleDegrees = (file.angleRadians + pi / 2) * (180.0 / pi);
+            center = D2D1::Point2F((position.right + position.left) / 2, (position.top + position.bottom) / 2);
+
+            // Rotates sprite. Makes art less consistent but saves time
+            rotation = D2D1::Matrix3x2F::Rotation(angleDegrees, center);
+
+            // Rotates bitmap based on rotation calculations
+            renderTarget->SetTransform(rotation);
+
+            renderTarget->DrawBitmap(shotEffectBitmap, displayPos, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+
+            // Resets the rotation transformation on renderTarget
+            renderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        }
+    }
+}
+
 
 __int8 prevState = 1;
 
@@ -3192,53 +3522,151 @@ public:
     }
 };
 
-class SaveMenu : public Menu {
+class SaveLoadMenu : public Menu {
 public:
     std::vector<MenuElement> elements;
+    bool saveMode = false;
+    std::vector<__int16> dispElem;
+    bool renderStation[3];
 
-
-    SaveMenu() {
+    SaveLoadMenu() {
         elements.emplace_back(files.save_file_panel, 16, 17);
         elements.emplace_back(files.save_file_panel, 16, 87);
         elements.emplace_back(files.save_file_panel, 16, 157);
         selecSize = 3;
+        std::ifstream inFile((L"Save Files\\Save.txt"));
+        std::string line;
+        int i = 0;
+        __int8 panel;
+        while (std::getline(inFile, line)) {
+            if ((i >= 15 && i < 19) || (i >= 34 && i < 38) || (i >= 53 && i < 57)) {
+                if (stoi(line) > 0) {
+                    panel = int(float(i) / 19);
+                    if (renderStation[panel] == false) elements.emplace_back(files.shrunken_repair_screen, 173, 21 + (70 * panel));
+                    renderStation[panel] = true;
+                    if (i == 15 || i == 34 || i == 53) {
+                        elements.emplace_back(files.Shrunken_Repair_Station_Bar_Shell, 175, 23 + (panel * 70));
+                        for (int j = 0; j < stoi(line); j++) {
+                            elements.emplace_back(files.Shrunken_Repair_Station_Hull_Filling, 177 + (j * 2), 24 + (panel * 70));
+                        }
+                    }
+                    if (i == 16 || i == 35 || i == 54) {
+                        elements.emplace_back(files.Shrunken_Repair_Station_Bar_Shell, 222, 23 + (panel * 70));
+                        for (int j = 0; j < stoi(line); j++) {
+                            elements.emplace_back(files.Shrunken_Repair_Station_Blasters_Filling, 224 + (j * 2), 24 + (panel * 70));
+                        }
+                    }
+                    if (i == 17 || i == 36 || i == 55) {
+                        elements.emplace_back(files.Shrunken_Repair_Station_Bar_Shell, 222, 27 + (panel * 70));
+                        for (int j = 0; j < stoi(line); j++) {
+                            elements.emplace_back(files.Shrunken_Repair_Station_Blasters_Filling, 224 + (j * 2), 28 + (panel * 70));
+                        }
+                    }
+                    if (i == 18 || i == 37 || i == 56) {
+                        elements.emplace_back(files.Shrunken_Repair_Station_Bar_Shell, 222, 45 + (panel * 70));
+                        for (int j = 0; j < stoi(line); j++) {
+                            elements.emplace_back(files.Shrunken_Repair_Station_Thruster_Filling, 224 + (j * 2), 46 + (panel * 70));
+                        }
+                    }
+                }
+            }
+            dispElem.emplace_back(stoi(line));
+            i++;
+        }
+    }
+
+    void SaveGame() {
+        stopwatch.Stop();
+        stopwatch.Start();
+        std::ifstream in("Save Files\\Save.txt");
+        std::ofstream out("Save Files\\Temp.txt");
+        std::string line;
+        int lineNum = (selection * 19);
+
+        // go line by line and copy all but current file info
+        for (int i = 0; i < 57; i++) {
+            if (i == lineNum) {
+                out << std::to_string(selection + 1) << "\n";
+                out << std::to_string(stopwatch.duration) << "\n";
+                out << std::to_string(player.currency) << "\n";
+                for (int j = 0; j < 12; j++) {
+                    out << std::to_string(player.upgrades[j]) << "\n";
+                }
+                for (int j = 0; j < 4; j++) {
+                    out << std::to_string(player.components[j]) << "\n";
+                    if (player.components[j] > 0) elements.emplace_back(files.shrunken_repair_screen, 173, 21 + (70 * (int(float(i) / 19))));
+                }
+                for (int j = 0; j < 19; j++) {
+                    std::getline(in, line);
+                }
+                i += 18;
+            }
+            else {
+                std::getline(in, line);
+                out << line << "\n";
+            }
+        }
+
+        in.close();
+        out.close();
+        // swap temp and original save file
+        std::remove("Save Files\\Save.txt");
+        std::rename("Save Files\\Temp.txt", "Save Files\\Save.txt");
+    }
+
+    void LoadGame() {
+        std::ifstream inFile((L"Save Files\\Save.txt"));
+        if (inFile.is_open()) {
+
+            std::string line;
+            __int8 index = (selection * 19);
+            for (int i = 0; i < index; i++) {
+                std::getline(inFile, line);
+            }
+            std::getline(inFile, line); // file id
+            if (stoi(line) == -1) return;
+            player.saveID = stoi(line);
+            std::getline(inFile, line); // time
+            stopwatch.duration = stoi(line);
+            std::getline(inFile, line); // curr
+            player.currency = stoi(line);
+
+            for (int j = 0; j < 12; j++) {
+                std::getline(inFile, line);
+                player.upgrades[j] = stoi(line);
+            }
+
+            for (int j = 0; j < 4; j++) {
+                std::getline(inFile, line);
+                player.components[j] = stoi(line);
+            }
+
+            player.defense = .1 * player.components[selection];
+            player.power = 1 * (1 + (player.components[selection] * .3));
+            player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (player.components[selection] * .25))));
+            player.speed = 1.5 * (1 + (player.components[selection] * .15));
+            player.xPos = saveStations[0].xPos;
+            player.yPos = saveStations[0].yPos;
+            prevState = 1;
+            justArriving = true;
+            gameState = 0;
+            StopAudio(0);
+            stopwatch.Start();
+            InitializeAssets();
+            inFile.close();
+            paused = false;
+        }
     }
 
     void UpdateLogic() {
         if (std::chrono::steady_clock::now() - menuLastInput <= menuInputBuffer) return;
-        if (keys.space) {
-            std::ifstream inFile((L"Save Files\\Save.txt"));
-            if (inFile.is_open()) {
-
-                std::string line;
-                for (int i = 0; i <= 4; i++) {
-                    std::getline(inFile, line);
-                    switch (i) {
-                        // Currency
-                    case 1:
-                        player.currency = stoi(line);
-                        break;
-                        // Time
-                    case 2:
-                        stopwatch.duration = stoi(line);
-                        stopwatch.Start();
-                        break;
-                        // Save Station ID
-                    case 3:
-                        player.xPos = saveStations[stoi(line)].xPos;
-                        player.yPos = saveStations[stoi(line)].yPos;
-                        break;
-                    }
-                }
-
-                gameState = 0;
-                StopAudio(0);
-                InitializeAssets();
-                inFile.close();
-                paused = false;
-            }
+        if (keys.space && saveMode) {
+            SaveGame();
         }
-        if (keys.escape) {
+        else if (keys.space && !saveMode) {
+            LoadGame();
+        }
+        else if (keys.escape) {
             
             menuLastInput = std::chrono::steady_clock::now();
             if (prevState == 3 || prevState == 0) {
@@ -3253,66 +3681,91 @@ public:
             prevState = 2;
             return;
         }
-        ChangeSelection(keys.up, keys.down);
-        if (keys.right && gameState == 2) {
+        else if (keys.right && gameState == 2) {
             menuLastInput = std::chrono::steady_clock::now();
             gameState = 3;
         }
+        else if (keys.up || keys.down) {
+            ChangeSelection(keys.up, keys.down);
+        }
+        
     }
 
     void Render() {
-        ID2D1Bitmap* bmp;
-        bmp = bitmaps[files.save_file_panel];
-        D2D1_SIZE_F size = bmp->GetSize();
-        if (!bmp) return;
         for (const auto& elem : elements) {
-            D2D1_RECT_F position = D2D1::RectF(
-                leftBoundary + (elem.xPos * scalerX),
-                0 + (elem.yPos * scalerY),
-                leftBoundary + ((elem.xPos + size.width) * scalerX),
-                (elem.yPos + size.height) * scalerY
-            );
-            renderTarget->DrawBitmap(bmp, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
+            RenderObjectLeft(elem.currentFramePath, elem.xPos, elem.yPos);
         }
+
         std::ifstream inFile((L"Save Files\\Save.txt"));
         if (inFile.is_open()) {
-            std::string line;
-            int yOffset = 0;
+            for (int i = 0; i < 3; i++) {
+                std::string line;
+                int yOffset = i * 70;
 
-            std::string name;
-            std::string curr;
-            std::string time;
+                std::string name;
+                std::string curr;
+                std::string time;
 
-            // File Name
-            if (std::getline(inFile, line)) {
-                yOffset += 17 + ((std::stoi(line) - 1) * 70);
-                name = "File " + line;
-            }
+                // File Name
+                if (std::getline(inFile, line)) {
+                    if (line == "-1") {
+                        for (int i = 0; i < 18; i++) {
+                            std::getline(inFile, line);
+                        }
+                        continue;
+                    }
+                    name = "File " + line;
+                }
 
-            // Currency amount
-            if (std::getline(inFile, line)) {
-                curr = line;
-            }
-
-            // Time Played
-            if (std::getline(inFile, line)) {
-                time = line;
-            }
-
-            RenderTextLeft(name, 69, 23);
-            RenderTextLeft(curr, 76, 45);
-            RenderTextLeft(time, 69, 57);
-            RenderObjectLeft(files.jewel_Red, 69, 46);
-
-            if (std::chrono::steady_clock::now() - player.lastFrameChange >= player.frameInterval) {
-                player.lastFrameChange = std::chrono::steady_clock::now();
-                if (player.currentFramePath == files.playerFrame2) {
-                    player.currentFramePath = files.playerFrame1;
+                // Time Played
+                std::getline(inFile, line);
+                time_t sec = stoi(line);
+                if (float(sec) / 3600 > 1) {
+                    __int16 hours = min(999, int(sec / 3600));
+                    time = std::to_string(hours) + ":";
+                    sec -= (3600 * hours);
+                    time += std::to_string(int(sec / 60));
                 }
                 else {
-                    player.currentFramePath = files.playerFrame2;
+                    if (sec > 3000) {
+                        time = "0:" + std::to_string(int(sec / 60));
+                    }
+                    else {
+                        time = "0:0" + std::to_string(int(sec / 60));
+                    }
                 }
-            }
+                // Currency amount
+                std::getline(inFile, line);
+                curr = line;
+
+                RenderTextLeft(name, 69, 23 + yOffset);
+                RenderTextLeft(curr, 76, 45 + yOffset);
+                RenderTextLeft(time, 69, 57 + yOffset);
+                RenderObjectLeft(files.jewel_Red, 69, 46 + yOffset);
+
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 4; j++) {
+                        std::getline(inFile, line);
+                        if (std::stoi(line) > 0 && i == 0 && j == 0) RenderObjectLeft(files.doubleShotPickup, 103, 18 + yOffset);
+                    }
+                }
+
+                for (int i = 0; i < 4; i++) {
+                    std::getline(inFile, line);
+                }
+
+                if (std::chrono::steady_clock::now() - player.lastFrameChange >= player.frameInterval) {
+                    player.lastFrameChange = std::chrono::steady_clock::now();
+                    if (player.currentFramePath == files.playerFrame2) {
+                        player.currentFramePath = files.playerFrame1;
+                    }
+                    else {
+                        player.currentFramePath = files.playerFrame2;
+                    }
+                }
+
+                
+            }   
             RenderObjectLeft(player.currentFramePath, 35, 36 + (selection * 69));
 
             inFile.close();
@@ -3320,7 +3773,7 @@ public:
     }
 };
 
-SaveMenu saveMenu;
+SaveLoadMenu saveLoadMenu;
 
 class TitleMenu : public Menu {
 public:
@@ -3337,7 +3790,7 @@ public:
             prevState = 1;
         }
         if (justArriving) {
-            PlayAudio(audioFiles.menu, 0);
+            PlayAudio(audioFiles.menu, 0, true);
             justArriving = false;
         }
         // Start Screen
@@ -3372,27 +3825,23 @@ public:
                 justArriving = true;
                 StopAudio(0);
                 paused = false;
+                stopwatch.duration = 0;
+                stopwatch.Start();
+                player.defense = 0;
+                player.power = 1;
+                player.shotFrequency = std::chrono::milliseconds(250);
+                player.speed = 1.5;
                 break;
 
                 // Load
             case 1:
-                elements.emplace_back(files.save_file_panel, 16, 17);
-                elements.emplace_back(files.save_file_panel, 16, 87);
-                elements.emplace_back(files.save_file_panel, 16, 157);
-                selection = 0;
-                selecSize = 3;
-                state = 2;
+                prevState = 1;
+                saveLoadMenu.saveMode = false;
+                gameState = 2;
                 break;
             }
             return;
         }
-
-        // Save/Load Menu
-        if (state == 2) {
-            prevState = 1;
-            gameState = 2;
-        }
-        return;
     }
 
     void Render() {
@@ -3547,7 +3996,7 @@ public:
                         player.defense = .1 * displayLength[selection];
                         break;
                     case 1:
-                        player.power = 2 * (1 + (displayLength[selection] * .3));
+                        player.power = 1 * (1 + (displayLength[selection] * .3));
                         break;
                     case 2:
                         player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (displayLength[selection] * .25))));
@@ -3556,9 +4005,9 @@ public:
                         player.speed = 1.5 * (1 + (displayLength[selection] * .15));
                         break;
                     }
-                    return;
                     componentSelected = false;
                     componentModified = false;
+                    return;
                 }
 
             }
@@ -3682,7 +4131,12 @@ public:
     }
 
     void UpdateLogic() {
-        if (justArriving) PlayAudio(audioFiles.repair_station, 0);
+        if (!componentSelected) {
+            for (int i = 0; i <= 3; i++) {
+                displayLength[i] = player.components[i];
+            }
+        }
+        if (justArriving) PlayAudio(audioFiles.repair_station, 0, true);
         ProcessKeyInputs();
         CycleSelectionAnimation();
     }
@@ -3838,7 +4292,7 @@ void Render() {
     renderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
 
     if (gameState == 1) titleMenu.Render();
-    else if (gameState == 2) saveMenu.Render();
+    else if (gameState == 2) saveLoadMenu.Render();
     else if (gameState == 3) repairStation.Render();
     else if (!paused && !splashscreen) {
         // Keeps stuff from being rendered outside boundaries
@@ -3967,6 +4421,10 @@ void Render() {
 
                 renderTarget->DrawBitmap(baseBitmap, position, 1.0F, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR);
             }
+        }
+
+        for (auto g : gunship) {
+            RenderEnemy(g, g.xPos, g.yPos, g.angleRadians);
         }
 
         if (!objects.empty()) {
@@ -4629,7 +5087,7 @@ void Render() {
 void UpdateGameLogic(double deltaTime) {
 
     if (gameState == 1) titleMenu.UpdateLogic();
-    else if (gameState == 2) saveMenu.UpdateLogic();
+    else if (gameState == 2) saveLoadMenu.UpdateLogic();
     else if (gameState == 3) repairStation.UpdateLogic();
     else if (!paused && !splashscreen) {
         player.UpdateHitBox();
@@ -4641,19 +5099,30 @@ void UpdateGameLogic(double deltaTime) {
 
         player.UpdateRedLightEffect(deltaTime);
 
-        player.UpdateBullets(deltaTime, objects);
+        player.UpdateBullets(deltaTime, objects, gunship);
         CheckEnvironmentCollisions(environments);
 
         if (player.inAscendingSequence) {
+            if (firstTime) {
+                PlayAudio(audioFiles.ae, 0, true);
+                firstTime = false;
+            }
             player.PlayAscendingSequence(deltaTime, saveStations[player.stationTouchingID]);
         }
         else if (player.inDockingSequence) {
+            if (firstTime) {
+                PlayAudio(audioFiles.ae, 0, true);
+                firstTime = false;
+            }
+
             player.PlayDockingAnimation(deltaTime, saveStations[player.stationTouchingID]);
             if (!player.inDockingSequence) {
                 StopAudio(0);
-                PlayAudio(audioFiles.repair_station, 0);
+                PlayAudio(audioFiles.repair_station, 0, true);
                 prevState = 0;
                 gameState = 2;
+                saveLoadMenu.saveMode = true;
+                firstTime = true;
             }
         }
         else {
@@ -4672,6 +5141,7 @@ void UpdateGameLogic(double deltaTime) {
             timeSinceSpawn = std::chrono::steady_clock::now();
         }
 
+        UpdateEnemyLogic(deltaTime);
         UpdateEnemyShootingLogic(deltaTime);
         CheckPickupCollision();
         UpdateOverworldAssets();
@@ -4682,8 +5152,8 @@ void UpdateGameLogic(double deltaTime) {
 
 void LoadEssentialData() {
     saveStations[0].id = 0;
-    saveStations[0].xPos = mapSizeX * .25;
-    saveStations[0].yPos = mapSizeY * .3;
+    saveStations[0].xPos = mapSizeX * .1;
+    saveStations[0].yPos = mapSizeY * .5;
 
     saveStations[1].id = 1;
     saveStations[1].xPos = mapSizeX * .5;
@@ -4696,7 +5166,6 @@ void LoadEssentialData() {
     saveStations[0].UpdateHitBox();
     saveStations[1].UpdateHitBox();
     saveStations[2].UpdateHitBox();
-    channels[0].setVolume(0);
 }
 
 LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -4726,7 +5195,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
                 LoadSpritesToMemory(hWnd, spriteFilePaths);
                 LoadEssentialData();
                 ShowWindow(hWnd, nCmdShow);
-                //PlaySound(L"Music\\Neodyum Overworld Idea.wav", NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 
                 MSG msg;
                 while (GetMessage(&msg, NULL, 0, 0)) {
