@@ -254,6 +254,13 @@ struct {
     LPCWSTR Shrunken_Repair_Station_Blasters_Filling = L"Sprites\\Menu\\Shrunken_Repair_Station_Blasters_Filling.png";
     LPCWSTR Shrunken_Repair_Station_Thruster_Filling = L"Sprites\\Menu\\Shrunken_Repair_Station_Thruster_Filling.png";
     LPCWSTR Shrunken_Repair_Station_Utilities_Filling = L"Sprites\\Menu\\Shrunken_Repair_Station_Utilities_Filling.png";
+    LPCWSTR red_jewel_sparkle_1 = L"Sprites\\Effects\\red_jewel_sparkle_1.png";
+    LPCWSTR red_jewel_sparkle_2 = L"Sprites\\Effects\\red_jewel_sparkle_2.png";
+    LPCWSTR red_jewel_sparkle_3 = L"Sprites\\Effects\\red_jewel_sparkle_3.png";
+    LPCWSTR red_jewel_sparkle_4 = L"Sprites\\Effects\\red_jewel_sparkle_4.png";
+    LPCWSTR red_jewel_sparkle_5 = L"Sprites\\Effects\\red_jewel_sparkle_5.png";
+    LPCWSTR red_jewel_sparkle_6 = L"Sprites\\Effects\\red_jewel_sparkle_6.png";
+    LPCWSTR red_jewel_sparkle_7 = L"Sprites\\Effects\\red_jewel_sparkle_7.png";
 } files;
 
 void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
@@ -460,6 +467,13 @@ void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
     spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Blasters_Filling);
     spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Thruster_Filling);
     spriteFilePaths.emplace_back(files.Shrunken_Repair_Station_Utilities_Filling);
+    spriteFilePaths.emplace_back(files.red_jewel_sparkle_1);
+    spriteFilePaths.emplace_back(files.red_jewel_sparkle_2);
+    spriteFilePaths.emplace_back(files.red_jewel_sparkle_3);
+    spriteFilePaths.emplace_back(files.red_jewel_sparkle_4);
+    spriteFilePaths.emplace_back(files.red_jewel_sparkle_5);
+    spriteFilePaths.emplace_back(files.red_jewel_sparkle_6);
+    spriteFilePaths.emplace_back(files.red_jewel_sparkle_7);
 }
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
@@ -1075,7 +1089,7 @@ public:
     void ApplyDirectionalInput(double deltaTime) {
         // Apply Player Inputs
         float velocity = speed;
-        if (keys.lShift && keys.directionPressed /* && !keys.f*/) {
+        if (keys.lShift && keys.directionPressed && !keys.f) {
             if (boost > 0 && ((std::chrono::steady_clock::now() - runoutTime) >= std::chrono::seconds(2))) {
                 velocity *= 2;
                 boost -= 1 * deltaTime;
@@ -1097,8 +1111,8 @@ public:
             if (boost > 100) {
                 boost = 100;
             }
-            if (/*keys.f*/false) {
-                velocity *= 0.66;
+            if (keys.f) {
+                velocity *= 0.75;
             }
         }
         if (keys.up) {
@@ -1119,6 +1133,13 @@ public:
             }
         }
 
+        yVel = -cos((angleRadians * 2) + pi / 2);
+        xVel = sin((angleRadians * 2) + pi / 2);
+        if (!(keys.up || keys.left || keys.down || keys.right)) {
+            yVel = 0;
+            xVel = 0;
+        }
+
         lastFrame = currentFramePath;
         if (sideMode) {
             xVel = 1;
@@ -1136,7 +1157,7 @@ public:
         }
         else {
             if (keys.right || keys.left || keys.up || keys.down) {
-                if (true/*!keys.f*/) {
+                if (!keys.f) {
                     directionX = keys.right - keys.left;
                     directionY = keys.down - keys.up;
                     angleRadians = atan2(directionY, directionX) / 2;
@@ -1214,21 +1235,6 @@ public:
                                 if (keys.left) {
                                     if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
                                         rolling = true;
-                                        currentFramePath = files.player_tilt_left;
-                                        rollTime = std::chrono::steady_clock::now();
-                                    }
-                                    else if (rolling) {
-                                        if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
-                                            rolling = false;
-                                        }
-                                    }
-                                    else {
-                                        currentFramePath = files.player_sideways_l;
-                                    }
-                                }
-                                else if (keys.right) {
-                                    if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
-                                        rolling = true;
                                         currentFramePath = files.player_tilt_right;
                                         rollTime = std::chrono::steady_clock::now();
                                     }
@@ -1241,8 +1247,23 @@ public:
                                         currentFramePath = files.player_sideways_r;
                                     }
                                 }
+                                else if (keys.right) {
+                                    if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                        rolling = true;
+                                        currentFramePath = files.player_tilt_left;
+                                        rollTime = std::chrono::steady_clock::now();
+                                    }
+                                    else if (rolling) {
+                                        if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                            rolling = false;
+                                        }
+                                    }
+                                    else {
+                                        currentFramePath = files.player_sideways_l;
+                                    }
+                                }
                                 else {
-                                    currentFramePath = files.player_sideways_r;
+                                    currentFramePath = files.player_sideways_l;
                                 }
                                 keys.left = (inverse) ? !keys.left : keys.left;
                                 keys.right = (inverse) ? !keys.right : keys.right;
@@ -1250,13 +1271,13 @@ public:
                             else if (keys.right && !keys.left) {
                                 if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
                                     rolling = false;
-                                    currentFramePath = (directionY > 0) ? files.player_tilt_right : files.player_tilt_left;
+                                    currentFramePath = (directionY < 0) ? files.player_tilt_right : files.player_tilt_left;
                                 }
                             }
                             else if (keys.left && !keys.right) {
                                 if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
                                     rolling = false;
-                                    currentFramePath = (directionY > 0) ? files.player_tilt_left : files.player_tilt_right;
+                                    currentFramePath = (directionY < 0) ? files.player_tilt_left : files.player_tilt_right;
                                 }
                             }
                             else {
@@ -1267,19 +1288,67 @@ public:
                             currentFramePath = files.playerFrame1;
                         }
                     }
-                    else if (abs(directionX) > 0 && directionY > 0) {
+                    else if (abs(directionX) > 0 && directionY < 0) {
                         if ((keys.left && keys.up) && directionX > 0) {
-                            currentFramePath = files.player_sideways_l;
+                            if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                rolling = true;
+                                currentFramePath = files.player_tilt_left;
+                                rollTime = std::chrono::steady_clock::now();
+                            }
+                            else if (rolling) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                }
+                            }
+                            else {
+                                currentFramePath = files.player_sideways_l;
+                            }
                         }
                         else if ((keys.right && keys.up) && directionX < 0) {
-                            currentFramePath = files.player_sideways_r;
+                            if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                rolling = true;
+                                currentFramePath = files.player_tilt_right;
+                                rollTime = std::chrono::steady_clock::now();
+                            }
+                            else if (rolling) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                }
+                            }
+                            else {
+                                currentFramePath = files.player_sideways_r;
+                            }
                         }
                         else if ((keys.down && keys.left && directionX < 0) || (keys.down && keys.right && directionX > 0)) {
                             if (directionX > 0) {
-                                currentFramePath = files.player_sideways_r;
+                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                    rolling = true;
+                                    currentFramePath = files.player_tilt_right;
+                                    rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (rolling) {
+                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                        rolling = false;
+                                    }
+                                }
+                                else {
+                                    currentFramePath = files.player_sideways_r;
+                                }
                             }
                             else if (directionX < 0) {
-                                currentFramePath = files.player_sideways_l;
+                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                    rolling = true;
+                                    currentFramePath = files.player_tilt_left;
+                                    rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (rolling) {
+                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                        rolling = false;
+                                    }
+                                }
+                                else {
+                                    currentFramePath = files.player_sideways_l;
+                                } 
                             }
                         }
                         else if ((keys.down && keys.left && directionX > 0) || (keys.down && keys.right && directionX < 0)) {
@@ -1292,49 +1361,113 @@ public:
                         else if (keys.up && !(keys.left || keys.right)) {
                             if (directionX > 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_right;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                         else if (((keys.left && directionX < 0) || (keys.right && directionX > 0)) && !keys.up) {
                             if (directionX > 0) {
                                 currentFramePath = files.player_tilt_right;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                         else if (((keys.right && directionX < 0) || (keys.left && directionX > 0)) && !keys.up) {
                             if (directionX > 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_right;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                         else if (keys.down) {
                             if (directionX > 0) {
                                 currentFramePath = files.player_tilt_right;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                     }
-                    else if (abs(directionX) > 0 && directionY < 0) {
+                    else if (abs(directionX) > 0 && directionY > 0) {
                         if ((keys.left && keys.down) && directionX > 0) {
-                            currentFramePath = files.player_sideways_r;
+                            if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                rolling = true;
+                                currentFramePath = files.player_tilt_right;
+                                rollTime = std::chrono::steady_clock::now();
+                            }
+                            else if (rolling) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                }
+                            }
+                            else {
+                                currentFramePath = files.player_sideways_r;
+                            }
                         }
                         else if ((keys.right && keys.down) && directionX < 0) {
-                            currentFramePath = files.player_sideways_l;
+                            if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                rolling = true;
+                                currentFramePath = files.player_tilt_left;
+                                rollTime = std::chrono::steady_clock::now();
+                            }
+                            else if (rolling) {
+                                if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                    rolling = false;
+                                }
+                            }
+                            else {
+                                currentFramePath = files.player_sideways_l;
+                            }
                         }
                         else if ((keys.up && keys.left && directionX < 0) || (keys.up && keys.right && directionX > 0)) {
                             if (directionX > 0) {
-                                currentFramePath = files.player_sideways_l;
+                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                    rolling = true;
+                                    currentFramePath = files.player_tilt_left;
+                                    rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (rolling) {
+                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                        rolling = false;
+                                    }
+                                }
+                                else {
+                                    currentFramePath = files.player_sideways_l;
+                                }
                             }
                             else if (directionX < 0) {
-                                currentFramePath = files.player_sideways_r;
+                                if (lastFrame == files.playerFrame1 || lastFrame == files.playerFrame2) {
+                                    rolling = true;
+                                    currentFramePath = files.player_tilt_right;
+                                    rollTime = std::chrono::steady_clock::now();
+                                }
+                                else if (rolling) {
+                                    if (std::chrono::steady_clock::now() - rollTime >= std::chrono::milliseconds(100)) {
+                                        rolling = false;
+                                    }
+                                }
+                                else {
+                                    currentFramePath = files.player_sideways_r;
+                                }
                             }
                         }
                         else if ((keys.up && keys.left && directionX > 0) || (keys.up && keys.right && directionX < 0)) {
@@ -1350,30 +1483,44 @@ public:
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                         else if (((keys.left && directionX < 0) || (keys.right && directionX > 0)) && !keys.up) {
                             if (directionX > 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_right;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                         else if (((keys.right && directionX < 0) || (keys.left && directionX > 0)) && !keys.up) {
                             if (directionX > 0) {
                                 currentFramePath = files.player_tilt_right;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                         else if (keys.up) {
                             if (directionX > 0) {
                                 currentFramePath = files.player_tilt_left;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                             else if (directionX < 0) {
                                 currentFramePath = files.player_tilt_right;
+                                rolling = true;
+                                rollTime = std::chrono::steady_clock::now();
                             }
                         }
                     }
@@ -1463,90 +1610,89 @@ public:
 
             if (doubleShot) {
                 double xOffset(0), yOffset(0);
-                xOffset = (-1.8 * sin(angleRadians * 2)) - 4;
-                yOffset = 4 - ((4 / sin(pi / 4)) * sin(angleRadians));
-                if (angleRadians > -pi / 6 && angleRadians < pi / 6) {
+                xOffset = (-1.8 * sin(angle * 2)) - 4;
+                yOffset = 4 - ((4 / sin(pi / 4)) * sin(angle));
+                if (angle > -pi / 6 && angle < pi / 6) {
                     xOffset = -4;
                     yOffset = 4;
                 }
-                else if (angleRadians > (pi / 6) && angleRadians < (pi / 3)) {
+                else if (angle > (pi / 6) && angle < (pi / 3)) {
                     xOffset = -5.6568542494923801952067548968388;
                     yOffset = 0;
                 }
-                else if (angleRadians > (pi / 3) && angleRadians < (2 * pi / 3)) {
+                else if (angle > (pi / 3) && angle < (2 * pi / 3)) {
                     xOffset = -4;
                     yOffset = 4;
                 }
-                else if (angleRadians > (2 * pi / 3) && angleRadians < (5 * pi / 6)) {
+                else if (angle > (2 * pi / 3) && angle < (5 * pi / 6)) {
                     xOffset = 0;
                     yOffset = -5.6568542494923801952067548968388;
                 }
-                else if (angleRadians > (5 * pi / 6) && angleRadians < (7 * pi / 6)) {
+                else if (angle > (5 * pi / 6) && angle < (7 * pi / 6)) {
                     xOffset = 4;
                     yOffset = -4;
                 }
-                else if (angleRadians > (-5 * pi / 6) && angleRadians < (-2 * pi / 3)) {
+                else if (angle > (-5 * pi / 6) && angle < (-2 * pi / 3)) {
                     xOffset = 5.6568542494923801952067548968388;
                     yOffset = 0;
                 }
-                else if (angleRadians > (-2 * pi / 3) && angleRadians < (-pi / 3)) {
+                else if (angle > (-2 * pi / 3) && angle < (-pi / 3)) {
                     xOffset = 4;
                     yOffset = 4;
                 }
-                else if (angleRadians > (-pi / 3) && angleRadians < 0) {
+                else if (angle > (-pi / 3) && angle < 0) {
                     xOffset = 0;
                     yOffset = 5.6568542494923801952067548968388;
                 }
                 bullets.emplace_back(files.basicShotDefault);
-                bullets.back().xPos = xPos + xOffset + (11 * sin(angleRadians));
-                bullets.back().yPos = yPos + yOffset - (11 * cos(angleRadians));
+                bullets.back().xPos = xPos + xOffset + (11 * sin(angle));
+                bullets.back().yPos = yPos + yOffset - (11 * cos(angle));
                 bullets.back().power = power;
                 bullets.back().UpdateHitBox();
-                bullets.back().angleRadians = angleRadians;
-                bullets.back().yVel = round(-cos(angleRadians) * 100) / 100;
+                bullets.back().angleRadians = angle;
+                bullets.back().yVel = (round(-cos(angle) * 100) / 100) + yVel;
                 if (abs(bullets.back().yVel) < 0.0001) {
                     bullets.back().yVel = 0;
                 }
-                bullets.back().xVel = round(sin(angleRadians) * 100) / 100;
+                bullets.back().xVel = (round(sin(angle) * 100) / 100) + xVel;
                 if (abs(bullets.back().xVel) < 0.0001) {
                     bullets.back().xVel = 0;
                 }
 
-                float angle = angleRadians;
-                if (angleRadians > -pi / 6 && angleRadians < pi / 6) {
+                if (angle > -pi / 6 && angle < pi / 6) {
                     xOffset = 4;
                     yOffset = 4;
                 }
-                else if (angleRadians > (pi / 6) && angleRadians < (pi / 3)) {
+                else if (angle > (pi / 6) && angle < (pi / 3)) {
                     xOffset = 0;
                     yOffset = 5.6568542494923801952067548968388;
                 }
-                else if (angleRadians > (pi / 3) && angleRadians < (2 * pi / 3)) {
+                else if (angle > (pi / 3) && angle < (2 * pi / 3)) {
                     xOffset = -4;
                     yOffset = -4;
                 }
-                else if (angleRadians > (2 * pi / 3) && angleRadians < (5 * pi / 6)) {
+                else if (angle > (2 * pi / 3) && angle < (5 * pi / 6)) {
                     xOffset = -5.6568542494923801952067548968388;
                     yOffset = 0;
                 }
-                else if (angleRadians > (5 * pi / 6) && angleRadians < (7 * pi / 6)) {
+                else if (angle > (5 * pi / 6) && angle < (7 * pi / 6)) {
                     xOffset = -4;
                     yOffset = -4;
                 }
-                else if (angleRadians > (-5 * pi / 6) && angleRadians < (-2 * pi / 3)) {
+                else if (angle > (-5 * pi / 6) && angle < (-2 * pi / 3)) {
                     xOffset = 0;
                     yOffset = -5.6568542494923801952067548968388;
                 }
-                else if (angleRadians > (-2 * pi / 3) && angleRadians < (-pi / 3)) {
+                else if (angle > (-2 * pi / 3) && angle < (-pi / 3)) {
                     xOffset = 4;
                     yOffset = -4;
                 }
-                else if (angleRadians > (-pi / 3) && angleRadians < 0) {
+                else if (angle > (-pi / 3) && angle < 0) {
                     xOffset = 5.6568542494923801952067548968388;
                     yOffset = 0;
                 }
-                xPosition = xPos + xOffset + (11 * sin(angleRadians));
-                yPosition = yPos + yOffset - (11 * cos(angleRadians));
+                xPosition = xPos + xOffset + (11 * sin(angle));
+                yPosition = yPos + yOffset - (11 * cos(angle));
             }
             else {
                 xPosition = xPos + (11 * sin(angle));
@@ -1561,7 +1707,7 @@ public:
             bullets.back().UpdateHitBox();
             bullets.back().power = power;
             bullets.back().angleRadians = angle;
-            bullets.back().yVel = round(-cos(angle) * 100) / 100;
+            bullets.back().yVel = (round(-cos(angle) * 100) / 100) * (1 + abs(yVel));
             bullets.back().modulator = double((rand() % 628)) / 100;
             bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
             int result = (rand() % 2);
@@ -1576,7 +1722,7 @@ public:
             if (abs(bullets.back().yVel) < 0.0001) {
                 bullets.back().yVel = 0;
             }
-            bullets.back().xVel = round(sin(angle) * 100) / 100;
+            bullets.back().xVel = (round(sin(angle) * 100) / 100) * (1 + abs(xVel));
             if (abs(bullets.back().xVel) < 0.0001) {
                 bullets.back().xVel = 0;
             }
@@ -2069,12 +2215,39 @@ std::vector<BomberDrone> bomberdrone;
 // Consolidatory Functions 
 //-------------------------
 
+void InitializeBomberDrone(float x, float y) {
+    objects.emplace_back(L"Bomber Drone",
+        x,
+        y,
+        2,
+        files.bomber_drone,
+        true,
+        0,
+        files.bomber_drone,
+        files.bomber_drone,
+        0.25,
+        0.25,
+        true,
+        true,
+        true
+    );
+    objects.back().turnRadius = pi / 4;
+    objects.back().shotSpeed = std::chrono::milliseconds(6000);
+    objects.back().shotVelocity = 2;
+    objects.back().shotType = files.drone_Shot_1;
+    objects.back().defaultShotEffect = files.basicShotEffectPurple1;
+    objects.back().power = 10;
+    objects.back().randomSpawner = true;
+    objects.back().angleRadians = atan2(objects.back().yPos - player.yPos, objects.back().xPos - player.xPos) + pi;
+}
+
 void InitializeAssets() {
     player.health = 100;
     player.maxHP = 100;
     player.inAscendingSequence = true;
     player.currentFramePath = player.descentFrames[5];
     player.angleRadians = -pi / 4;
+    if (player.upgrades[0] == 1) player.doubleShot = true;
     environments.emplace_back(nullptr, 1, true);
     float gunshipAngles[32] = {
         pi / 4, // 1
@@ -2111,8 +2284,71 @@ void InitializeAssets() {
        -pi / 3 // 32
     };
 
-    float gunshipXPos[32] = { 6.3, 9.7, 21, 24, 23.6, 19, 31.3, 41, 31.3, 28.3, 33.6, 37, 34.6, 42, 40.3, 41.6, 47, 49.3, 60.3, 60.3, 6.3, 66, 72.6, 72, 69.6, 72, 64.3, 73.6, 82.3, 81.3, 91, 64 };
-    float gunshipYPos[32] = { 38.3, 38.3, 42.6, 42.6, 45, 50.6, 52, 53.6, 84.3, 85.9, 87.6, 90, 95, 87.6, 87.6, 75, 66, 62.3, 55.6, 53, 83, 46, 45, 36.6, 10, 85, 61 };
+    float gunshipXPos[32] = { 
+        6.3, // 1
+        9.7, // 1
+        21, // 1
+        24, // 1
+        23.6, // 1
+        19, // 1
+        31.3, // 1
+        41, // 1
+        31.3,
+        28.3,
+        33.6, 
+        37, 
+        34.6,
+        42,
+        40.3,
+        41.6, 
+        47, 
+        49.3,
+        60.3, 
+        60.3, 
+        6.3, 
+        66, 
+        72.6, 
+        72, 
+        69.6, 
+        72, 
+        64.3,
+        73.6,
+        82.3,
+        81.3, 
+        91, 
+        64 };
+    float gunshipYPos[32] = { 
+        38.3, // 1
+        38.3, // 2
+        42.6, // 3
+        42.6, // 4
+        45, // 5
+        20, // 6
+        9.5, // 7
+        20, // 8
+        32, // 9
+        32, // 10
+        51, // 11
+        53, // 12
+        55, // 13
+        84, // 14
+        85, // 15
+        86, // 16
+        90, // 17
+        91, // 18
+        87, // 19
+        83, // 20
+        83, // 21
+        66, // 22
+        62, // 23
+        56, // 24
+        53.5, // 25
+        45, // 26
+        46,
+        37,
+        10,
+        90,
+        61};// 28
 
     for (int i = 0; i < 32; i++) {
         gunship.emplace_back();
@@ -2206,9 +2442,9 @@ void InitializeAssets() {
                 files.turret,
                 0,
                 0,
-                false,
                 true,
-                false
+                true,
+                true
             );
             objects[j + (i * 17)].turnRadius = pi / 4;
             objects[j + (i * 17)].shotSpeed = std::chrono::milliseconds(1250);
@@ -2260,6 +2496,40 @@ void InitializeAssets() {
         environments.emplace_back(files.base_Interior, i + 2, false);
         environments.at(i + 1).AddDoor(0, 2, 22, 187, hboxL - 40, hboxU, 0, nullptr);
     }
+
+    InitializeBomberDrone(mapSizeX * (7.8 /100), mapSizeY * (40.4 /100)); // 1
+    InitializeBomberDrone(mapSizeX * (20.4/ 100), mapSizeY * (46.0/ 100)); // 2
+    InitializeBomberDrone(mapSizeX * (29.6/ 100), mapSizeY * (33.7/ 100)); // 3
+    InitializeBomberDrone(mapSizeX * (21.5/ 100), mapSizeY * (22.7/ 100)); // 4
+    InitializeBomberDrone(mapSizeX * (21.5/ 100), mapSizeY * (18.9/ 100)); // 5
+    InitializeBomberDrone(mapSizeX * (28.1/ 100), mapSizeY * (10.9/ 100)); // 6
+    InitializeBomberDrone(mapSizeX * (32.2/ 100), mapSizeY * (10.7/ 100)); // 7
+    InitializeBomberDrone(mapSizeX * (38.8/ 100), mapSizeY * (18.9/ 100)); // 8
+    InitializeBomberDrone(mapSizeX * (38.8/ 100), mapSizeY * (22.7/ 100)); // 9
+    InitializeBomberDrone(mapSizeX * (10.0/ 100), mapSizeY * (10.0/ 100)); // 10
+    InitializeBomberDrone(mapSizeX * (41.7/ 100), mapSizeY * (30.0/ 100)); // 11
+    InitializeBomberDrone(mapSizeX * (24.4/ 100), mapSizeY * (69.4/ 100)); // 12
+    InitializeBomberDrone(mapSizeX * (19.4/ 100), mapSizeY * (90.0/ 100)); // 13
+    InitializeBomberDrone(mapSizeX * (49.0/ 100), mapSizeY * (70.3/ 100)); // 14
+    InitializeBomberDrone(mapSizeX * (52.0/ 100), mapSizeY * (71.0/ 100)); // 15
+    InitializeBomberDrone(mapSizeX * (54.0/ 100), mapSizeY * (70.3/ 100)); // 16
+    InitializeBomberDrone(mapSizeX * (51.6/ 100), mapSizeY * (90.0/ 100)); // 17
+    InitializeBomberDrone(mapSizeX * (61.4/ 100), mapSizeY * (84.6/ 100)); // 18
+    InitializeBomberDrone(mapSizeX * (70.0/ 100), mapSizeY * (78.9/ 100)); // 19
+    InitializeBomberDrone(mapSizeX * (63.4/ 100), mapSizeY * (64.6/ 100)); // 20
+    InitializeBomberDrone(mapSizeX * (66.1/ 100), mapSizeY * (62.1/ 100)); // 21
+    InitializeBomberDrone(mapSizeX * (72.0/ 100), mapSizeY * (65.1/ 100)); // 22
+    InitializeBomberDrone(mapSizeX * (74.6/ 100), mapSizeY * (61.5/ 100)); // 23
+    InitializeBomberDrone(mapSizeX * (74.4/ 100), mapSizeY * (53.6/ 100)); // 24
+    InitializeBomberDrone(mapSizeX * (67.8/ 100), mapSizeY * (45.6/ 100)); // 25
+    InitializeBomberDrone(mapSizeX * (66.7/ 100), mapSizeY * (42.0/ 100)); // 26
+    InitializeBomberDrone(mapSizeX * (69.0/ 100), mapSizeY * (42.7/ 100)); // 27
+    InitializeBomberDrone(mapSizeX * (74.5/ 100), mapSizeY * (42.9/ 100)); // 28
+    InitializeBomberDrone(mapSizeX * (75.5/ 100), mapSizeY * (46.0/ 100)); // 29
+    InitializeBomberDrone(mapSizeX * (80.0/ 100), mapSizeY * (39.3/ 100)); // 30
+    InitializeBomberDrone(mapSizeX * (83.3/ 100), mapSizeY * (39.3/ 100)); // 31
+    InitializeBomberDrone(mapSizeX * (90.0/ 100), mapSizeY* (10.0/ 100)); // 32
+    InitializeBomberDrone(mapSizeX* (60.0/ 100), mapSizeY* (25.0/ 100)); // 33
 
     UI.emplace_back(L"Status_Bar", leftBoundary + (4 * scalerX), 4 * scalerY, 0,
         files.status_Bar, false, 0, nullptr, files.status_Bar, 0, 0, false, false, false);
@@ -2656,13 +2926,13 @@ void UpdateMasterObjectLogic(double deltaTime, int& spawnerCounter) {
                                 }
                                 else {
                                     rng = distribution(generator);
-                                    if (rng <= 85) {
+                                    if (rng <= 70) {
                                         objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
                                     }
-                                    else if (rng <= 94) {
+                                    else if (rng <= 88) {
                                         objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
                                     }
-                                    else if (rng <= 98) {
+                                    else if (rng <= 96) {
                                         objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
                                     }
                                     else {
@@ -2872,13 +3142,13 @@ void UpdateEnemyLogic(double deltaTime) {
                         }
                         else {
                             rng = distribution(generator);
-                            if (rng <= 85) {
+                            if (rng <= 70) {
                                 objects.emplace_back(L"Red Jewel", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
                             }
-                            else if (rng <= 94) {
+                            else if (rng <= 88) {
                                 objects.emplace_back(L"Blue Jewel", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
                             }
-                            else if (rng <= 98) {
+                            else if (rng <= 96) {
                                 objects.emplace_back(L"Purple Jewel", gunship[i].xPos + xOffset, gunship[i].yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
                             }
                             else {
@@ -3643,7 +3913,7 @@ public:
 
             player.defense = .1 * player.components[selection];
             player.power = 1 * (1 + (player.components[selection] * .3));
-            player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (player.components[selection] * .25))));
+            player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (player.components[selection] * .5))));
             player.speed = 1.5 * (1 + (player.components[selection] * .15));
             player.xPos = saveStations[0].xPos;
             player.yPos = saveStations[0].yPos;
@@ -3746,7 +4016,7 @@ public:
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 4; j++) {
                         std::getline(inFile, line);
-                        if (std::stoi(line) > 0 && i == 0 && j == 0) RenderObjectLeft(files.doubleShotPickup, 103, 18 + yOffset);
+                        if (std::stoi(line) > 0 && i == 0 && j == 0) RenderObjectLeft(files.doubleShotPickup, 103, 21 + yOffset);
                     }
                 }
 
@@ -3999,7 +4269,7 @@ public:
                         player.power = 1 * (1 + (displayLength[selection] * .3));
                         break;
                     case 2:
-                        player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (displayLength[selection] * .25))));
+                        player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (displayLength[selection] * .5))));
                         break;
                     case 3:
                         player.speed = 1.5 * (1 + (displayLength[selection] * .15));
@@ -5104,14 +5374,12 @@ void UpdateGameLogic(double deltaTime) {
 
         if (player.inAscendingSequence) {
             if (firstTime) {
-                PlayAudio(audioFiles.ae, 0, true);
                 firstTime = false;
             }
             player.PlayAscendingSequence(deltaTime, saveStations[player.stationTouchingID]);
         }
         else if (player.inDockingSequence) {
             if (firstTime) {
-                PlayAudio(audioFiles.ae, 0, true);
                 firstTime = false;
             }
 
@@ -5133,7 +5401,7 @@ void UpdateGameLogic(double deltaTime) {
 
         bool spawnEnemies = true;
         bool spawnsExist = false;
-        HandleEnemySpawns(deltaTime, spawnEnemies, spawnsExist);
+        //HandleEnemySpawns(deltaTime, spawnEnemies, spawnsExist);
 
         int spawnerCounter = 0;
         UpdateMasterObjectLogic(deltaTime, spawnerCounter);
@@ -5326,7 +5594,7 @@ LRESULT CALLBACK ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
             keys.space = false;
             break;
         case VK_SHIFT:
-            keys.lShift = false;
+            keys.lShift = false; 
             break;
         case VK_ESCAPE:
             keys.escape = false;
