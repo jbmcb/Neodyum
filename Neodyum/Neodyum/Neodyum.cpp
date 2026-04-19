@@ -261,6 +261,12 @@ struct {
     LPCWSTR red_jewel_sparkle_5 = L"Sprites\\Effects\\red_jewel_sparkle_5.png";
     LPCWSTR red_jewel_sparkle_6 = L"Sprites\\Effects\\red_jewel_sparkle_6.png";
     LPCWSTR red_jewel_sparkle_7 = L"Sprites\\Effects\\red_jewel_sparkle_7.png";
+    LPCWSTR jewel_red_shimmer_1 = L"Sprites\\Pickups\\Jewel_Red_1.png";
+    LPCWSTR jewel_red_shimmer_2 = L"Sprites\\Pickups\\Jewel_Red_2.png";
+    LPCWSTR jewel_red_shimmer_3 = L"Sprites\\Pickups\\Jewel_Red_3.png";
+    LPCWSTR jewel_red_shimmer_4 = L"Sprites\\Pickups\\Jewel_Red_4.png";
+    LPCWSTR jewel_red_shimmer_5 = L"Sprites\\Pickups\\Jewel_Red_5.png";
+    LPCWSTR jewel_red_shimmer_6 = L"Sprites\\Pickups\\Jewel_Red_6.png";
 } files;
 
 void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
@@ -474,6 +480,12 @@ void LoadFilePathsToVector(std::vector<LPCWSTR>& spriteFilePaths) {
     spriteFilePaths.emplace_back(files.red_jewel_sparkle_5);
     spriteFilePaths.emplace_back(files.red_jewel_sparkle_6);
     spriteFilePaths.emplace_back(files.red_jewel_sparkle_7);
+    spriteFilePaths.emplace_back(files.jewel_red_shimmer_1);
+    spriteFilePaths.emplace_back(files.jewel_red_shimmer_2);
+    spriteFilePaths.emplace_back(files.jewel_red_shimmer_3);
+    spriteFilePaths.emplace_back(files.jewel_red_shimmer_4);
+    spriteFilePaths.emplace_back(files.jewel_red_shimmer_5);
+    spriteFilePaths.emplace_back(files.jewel_red_shimmer_6);
 }
 
 // The starting point for using Direct2D; it's what you use to create other Direct2D resources
@@ -1046,7 +1058,7 @@ public:
     bool sideMode;
     float speed = 1.5;
     float defense = 0;
-    std::chrono::milliseconds shotFrequency = std::chrono::milliseconds(250);
+    std::chrono::milliseconds shotFrequency = std::chrono::milliseconds(333);
     bool alreadyOnStation = true;
     unsigned __int8 stationTouchingID = 0;
     bool inDockingSequence = false;
@@ -1091,7 +1103,7 @@ public:
         float velocity = speed;
         if (keys.lShift && keys.directionPressed && !keys.f) {
             if (boost > 0 && ((std::chrono::steady_clock::now() - runoutTime) >= std::chrono::seconds(2))) {
-                velocity *= 2;
+                velocity *= 1.66;
                 boost -= 1 * deltaTime;
                 if (boost <= 0) {
                     boost = 0;
@@ -1112,7 +1124,7 @@ public:
                 boost = 100;
             }
             if (keys.f) {
-                velocity *= 0.75;
+                velocity *= 0.66;
             }
         }
         if (keys.up) {
@@ -1755,11 +1767,14 @@ public:
         }
     }
 
-    void UpdateBullets(double deltaTime, std::vector<Object>& objects, std::vector<Object>& gShip) {
+    void UpdateBullets(double deltaTime, std::vector<Object>& objects, std::vector<Object>& gShip, Player player) {
         // Bullet logic
         if (!bullets.empty()) {
             for (auto it = bullets.begin(); it != bullets.end(); ) {
-                if (it->collided && std::chrono::steady_clock::now() - it->explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
+                if (abs(it->xPos - player.xPos) >= 128 || abs(it->yPos - player.yPos) >= 112) {
+                    it = bullets.erase(it);
+                }
+                else if (it->collided && std::chrono::steady_clock::now() - it->explosionBegin > std::chrono::nanoseconds(16666666 * 6)) {
                     it = bullets.erase(it);
                 }
                 else if (!it->collided) {
@@ -1956,7 +1971,7 @@ public:
         g = green;
         b = blue;
         a = alpha;
-        std::uniform_real_distribution<float> range(0.00125, 0.00375);
+        std::uniform_real_distribution<float> range(0.0033, 0.01);
         float roll = range(generator);
         std::uniform_int_distribution<int> range1(0, 1);
         rate = range1(generator) ? roll : -roll;
@@ -2043,6 +2058,51 @@ public:
 
     void Stop() {
         duration = duration + int(std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count());
+    }
+};
+
+class Jewel : public Object {
+public:
+    std::string type;
+    LPCWSTR defaultFrame;
+    LPCWSTR sFrame[6];
+    bool shimmering = false;
+    std::chrono::steady_clock::time_point timeSinceShimmer;
+    unsigned __int8 payout, sIndex;
+    std::chrono::steady_clock::time_point timeSinceAnimation;
+    Jewel(float x, float y, const LPCWSTR def, const LPCWSTR s1, const LPCWSTR s2, const LPCWSTR s3, const LPCWSTR s4, const LPCWSTR s5, const LPCWSTR s6, const unsigned __int8 p) {
+        xPos = x;
+        yPos = y;
+        defaultFrame = def;
+        currentFramePath = defaultFrame;
+        sFrame[0] = s1;
+        sFrame[1] = s2;
+        sFrame[2] = s3;
+        sFrame[3] = s4;
+        sFrame[4] = s5;
+        sFrame[5] = s6;
+        sIndex = 0;
+        timeSinceShimmer = std::chrono::steady_clock::now();
+        payout = p;
+    }
+
+    void CycleShimmerAnimation() {
+        if (shimmering && (std::chrono::steady_clock::now() - timeSinceAnimation >= std::chrono::milliseconds(111))) {
+            if (sIndex < 5) {
+                sIndex++;
+                currentFramePath = sFrame[sIndex];
+                timeSinceAnimation = std::chrono::steady_clock::now();
+            }
+            else {
+                sIndex = 0;
+                shimmering = false;
+            }
+        }
+        if (std::chrono::steady_clock::now() - timeSinceShimmer >= std::chrono::seconds(2)) {
+            shimmering = true;
+            currentFramePath = sFrame[0];
+            timeSinceAnimation = std::chrono::steady_clock::now();
+        }
     }
 };
 
@@ -2207,6 +2267,7 @@ SaveStation saveStations[3];
 int gameState = 1;
 std::vector<Object> gunship;
 std::vector<BomberDrone> bomberdrone;
+std::vector<Jewel> jewels;
 
 
 
@@ -2668,7 +2729,7 @@ void UpdateBackgroundElements(double deltaTime) {
                                         b = 46;
                                     }
                                     roll = range(generator);
-                                    float alpha = max(float(roll) / 100000.0, 0.01);
+                                    float alpha = max(float(roll) / 100.0, 0.5);
 
                                     std::lock_guard<std::mutex> lock(chunkInProgress);
                                     starGrid[cell].emplace_back(j, i, r, g, b, alpha);
@@ -2724,8 +2785,8 @@ void UpdateBackgroundElements(double deltaTime) {
                                         g = 53;
                                         b = 46;
                                     }
-                                    roll = range(generator);
-                                    float alpha = max(float(roll) / 100000.0, 0.01);
+                                    std::uniform_real_distribution<float> range(0, 1);
+                                    float alpha = range(generator);
                                     starGrid[cell].emplace_back(j, i, r, g, b, alpha);
                                 }
                             }
@@ -2776,8 +2837,9 @@ void UpdateBackgroundElements(double deltaTime) {
                                 }
                                 else {
                                     rng = distribution(generator);
-                                    if (rng <= 85) {
-                                        objects.emplace_back(L"Red Jewel", x + xOffset, y + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
+                                    if (true) {
+                                        objects.emplace_back(L"Blue Jewel", x + xOffset, y + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
+                                        jewels.emplace_back(x + xOffset, y + yOffset, files.jewel_Red, files.jewel_red_shimmer_1, files.jewel_red_shimmer_2, files.jewel_red_shimmer_3, files.jewel_red_shimmer_4, files.jewel_red_shimmer_5, files.jewel_red_shimmer_6, 1);
                                     }
                                     else if (rng <= 94) {
                                         objects.emplace_back(L"Blue Jewel", x + xOffset, y + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
@@ -2788,6 +2850,9 @@ void UpdateBackgroundElements(double deltaTime) {
                                     else {
                                         objects.emplace_back(L"Yellow Jewel", x + xOffset, y + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
                                     }
+                                    jewels.back().xPos = x + xOffset;
+                                    jewels.back().yPos = x + yOffset;
+                                    jewels.back().UpdateHitBox();
                                     objects.back().UpdateHitBox();
                                     objects.back().pickup = true;
                                 }
@@ -2995,26 +3060,26 @@ void UpdateMasterObjectLogic(double deltaTime, int& spawnerCounter) {
                     }
                 }
                 if (!objects[i].dead) {
-                    if (objects[i].rotatable) {
-                        double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
-                        double angleDelta = newAngle - objects[i].angleRadians;
-                        if (angleDelta > pi) {
-                            angleDelta -= (2 * pi);
-                        }
-                        else if (angleDelta < -pi) {
-                            angleDelta += (2 * pi);
-                        }
-                        if (angleDelta > 0) {
-                            objects[i].angleRadians += objects[i].turnRadius * ((deltaTime / 50) / 1);
-                        }
-                        else {
-                            objects[i].angleRadians -= objects[i].turnRadius * ((deltaTime / 50) / 1);
-                        }
+                    if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 128 && abs(objects[i].yPos - player.yPos) < 112) {
+                        if (objects[i].rotatable) {
+                            double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
+                            double angleDelta = newAngle - objects[i].angleRadians;
+                            if (angleDelta > pi) {
+                                angleDelta -= (2 * pi);
+                            }
+                            else if (angleDelta < -pi) {
+                                angleDelta += (2 * pi);
+                            }
+                            if (angleDelta > 0) {
+                                objects[i].angleRadians += objects[i].turnRadius * ((deltaTime / 50) / 1);
+                            }
+                            else {
+                                objects[i].angleRadians -= objects[i].turnRadius * ((deltaTime / 50) / 1);
+                            }
 
-                        objects[i].xPos += objects[i].xVel * deltaTime * cos(objects[i].angleRadians);
-                        objects[i].yPos += objects[i].yVel * deltaTime * sin(objects[i].angleRadians);
-                    }
-                    if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 192 && abs(objects[i].yPos - player.yPos) < 168) {
+                            objects[i].xPos += objects[i].xVel * deltaTime * cos(objects[i].angleRadians);
+                            objects[i].yPos += objects[i].yVel * deltaTime * sin(objects[i].angleRadians);
+                        }
                         double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
                         double angleDelta = newAngle - objects[i].angleRadians;
                         if (angleDelta > pi) {
@@ -3115,6 +3180,19 @@ void UpdateMasterObjectLogic(double deltaTime, int& spawnerCounter) {
     }
 }
 
+void UpdatePickupLogic(const double deltaTime) {
+    if (!jewels.empty()) {
+        for (unsigned int i = 0; i < jewels.size(); i++)
+        if (player.CheckCollision(jewels.at(i))) {
+            player.currencyAcquired = std::chrono::steady_clock::now();
+            player.currency += jewels.at(i).payout;
+            jewels.erase(jewels.begin() + i);
+            i--;
+            continue;
+        }
+    }
+}
+
 void UpdateEnemyLogic(double deltaTime) {
     for (int i = 0; i < gunship.size(); i++) {
         if (gunship[i].damaged) {
@@ -3211,7 +3289,7 @@ void UpdateEnemyLogic(double deltaTime) {
             }
         }
 
-        if (!gunship[i].dead && (abs(gunship[i].xPos - player.xPos) < 256 && abs(gunship[i].yPos - player.yPos) < 224)) {
+        if (!gunship[i].dead && (abs(gunship[i].xPos - player.xPos) < 128 && abs(gunship[i].yPos - player.yPos) < 112)) {
             double newAngle = atan2(player.yPos - gunship[i].yPos, player.xPos - gunship[i].xPos);
             double angleDelta = newAngle - gunship[i].angleRadians;
             if (angleDelta > pi) {
@@ -3913,8 +3991,8 @@ public:
 
             player.defense = .1 * player.components[selection];
             player.power = 1 * (1 + (player.components[selection] * .3));
-            player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (player.components[selection] * .5))));
-            player.speed = 1.5 * (1 + (player.components[selection] * .15));
+            player.shotFrequency = std::chrono::milliseconds(int(333 - (333 * (player.components[selection] * .15))));
+            player.speed = 1.25 + (1.25 * (player.components[selection] * .18));
             player.xPos = saveStations[0].xPos;
             player.yPos = saveStations[0].yPos;
             prevState = 1;
@@ -4099,8 +4177,8 @@ public:
                 stopwatch.Start();
                 player.defense = 0;
                 player.power = 1;
-                player.shotFrequency = std::chrono::milliseconds(250);
-                player.speed = 1.5;
+                player.shotFrequency = std::chrono::milliseconds(333);
+                player.speed = 1.25;
                 break;
 
                 // Load
@@ -4269,14 +4347,15 @@ public:
                         player.power = 1 * (1 + (displayLength[selection] * .3));
                         break;
                     case 2:
-                        player.shotFrequency = std::chrono::milliseconds(int(250 / (1 + (displayLength[selection] * .5))));
+                        player.shotFrequency = std::chrono::milliseconds(int(333 - (333 * (displayLength[selection] * .15))));
                         break;
                     case 3:
-                        player.speed = 1.5 * (1 + (displayLength[selection] * .15));
+                        player.speed = 1.25 + (1.25 * (displayLength[selection] * .18));
                         break;
                     }
                     componentSelected = false;
                     componentModified = false;
+                    cost = 0;
                     return;
                 }
 
@@ -5369,7 +5448,7 @@ void UpdateGameLogic(double deltaTime) {
 
         player.UpdateRedLightEffect(deltaTime);
 
-        player.UpdateBullets(deltaTime, objects, gunship);
+        player.UpdateBullets(deltaTime, objects, gunship, player);
         CheckEnvironmentCollisions(environments);
 
         if (player.inAscendingSequence) {
@@ -5397,24 +5476,24 @@ void UpdateGameLogic(double deltaTime) {
             player.ApplyDirectionalInput(deltaTime);
             player.ApplyShootingLogic(deltaTime);
             UpdateSaveStationLogic(deltaTime);
+            UpdateEnemyLogic(deltaTime);
+            UpdateEnemyShootingLogic(deltaTime);
+            CheckPickupCollision();
+            UpdateOverworldAssets();
+
+            bool spawnEnemies = true;
+            bool spawnsExist = false;
+            //HandleEnemySpawns(deltaTime, spawnEnemies, spawnsExist);
+
+            int spawnerCounter = 0;
+            UpdateMasterObjectLogic(deltaTime, spawnerCounter);
+            if ((spawnerCounter == 0) && spawnsExist) {
+                timeSinceSpawn = std::chrono::steady_clock::now();
+            }
+            UpdateSideViewCamera();
         }
 
-        bool spawnEnemies = true;
-        bool spawnsExist = false;
-        //HandleEnemySpawns(deltaTime, spawnEnemies, spawnsExist);
-
-        int spawnerCounter = 0;
-        UpdateMasterObjectLogic(deltaTime, spawnerCounter);
-        if ((spawnerCounter == 0) && spawnsExist) {
-            timeSinceSpawn = std::chrono::steady_clock::now();
-        }
-
-        UpdateEnemyLogic(deltaTime);
-        UpdateEnemyShootingLogic(deltaTime);
-        CheckPickupCollision();
-        UpdateOverworldAssets();
-        UpdateSideViewCamera();
-
+        
     }
 }
 
