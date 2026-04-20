@@ -2839,7 +2839,7 @@ void UpdateBackgroundElements(double deltaTime) {
                                     rng = distribution(generator);
                                     if (true) {
                                         objects.emplace_back(L"Blue Jewel", x + xOffset, y + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
-                                        jewels.emplace_back(x + xOffset, y + yOffset, files.jewel_Red, files.jewel_red_shimmer_1, files.jewel_red_shimmer_2, files.jewel_red_shimmer_3, files.jewel_red_shimmer_4, files.jewel_red_shimmer_5, files.jewel_red_shimmer_6, 1);
+                                        //jewels.emplace_back(x + xOffset, y + yOffset, files.jewel_Red, files.jewel_red_shimmer_1, files.jewel_red_shimmer_2, files.jewel_red_shimmer_3, files.jewel_red_shimmer_4, files.jewel_red_shimmer_5, files.jewel_red_shimmer_6, 1);
                                     }
                                     else if (rng <= 94) {
                                         objects.emplace_back(L"Blue Jewel", x + xOffset, y + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
@@ -2850,11 +2850,12 @@ void UpdateBackgroundElements(double deltaTime) {
                                     else {
                                         objects.emplace_back(L"Yellow Jewel", x + xOffset, y + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
                                     }
+                                    objects.back().UpdateHitBox();
+                                    objects.back().pickup = true;
+                                    if (jewels.empty()) continue;
                                     jewels.back().xPos = x + xOffset;
                                     jewels.back().yPos = x + yOffset;
                                     jewels.back().UpdateHitBox();
-                                    objects.back().UpdateHitBox();
-                                    objects.back().pickup = true;
                                 }
                             }
                             break;
@@ -2963,123 +2964,105 @@ void HandleEnemySpawns(double deltaTime, bool spawnEnemies, bool spawnsExist) {
 
 void UpdateMasterObjectLogic(double deltaTime, int& spawnerCounter) {
     // Master Object logic
-    if (!objects.empty()) {
-        for (int i = 0; i < objects.size(); i++) {
-            if (objects[i].currentFramePath != nullptr) {
-                if (objects[i].destructible) {
-                    if (objects[i].health <= 0) {
-                        if (objects[i].dead == false) {
-                            std::uniform_int_distribution<int> distribution(3, 5);
-                            int qty = distribution(generator);
-                            float percentage = player.health / player.maxHP;
-                            for (int j = 0; j < qty; j++) {
-                                std::uniform_int_distribution<int> distribution(1, 100);
-                                int rng = distribution(generator);
-                                bool rollHP = false;
-                                std::uniform_real_distribution<float> fdistribution(-pi, pi);
-                                float angle = fdistribution(generator);
-                                float xOffset = 8 * sin(angle);
-                                angle = fdistribution(generator);
-                                float yOffset = 8 * sin(angle);
-                                if (((percentage <= 0.75) && rng >= 90) || ((percentage <= 0.5) && rng >= 80) || ((percentage <= 0.33) && rng >= 50)) {
-                                    rollHP = true;
+    if (objects.empty()) return;
+    for (int i = 0; i < objects.size(); i++) {
+        if (objects[i].currentFramePath != nullptr) {
+            if (objects[i].destructible) {
+                if (objects[i].health <= 0) {
+                    if (objects[i].dead == false) {
+                        std::uniform_int_distribution<int> distribution(3, 5);
+                        int qty = distribution(generator);
+                        float percentage = player.health / player.maxHP;
+                        for (int j = 0; j < qty; j++) {
+                            std::uniform_int_distribution<int> distribution(1, 100);
+                            int rng = distribution(generator);
+                            bool rollHP = false;
+                            std::uniform_real_distribution<float> fdistribution(-pi, pi);
+                            float angle = fdistribution(generator);
+                            float xOffset = 8 * sin(angle);
+                            angle = fdistribution(generator);
+                            float yOffset = 8 * sin(angle);
+                            if (((percentage <= 0.75) && rng >= 90) || ((percentage <= 0.5) && rng >= 80) || ((percentage <= 0.33) && rng >= 50)) {
+                                rollHP = true;
+                            }
+                            if (rollHP) {
+                                objects.emplace_back(L"Health Pickup", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.hp_pickup_2, false, 0, nullptr, files.hp_pickup_2, 0, 0, false, true, false);
+                                objects.back().genericFrameMarker = std::chrono::steady_clock::now();
+                                objects.back().pickup = true;
+                            }
+                            else {
+                                rng = distribution(generator);
+                                if (rng <= 70) {
+                                    objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
                                 }
-                                if (rollHP) {
-                                    objects.emplace_back(L"Health Pickup", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.hp_pickup_2, false, 0, nullptr, files.hp_pickup_2, 0, 0, false, true, false);
-                                    objects.back().genericFrameMarker = std::chrono::steady_clock::now();
-                                    objects.back().pickup = true;
+                                else if (rng <= 88) {
+                                    objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
+                                }
+                                else if (rng <= 96) {
+                                    objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
                                 }
                                 else {
-                                    rng = distribution(generator);
-                                    if (rng <= 70) {
-                                        objects.emplace_back(L"Red Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Red, false, 0, nullptr, files.jewel_Red, 0, 0, false, true, false);
-                                    }
-                                    else if (rng <= 88) {
-                                        objects.emplace_back(L"Blue Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Blue, false, 0, nullptr, files.jewel_Blue, 0, 0, false, true, false);
-                                    }
-                                    else if (rng <= 96) {
-                                        objects.emplace_back(L"Purple Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Purple, false, 0, nullptr, files.jewel_Purple, 0, 0, false, true, false);
-                                    }
-                                    else {
-                                        objects.emplace_back(L"Yellow Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
-                                    }
-                                    objects.back().UpdateHitBox();
-                                    objects.back().pickup = true;
+                                    objects.emplace_back(L"Yellow Jewel", objects.at(i).xPos + xOffset, objects.at(i).yPos + yOffset, 0, files.jewel_Yellow, false, 0, nullptr, files.jewel_Yellow, 0, 0, false, true, false);
                                 }
+                                objects.back().UpdateHitBox();
+                                objects.back().pickup = true;
                             }
-                            objects[i].dead = true;
-                            objects[i].currentFramePath = files.explosion1;
-                            objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
                         }
-                        bool updated(false);
-                        std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - objects[i].lastDeathFrameUpdate;
-                        if (objects[i].currentFramePath == files.explosion1 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                            objects[i].currentFramePath = files.explosion2;
-                            updated = true;
-                        }
-                        else if (objects[i].currentFramePath == files.explosion2 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                            objects[i].currentFramePath = files.explosion3;
-                            updated = true;
-                        }
-                        else if (objects[i].currentFramePath == files.explosion3 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                            objects[i].currentFramePath = files.explosion4;
-                            updated = true;
-                        }
-                        else if (objects[i].currentFramePath == files.explosion4 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                            objects[i].currentFramePath = files.explosion3;
-                            updated = true;
-                            objects[i].reverseDeathAnimation = true;
-                        }
-                        else if (objects[i].currentFramePath == files.explosion3 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                            objects[i].currentFramePath = files.explosion2;
-                            updated = true;
-                        }
-                        else if (objects[i].currentFramePath == files.explosion2 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
-                            objects[i].currentFramePath = files.explosion1;
-                            updated = true;
-                        }
-                        else if (objects[i].currentFramePath == files.explosion1 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
-                            objects.erase(objects.begin() + i);
-                            i--;
-                            continue;
-                        }
-                        if (updated) {
-                            objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
-                        }
+                        objects[i].dead = true;
+                        objects[i].currentFramePath = files.explosion1;
+                        objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
                     }
-                    if (!objects[i].dead) {
-                        if (std::chrono::steady_clock::now() - objects[i].damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
-                            objects[i].damaged = false;
-                        }
-                        if (objects[i].damaged) {
-                            objects[i].currentFramePath = objects[i].damagedFrame;
-                        }
-                        else {
-                            objects[i].currentFramePath = objects[i].defaultFrame;
-                        }
+                    bool updated(false);
+                    std::chrono::nanoseconds elapsedTime = std::chrono::steady_clock::now() - objects[i].lastDeathFrameUpdate;
+                    if (objects[i].currentFramePath == files.explosion1 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                        objects[i].currentFramePath = files.explosion2;
+                        updated = true;
+                    }
+                    else if (objects[i].currentFramePath == files.explosion2 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                        objects[i].currentFramePath = files.explosion3;
+                        updated = true;
+                    }
+                    else if (objects[i].currentFramePath == files.explosion3 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                        objects[i].currentFramePath = files.explosion4;
+                        updated = true;
+                    }
+                    else if (objects[i].currentFramePath == files.explosion4 && !objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                        objects[i].currentFramePath = files.explosion3;
+                        updated = true;
+                        objects[i].reverseDeathAnimation = true;
+                    }
+                    else if (objects[i].currentFramePath == files.explosion3 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                        objects[i].currentFramePath = files.explosion2;
+                        updated = true;
+                    }
+                    else if (objects[i].currentFramePath == files.explosion2 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(66666666)) {
+                        objects[i].currentFramePath = files.explosion1;
+                        updated = true;
+                    }
+                    else if (objects[i].currentFramePath == files.explosion1 && objects[i].reverseDeathAnimation && elapsedTime >= std::chrono::nanoseconds(33333333)) {
+                        objects.erase(objects.begin() + i);
+                        i--;
+                        continue;
+                    }
+                    if (updated) {
+                        objects[i].lastDeathFrameUpdate = std::chrono::steady_clock::now();
                     }
                 }
                 if (!objects[i].dead) {
-                    if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 128 && abs(objects[i].yPos - player.yPos) < 112) {
-                        if (objects[i].rotatable) {
-                            double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
-                            double angleDelta = newAngle - objects[i].angleRadians;
-                            if (angleDelta > pi) {
-                                angleDelta -= (2 * pi);
-                            }
-                            else if (angleDelta < -pi) {
-                                angleDelta += (2 * pi);
-                            }
-                            if (angleDelta > 0) {
-                                objects[i].angleRadians += objects[i].turnRadius * ((deltaTime / 50) / 1);
-                            }
-                            else {
-                                objects[i].angleRadians -= objects[i].turnRadius * ((deltaTime / 50) / 1);
-                            }
-
-                            objects[i].xPos += objects[i].xVel * deltaTime * cos(objects[i].angleRadians);
-                            objects[i].yPos += objects[i].yVel * deltaTime * sin(objects[i].angleRadians);
-                        }
+                    if (std::chrono::steady_clock::now() - objects[i].damageBegins >= std::chrono::nanoseconds(16666666 * 4)) {
+                        objects[i].damaged = false;
+                    }
+                    if (objects[i].damaged) {
+                        objects[i].currentFramePath = objects[i].damagedFrame;
+                    }
+                    else {
+                        objects[i].currentFramePath = objects[i].defaultFrame;
+                    }
+                }
+            }
+            if (!objects[i].dead) {
+                if (objects[i].canFire && abs(objects[i].xPos - player.xPos) < 128 && abs(objects[i].yPos - player.yPos) < 112) {
+                    if (objects[i].rotatable) {
                         double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
                         double angleDelta = newAngle - objects[i].angleRadians;
                         if (angleDelta > pi) {
@@ -3088,93 +3071,110 @@ void UpdateMasterObjectLogic(double deltaTime, int& spawnerCounter) {
                         else if (angleDelta < -pi) {
                             angleDelta += (2 * pi);
                         }
-                        if (objects[i].burstFire && !objects[i].burstAvailable && (std::chrono::steady_clock::now() - objects[i].timeSinceBurst >= std::chrono::seconds(2))) {
-                            objects[i].burstAvailable = true;
-                            objects[i].shotsInBurst = 0;
-                        }
-                        if (abs(angleDelta) <= pi / 12 && !objects[i].shotFrame && std::chrono::steady_clock::now() - objects[i].lastShotTime >= objects[i].shotSpeed
-                            && ((objects[i].burstFire && objects[i].burstAvailable) || !objects[i].burstFire)) {
-                            // Create new bullet, position it with player, give it its velocities
-                            if (objects[i].burstFire) {
-                                objects[i].shotsInBurst++;
-                                if (objects[i].shotsInBurst >= 3) {
-                                    objects[i].burstAvailable = false;
-                                }
-                                else if (objects[i].shotsInBurst == 1) {
-                                    objects[i].timeSinceBurst = std::chrono::steady_clock::now();
-                                }
-                            }
-                            enemyBullets.emplace_back(objects[i].shotType);
-                            enemyBullets.back().xPos = objects[i].xPos;
-                            enemyBullets.back().yPos = objects[i].yPos;
-                            enemyBullets.back().shotVelocity = objects[i].shotVelocity;
-                            enemyBullets.back().power = objects[i].power;
-                            enemyBullets.back().defaultFrame = objects.at(i).shotType;
-                            enemyBullets.back().UpdateHitBox();
-                            enemyBullets.back().angleRadians = objects[i].angleRadians + pi / 2;
-                            enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
-                            if (abs(enemyBullets.back().yVel) < 0.0001) {
-                                enemyBullets.back().yVel = 0;
-                            }
-                            enemyBullets.back().xVel = round(sin(enemyBullets.back().angleRadians) * 100) / 100;
-                            if (abs(enemyBullets.back().xVel) < 0.0001) {
-                                enemyBullets.back().xVel = 0;
-                            }
-
-                            //enemyBullets.back().modulator = double((rand() % 628)) / 100;
-                            //bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
-                            //int result = (rand() % 2);
-                            //if (modulatorTicker == true) {
-                            //    modulatorTicker = false;
-                            //    bullets.back().modulatorPositiveDelta = false;
-                            //}
-                            //else {
-                            //    modulatorTicker = true;
-                            //    bullets.back().modulatorPositiveDelta = true;
-                            //}
-                            objects[i].shotFrame = objects[i].defaultShotEffect;
+                        if (angleDelta > 0) {
+                            objects[i].angleRadians += objects[i].turnRadius * ((deltaTime / 50) / 1);
                         }
                         else {
-                            CycleShotEffect(objects[i]);
+                            objects[i].angleRadians -= objects[i].turnRadius * ((deltaTime / 50) / 1);
                         }
+
+                        objects[i].xPos += objects[i].xVel * deltaTime * cos(objects[i].angleRadians);
+                        objects[i].yPos += objects[i].yVel * deltaTime * sin(objects[i].angleRadians);
                     }
-                    objects[i].UpdateHitBox();
-                }
-                if (objects.at(i).pickup) {
-                    if (std::chrono::steady_clock::now() - objects.at(i).timesinceInception >= std::chrono::milliseconds(750)) {
-                        float dx = (player.xPos - objects.at(i).xPos) / 35;
-                        float dy = (player.yPos - objects.at(i).yPos) / 35;
-                        double length = sqrt(dx * dx + dy * dy);
-                        objects.at(i).xVel = (dx / length) * 5;
-                        objects.at(i).yVel = (dy / length) * 5;
-                        objects.at(i).xPos += objects.at(i).xVel * deltaTime;
-                        objects.at(i).yPos += objects.at(i).yVel * deltaTime;
+                    double newAngle = atan2(player.yPos - objects[i].yPos, player.xPos - objects[i].xPos);
+                    double angleDelta = newAngle - objects[i].angleRadians;
+                    if (angleDelta > pi) {
+                        angleDelta -= (2 * pi);
                     }
-                    if (objects.at(i).name == L"Health Pickup") {
-                        if (player.CheckCollision(objects.at(i))) {
-                            player.health = min(player.health + 10, player.maxHP);
-                            objects.erase(objects.begin() + i);
-                            i--;
-                            continue;
+                    else if (angleDelta < -pi) {
+                        angleDelta += (2 * pi);
+                    }
+                    if (objects[i].burstFire && !objects[i].burstAvailable && (std::chrono::steady_clock::now() - objects[i].timeSinceBurst >= std::chrono::seconds(2))) {
+                        objects[i].burstAvailable = true;
+                        objects[i].shotsInBurst = 0;
+                    }
+                    if (abs(angleDelta) <= pi / 12 && !objects[i].shotFrame && std::chrono::steady_clock::now() - objects[i].lastShotTime >= objects[i].shotSpeed
+                        && ((objects[i].burstFire && objects[i].burstAvailable) || !objects[i].burstFire)) {
+                        // Create new bullet, position it with player, give it its velocities
+                        if (objects[i].burstFire) {
+                            objects[i].shotsInBurst++;
+                            if (objects[i].shotsInBurst >= 3) {
+                                objects[i].burstAvailable = false;
+                            }
+                            else if (objects[i].shotsInBurst == 1) {
+                                objects[i].timeSinceBurst = std::chrono::steady_clock::now();
+                            }
                         }
-                        if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::seconds(2)) {
-                            objects.at(i).genericFrameMarker = std::chrono::steady_clock::now();
-                            objects.at(i).currentFramePath = files.hp_pickup_2;
+                        enemyBullets.emplace_back(objects[i].shotType);
+                        enemyBullets.back().xPos = objects[i].xPos;
+                        enemyBullets.back().yPos = objects[i].yPos;
+                        enemyBullets.back().shotVelocity = objects[i].shotVelocity;
+                        enemyBullets.back().power = objects[i].power;
+                        enemyBullets.back().defaultFrame = objects.at(i).shotType;
+                        enemyBullets.back().UpdateHitBox();
+                        enemyBullets.back().angleRadians = objects[i].angleRadians + pi / 2;
+                        enemyBullets.back().yVel = round(-cos(enemyBullets.back().angleRadians) * 100) / 100;
+                        if (abs(enemyBullets.back().yVel) < 0.0001) {
+                            enemyBullets.back().yVel = 0;
                         }
-                        else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(700)) {
-                            objects.at(i).currentFramePath = files.hp_pickup_3;
+                        enemyBullets.back().xVel = round(sin(enemyBullets.back().angleRadians) * 100) / 100;
+                        if (abs(enemyBullets.back().xVel) < 0.0001) {
+                            enemyBullets.back().xVel = 0;
                         }
-                        else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(500)) {
-                            objects.at(i).currentFramePath = files.hp_pickup_2;
-                        }
-                        else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(250)) {
-                            objects.at(i).currentFramePath = files.hp_pickup_1;
-                        }
+
+                        //enemyBullets.back().modulator = double((rand() % 628)) / 100;
+                        //bullets.back().modulatorDelta = double((rand() % 5) + 15) / 100;
+                        //int result = (rand() % 2);
+                        //if (modulatorTicker == true) {
+                        //    modulatorTicker = false;
+                        //    bullets.back().modulatorPositiveDelta = false;
+                        //}
+                        //else {
+                        //    modulatorTicker = true;
+                        //    bullets.back().modulatorPositiveDelta = true;
+                        //}
+                        objects[i].shotFrame = objects[i].defaultShotEffect;
+                    }
+                    else {
+                        CycleShotEffect(objects[i]);
                     }
                 }
-                if (objects.at(i).randomSpawner) {
-                    spawnerCounter++;
+                objects[i].UpdateHitBox();
+            }
+            if (objects.at(i).pickup) {
+                if (std::chrono::steady_clock::now() - objects.at(i).timesinceInception >= std::chrono::milliseconds(750)) {
+                    float dx = (player.xPos - objects.at(i).xPos) / 35;
+                    float dy = (player.yPos - objects.at(i).yPos) / 35;
+                    double length = sqrt(dx * dx + dy * dy);
+                    objects.at(i).xVel = (dx / length) * 5;
+                    objects.at(i).yVel = (dy / length) * 5;
+                    objects.at(i).xPos += objects.at(i).xVel * deltaTime;
+                    objects.at(i).yPos += objects.at(i).yVel * deltaTime;
                 }
+                if (objects.at(i).name == L"Health Pickup") {
+                    if (player.CheckCollision(objects.at(i))) {
+                        player.health = min(player.health + 10, player.maxHP);
+                        objects.erase(objects.begin() + i);
+                        i--;
+                        continue;
+                    }
+                    if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::seconds(2)) {
+                        objects.at(i).genericFrameMarker = std::chrono::steady_clock::now();
+                        objects.at(i).currentFramePath = files.hp_pickup_2;
+                    }
+                    else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(700)) {
+                        objects.at(i).currentFramePath = files.hp_pickup_3;
+                    }
+                    else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(500)) {
+                        objects.at(i).currentFramePath = files.hp_pickup_2;
+                    }
+                    else if (std::chrono::steady_clock::now() - objects.at(i).genericFrameMarker >= std::chrono::milliseconds(250)) {
+                        objects.at(i).currentFramePath = files.hp_pickup_1;
+                    }
+                }
+            }
+            if (objects.at(i).randomSpawner) {
+                spawnerCounter++;
             }
         }
     }
